@@ -2,22 +2,8 @@ import '@/styles/globals.css'
 import type { AppProps } from 'next/app'
 import { SessionProvider } from "next-auth/react"
 import {WidthProvider} from "@/lib/components/providers/WidthProvider";
-import {RecaptchaProvider} from "@/lib/components/providers/RecaptchaProvider";
-import {useEffect, useState} from "react";
-import {useRouter} from "next/router";
-import {hasConsentCookie} from "@/lib/utils/cookies";
-import Navbar from "@/lib/components/layout/Navbar";
-import PopupCookieBanner from "@/lib/components/layout/PopupCookieBanner";
 
 export default function App({ Component, pageProps: { session, ...pageProps }}: AppProps) {
-  const [cookieBannerOpen, setCookieBannerOpen] = useState(false);
-  const router = useRouter();
-  useEffect(() => {
-    if (router.query?.noCookie === "1") {return;}
-    setCookieBannerOpen(!hasConsentCookie());
-  }, []);
-
-
   return <WidthProvider>
     <SessionProvider session={session}>
       <link rel="apple-touch-icon" sizes="180x180" href="https://static.anianimals.moe/apple-touch-icon.png"/>
