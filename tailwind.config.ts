@@ -1,4 +1,5 @@
 module.exports = {
+  darkMode: 'class',
   content: ['./src/lib/**/*.{js,ts,jsx,tsx}', './src/pages/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
@@ -11,6 +12,7 @@ module.exports = {
     }
   },
   plugins: [
-    require("tailwindcss-inner-border")
+    require("tailwindcss-inner-border"),
+    require('tailwind-scrollbar')
   ]
 }

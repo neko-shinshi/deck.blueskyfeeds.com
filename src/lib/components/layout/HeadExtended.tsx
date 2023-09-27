@@ -36,7 +36,6 @@ export default function HeadExtended(
             <link rel="alternate" type="application/rss+xml" title="Anime Dogs RSS" href="/rss-dog.xml"/>
             <link rel="alternate" type="application/rss+xml" title="アニメの犬 RSS" href="/rss-dog-jp.xml"/>
 
-            <meta name="viewport" content="initial-scale=1.0, width=device-width"/>
             <meta name="description" content={description}/>
 
             <meta property="fb:app_id" content="566952651522356"/>

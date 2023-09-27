@@ -25,16 +25,17 @@ export default function Popup(
     }, [router]);
 
     return <Transition.Root show={isOpen} as={Fragment}>
-        <Dialog className="fixed inset-0 overflow-y-auto z-[998]"
-                initialFocus={initialFocus}
-                onClose={() => {
-                    if (!preventManualEscape) {
-                        setOpen(false);
-                    }
-                    if (onCloseCallback) {
-                        onCloseCallback();
-                    }
-                }}
+        <Dialog
+            className="fixed inset-0 overflow-y-auto z-[998]"
+            initialFocus={initialFocus}
+            onClose={() => {
+                if (!preventManualEscape) {
+                    setOpen(false);
+                }
+                if (onCloseCallback) {
+                    onCloseCallback();
+                }
+            }}
         >
             <Transition.Child
                 as={Fragment}

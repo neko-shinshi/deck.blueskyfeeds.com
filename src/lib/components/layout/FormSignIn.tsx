@@ -1,182 +1,147 @@
-import {forwardRef, useImperativeHandle, useRef, useState} from "react";
-import clsx from "clsx";
-import Link from "next/link";
+import {forwardRef, useEffect, useImperativeHandle, useRef, useState} from "react";
+import {getAgent} from "@/lib/utils/bsky";
 import {BsFillInfoCircleFill} from "react-icons/bs";
+import Link from "next/link";
 import {HiAtSymbol} from "react-icons/hi";
+import clsx from "clsx";
+import {useForm} from "react-hook-form";
+import {useDispatch, useSelector} from "react-redux";
+import {addOrUpdateUser} from "@/lib/utils/redux/slices/users"
+import {setConfigValue} from "@/lib/utils/redux/slices/config";
 
-const FormSignIn = forwardRef(function FormSignIn(props, ref) {
-    const [password, setPassword] = useState("");
-    const [domain, setDomain] = useState("bsky.social");
-    const [warning, setWarning] = useState(false);
-
-    const emailRef = useRef(null);
-    const [error, setError] = useState<{msg?:string, part?:string}[]>([]);
-
+const FormSignIn = forwardRef(function FormSignIn({signInCallback}, ref) {
     useImperativeHandle(ref, () => {
         return {
-            reset() {
-                setPassword("");
-                setDomain("bsky.social");
-                setWarning(false);
-                setError([]);
-                emailRef.current.value = "";
+            resetForm (username) {
+                reset({service: "bsky.social", username});
+                setSubmitting(false);
             }
-        }
+        };
     }, []);
+    const [warning, setWarning] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+    const users = useSelector((state) => state.users);
+    const dispatch = useDispatch();
+
+    const useFormReturn = useForm();
+    const {
+        register,
+        reset,
+        clearErrors,
+        setError,
+        trigger,
+        formState: { errors },
+        handleSubmit,
+    } = useFormReturn;
 
 
-    const updateDomain = (val) => {
-        validateFields(val, emailRef.current.value, password);
-        setDomain(val);
-    }
 
-    const updateUsername = (val) => {
-        validateFields(domain, val, password);
-    }
-
-    const updatePassword = (val) => {
-        validateFields(domain, emailRef.current.value, val);
-        setPassword(val)
-    }
-
-    const validateFields = (domain, username, password) => {
-        let newErrors:{msg?:string, part?:string}[] = [];
-        let regex = /^[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}$/;
-        if(password.length > 0 && !regex.test(password)) {
-            newErrors.push({msg:"Not a valid App Password. Please generate it from website or app", part:"password"});
-        }
-        regex = /^((?!-))(xn--)?[a-z0-9][a-z0-9-_]{0,61}[a-z0-9]{0,1}\.(xn--)?([a-z0-9\-]{1,61}|[a-z0-9-]{1,30}\.[a-z]{2,})$/;
-        if (!regex.test(domain)) {
-            newErrors.push({msg:"Not a valid domain", part:"domain"});
-        }
-        setError(newErrors);
-
-        return newErrors.length === 0;
-    }
-
-    const handleSubmit = async (event) => {
-        event.preventDefault();
-        try {
-            if (!validateFields(domain, emailRef.current.value, password)) {
+    const formHandleSubmit = (e) => {
+        clearErrors();
+        trigger();
+        console.log("submit");
+        handleSubmit(async (data) => {
+            if (submitting) {
+                console.log("duplicate submit")
                 return;
             }
-
-
-            let usernameOrEmail = emailRef.current.value;
+            console.log("actual submit", data);
+            const {service, username, password} = data;
+            let usernameOrEmail = username;
             usernameOrEmail = usernameOrEmail.startsWith("@")? usernameOrEmail.slice(1) : usernameOrEmail;
-            usernameOrEmail = usernameOrEmail.indexOf(".") < 0? `${usernameOrEmail}.${domain}` : usernameOrEmail;
+            usernameOrEmail = usernameOrEmail.indexOf(".") < 0? `${usernameOrEmail}.${service}` : usernameOrEmail;
 
 
-            /*
-            const result = await signIn(APP_PASSWORD, {redirect:false, service:domain, usernameOrEmail, password, captcha});
-            if (result.status === 200) { // If signin successful
-                location.reload();
-            } else if (result.status === 401) {
-                console.log(result);
-                setError([{msg:"Authentication Failed", part:"password"}]);
+            const agent = await getAgent(service, usernameOrEmail, password);
+            if (!agent) {
+                setError("fail", {type: "unknown", message:`Unknown Error, try again later or contact @blueskyfeeds.com`});
             } else {
-                console.log(result);
-                setError([{msg:"Unknown Error, try again later or contact @blueskyfeeds.com", part:"all"}]);
-            }*/
+                console.log("OK!");
+                const {did} = agent.session;
+                const {data} = await agent.getProfile({actor:did});
+                if (users.length === 0) {
+                    // This user is now the primary!
+                    dispatch(setConfigValue({primaryDid: did}))
+                }
+                dispatch(addOrUpdateUser({agent, service, usernameOrEmail, password, data}));
 
-        } catch (e) {
-            setError([{msg:"Unknown Caught Error, try again later or contact @blueskyfeeds.com", part:"all"}]);
-            console.log("ERROR");
-            console.log(e);
-            if (e.response) {
-                console.log(e.response);
+                signInCallback();
             }
-        }
+
+            setSubmitting(false);
+        })(e).catch(err => {
+            setSubmitting(false);
+            switch (err.status) {
+                case 401: {
+                    setError("fail", {type: err.status, message:`Authentication Failed, check your username, password or domain again`});
+                    break;
+                }
+                case 429: {
+                    setError("fail", {type: err.status, message:`Too many attempts to login, please wait`});
+                    break;
+                }
+                default: {
+                    setError("fail", {type: err.status, message:`Unknown Caught Error ${err.status}, try again later or contact @blueskyfeeds.com`});
+                    break;
+                }
+            }
+            console.log(err);
+        });
     }
 
-    return <div className={
-        clsx("inline-block align-bottom bg-white rounded-lg",
-            "px-4 pt-5 pb-4 sm:p-6",
-            "text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full ")}>
-
+    return <>
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
             <h1 className="mt-3 text-center text-2xl font-extrabold text-gray-900 ">
-                <span>Login with a Bluesky App Password to continue</span>
+                <span>Login with a Bluesky App Password</span>
             </h1>
-            <Link href="/faq-app-password" target="_blank" rel="noreferrer">
-                <div className="flex place-items-center justify-center gap-2">
-                    <BsFillInfoCircleFill className="w-4 h-4 text-blue-500"/><div className="text-center text-blue-500 hover:text-blue-700 hover:underline">What is an App Password?</div>
-                </div>
-            </Link>
         </div>
 
         <div className="mt-4 sm:mx-auto sm:w-full sm:max-w-md">
-            <form className="space-y-4" onSubmit={handleSubmit}>
-                <div>
-                    <label htmlFor="domain" className="block text-sm font-medium text-gray-700">
-                        Federated PDS Domain (not your @handle.domain)
-                    </label>
-                    <div className="mt-1 flex place-items-center">
-                        <input id="domain"
-                               name="domain"
-                               onClick={() => {
-                                   if (!warning) {
-                                       alert("Only change this if you are on a FEDERATED server");
-                                       setWarning(true);
-                                   }
-                               }}
-                               defaultValue="bsky.social"
-                               type="text"
-                               onChange={(event) => {
-                                   updateDomain(event.target.value);
-                               }}
-                               required
-                               className={clsx("appearance-none block w-full px-3 py-2",
-                                   error.find(x => x.part === "service" || x.part === "all") && "border-red-600",
-                                   "border border-gray-300 rounded-md shadow-sm placeholder-gray-400",
-                                   "focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm")}
-                        />
-                    </div>
-                </div>
-
+            <form className="space-y-4" onSubmit={formHandleSubmit}>
                 <div>
                     <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                         @Handle, Email, or `user` from `user`.bsky.social
                     </label>
                     <div className="mt-1 relative">
-                        <input ref={emailRef}
-                               id="email"
-                               name="email"
-                               type="text"
-                               onChange={(event) => {
-                                   updateUsername(event.target.value);
-                               }}
-                               required
-                               className={clsx("pl-8 appearance-none block w-full px-3 py-2",
-                                   error.find(x => x.part === "all") && "border-red-600",
-                                   "border border-gray-300 rounded-md shadow-sm placeholder-gray-400",
-                                   "focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm")}
+                        <input
+                            type="text"
+                            className={clsx("pl-8 appearance-none block w-full px-3 py-2",
+                                errors.username && "border-red-600",
+                                "border border-2 border-gray-300 rounded-md shadow-sm placeholder-gray-400",
+                                "focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm")}
+                            {...register("username", {required: `Username or email is required`})}
                         />
                         <div
                             className="absolute inset-y-0 left-0 flex items-center px-2 pointer-events-none">
                             <HiAtSymbol className="w-4 h-4"/>
                         </div>
                     </div>
+                    {
+                        errors.username && <div className="text-red-600 text-sm">{errors.username.message as string}</div>
+                    }
                 </div>
 
                 <div>
                     <label htmlFor="password" className="flex justify-items-start place-items-center gap-2 text-sm font-medium text-gray-700">
-                        App Password  <Link href="/faq-app-password"><BsFillInfoCircleFill className="w-4 h-4 text-blue-500 hover:text-blue-800"/></Link>
+                        App Password  <Link href="/faq-app-password" className="flex place-items-center group" target="_blank" rel="noreferrer">
+                        <BsFillInfoCircleFill className="mr-1 w-4 h-4 text-blue-500 group-hover:text-blue-800"/>
+                        <div className=" text-blue-500 group-hover:underline group-hover:text-blue-800">What is this?</div>
+                    </Link>
                     </label>
                     <div className="mt-1 relative">
                         <input
-                            id="password"
-                            name="password"
-                            value={password}
-                            onChange={(event) => {
-                                updatePassword(event.target.value);
-                            }}
                             placeholder="xxxx-xxxx-xxxx-xxxx"
-                            required
                             className={clsx("pl-8 appearance-none block w-full px-3 py-2",
-                                error.find(x => x.part === "password" || x.part === "all") && "border-red-600",
-                                "border border-gray-300 rounded-md shadow-sm placeholder-gray-400",
+                                errors.password && "border-red-600",
+                                "border border-2 border-gray-300 rounded-md shadow-sm placeholder-gray-400",
                                 "focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm")}
+                            {...register("password", {
+                                required: `Password is required`,
+                                validate: v => {
+                                    let regex = /^[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}-[A-Za-z0-9]{4}$/;
+                                    return regex.test(v) || "Not a valid App Password. Please generate it from website or app. Click the link above to find out how.";
+                                }
+                            })}
                         />
                         <div
                             className="absolute inset-y-0 left-0 flex items-center px-2 pointer-events-none">
@@ -186,15 +151,47 @@ const FormSignIn = forwardRef(function FormSignIn(props, ref) {
                                       clipRule="evenodd"/>
                             </svg>
                         </div>
-                        <div></div>
                     </div>
+                    {
+                        errors.password && <div className="text-red-600 text-sm">{errors.password.message as string}</div>
+                    }
                 </div>
+                <div>
+                    <label htmlFor="domain" className="block text-sm font-medium text-gray-700">
+                        Federated PDS Domain (not your @handle.domain)
+                    </label>
+                    <div className="mt-1 flex place-items-center">
+                        <input
+                            onClick={() => {
+                                if (!warning) {
+                                    alert("Only change this if you are on a FEDERATED server");
+                                    setWarning(true);
+                                }
+                            }}
+                            type="text"
+                            className={clsx("appearance-none block w-full px-3 py-2",
+                                errors.service && "border-red-600",
+                                "border border-2 border-gray-300 rounded-md shadow-sm placeholder-gray-400",
+                                "focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm")}
+                            {...register("service", {
+                                required: `Domain is required`,
+                                validate: v => {
+                                    let regex = /^((?!-))(xn--)?[a-z0-9][a-z0-9-_]{0,61}[a-z0-9]{0,1}\.(xn--)?([a-z0-9\-]{1,61}|[a-z0-9-]{1,30}\.[a-z]{2,})$/;
+                                    return regex.test(v) || "Not a valid domain. Check it again";
+                                }
+                            })}
+                        />
+                    </div>
+                    {
+                        errors.service && <div className="text-red-600 text-sm">{errors.service.message as string}</div>
+                    }
+                </div>
+
                 {
-                    error.length > 0 && <div className="text-red-600 text-sm">
-                        {error[0].msg}
+                    errors.fail && <div className="text-red-600 text-sm">
+                        {errors.fail.message as string}
                     </div>
                 }
-
                 <div>
                     <button
                         type="submit"
@@ -202,12 +199,12 @@ const FormSignIn = forwardRef(function FormSignIn(props, ref) {
                             clsx("w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2",
                                 "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500")
                         }>
-                        Continue
+                        Login
                     </button>
                 </div>
             </form>
         </div>
-    </div>
+    </>
 });
 
 export default FormSignIn;
