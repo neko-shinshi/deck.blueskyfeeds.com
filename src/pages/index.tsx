@@ -14,6 +14,7 @@ import FormSignIn from "@/lib/components/layout/FormSignIn";
 import {useForm} from "react-hook-form";
 import {useReduxSync} from "@/lib/components/providers/ReduxSyncProvider";
 import {increment} from "@/lib/utils/redux/slices/test";
+import {decrypt, encrypt, parseKey} from "@/lib/utils/crypto";
 
 
 const widths = ["w-[19rem]", "w-[21rem]", "w-[24rem]"];
@@ -39,6 +40,9 @@ const App = () => {
             ref.current.resetForm ("");
         }
     }, [ref, users]);
+
+    const cipherRef = useRef(null);
+    const plainRef = useRef(null);
 
     const [popupState, setPopupState] = useState<"users"|"login"|false>(false);
     const useFormReturn = useForm();

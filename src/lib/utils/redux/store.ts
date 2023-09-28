@@ -8,6 +8,7 @@ import tests from "@/lib/utils/redux/slices/test";
 import {combineReducers} from "redux";
 import thunk from 'redux-thunk';
 import {randomUuid} from "@/lib/utils/random";
+import {decrypt, encrypt, parseKey} from "@/lib/utils/crypto";
 
 
 const persistedReducer = persistReducer(
@@ -17,20 +18,23 @@ const persistedReducer = persistReducer(
 
 export const SYNC_SESSION_ID = randomUuid();
 
-function timestampAction(action) {
-    return {
-        session: SYNC_SESSION_ID,
-        action,
-        time: Date.now()
-    }
-}
-
-
-
 const storageSyncMiddleware = (store) => (next) => (action) => {
     try {
         if (action.type !== "REHYDRATE" && action.type !== "PERSIST" && action.payload?.__terminate !== true) {
-            localStorage?.setItem('SYNC-KEY', JSON.stringify(timestampAction(action)));
+            const {type, payload} = action;
+            const state = store.getState();
+            const keyString = state.config.basicKey;
+            if (keyString) {
+                parseKey(keyString).then(key => {
+                    encrypt(key, JSON.stringify({type, payload})).then(cipherText => {
+                        localStorage?.setItem('SYNC-KEY', JSON.stringify({
+                            session: SYNC_SESSION_ID,
+                            action: cipherText,
+                            time: Date.now()
+                        }));
+                    });
+                });
+            }
         }
     } catch (e) {
        // console.error("sync", e);

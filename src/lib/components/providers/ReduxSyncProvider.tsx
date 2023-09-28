@@ -1,22 +1,32 @@
 import {createContext, useContext, useEffect, useState} from "react";
-import {useDispatch} from "react-redux";
 import {SYNC_SESSION_ID} from "@/lib/utils/redux/store";
+import {decrypt, makeKey, parseKey} from "@/lib/utils/crypto";
+import {setConfigValue} from "@/lib/utils/redux/slices/config";
 // Based on https://franz.hamburg/writing/syncing-redux-stores-across-browser-tabs.html
-
+import {useDispatch, useSelector} from "react-redux";
 const ReduxSyncContext = createContext<any>(null)
 
 function ReduxSyncProvider ({children}) {
     const [ready, setReady] = useState(false); // dummy, not used
+    //@ts-ignore
+    const config = useSelector((state) => state.config);
+
     const dispatch = useDispatch();
     function createStorageListener() {
-        return event => {
+        return async (event) => {
             const {newValue, key} = event;
             if ('SYNC-KEY' === key) {
-                const {action, session} = JSON.parse(newValue);
-                const {type, payload} = action;
-                if (SYNC_SESSION_ID !== session) {
-                    // Don't dispatch own sessions to self
-                    dispatch({type, payload:{...payload, __terminate: true}});
+                const keyString = config.basicKey;
+                if (keyString) {
+                    let {action, session} = JSON.parse(newValue);
+                    if (SYNC_SESSION_ID !== session) { // Don't dispatch own sessions to self
+                        const key = await parseKey(keyString);
+                        action = JSON.parse(await decrypt(key, action));
+
+                        const {type, payload} = action;
+
+                        dispatch({type, payload:{...payload, __terminate: true}});
+                    }
                 }
             }
         }
@@ -28,6 +38,14 @@ function ReduxSyncProvider ({children}) {
         window.addEventListener('storage', listenStorage);
         return () => window.removeEventListener("storage", listenStorage);
     }, []);
+
+    useEffect(() => {
+        if (config && !config.basicKey) {
+            makeKey().then(key => {
+                dispatch(setConfigValue({basicKey: key}));
+            });
+        }
+    }, [config]);
 
     return <ReduxSyncContext.Provider value={ready}>
         {children}
