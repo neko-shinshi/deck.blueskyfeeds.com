@@ -7,34 +7,25 @@ import users from "@/lib/utils/redux/slices/users";
 import tests from "@/lib/utils/redux/slices/test";
 import {combineReducers} from "redux";
 import thunk from 'redux-thunk';
-import {randomUuid} from "@/lib/utils/random";
-import {decrypt, encrypt, parseKey} from "@/lib/utils/crypto";
-
 
 const persistedReducer = persistReducer(
     {key: 'root', storage},
     combineReducers({config, pages, users, tests})
 );
 
-export const SYNC_SESSION_ID = randomUuid();
+const SyncChannel = new BroadcastChannel("DECK_SYNC");
+SyncChannel.onmessage = async (message) => {
+    const {data} = message;
+    const action = JSON.parse(data);
+    const {type, payload} = action;
+    store.dispatch({type, payload:{...payload, __terminate: true}});
+};
 
 const storageSyncMiddleware = (store) => (next) => (action) => {
     try {
-        if (action.type !== "REHYDRATE" && action.type !== "PERSIST" && action.payload?.__terminate !== true) {
+        if (!action.type.startsWith("persist/") && action.payload?.__terminate !== true) {
             const {type, payload} = action;
-            const state = store.getState();
-            const keyString = state.config.basicKey;
-            if (keyString) {
-                parseKey(keyString).then(key => {
-                    encrypt(key, JSON.stringify({type, payload})).then(cipherText => {
-                        localStorage?.setItem('SYNC-KEY', JSON.stringify({
-                            session: SYNC_SESSION_ID,
-                            action: cipherText,
-                            time: Date.now()
-                        }));
-                    });
-                });
-            }
+            SyncChannel.postMessage(JSON.stringify({type, payload}));
         }
     } catch (e) {
        // console.error("sync", e);
@@ -50,6 +41,7 @@ export const store = configureStore({
     middleware: [storageSyncMiddleware, thunk] // thunk is required to get rid of an error
 });
 
-
 // export default the store
 export const persistor = persistStore(store);
+
+

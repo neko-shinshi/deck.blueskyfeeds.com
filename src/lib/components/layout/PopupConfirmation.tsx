@@ -51,10 +51,10 @@ export default function PopupConfirmation(
                     className={clsx(buttonClass || "bg-white text-black",
                         "mt-3 w-full inline-flex justify-center rounded-md border border-2 shadow-sm px-4 py-2 text-base font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black sm:mt-0 sm:col-start-1 sm:text-sm")}
                     onClick={() => {
-                        setOpen(false);
                         if (yesCallback) {
                             yesCallback();
                         }
+                        setOpen(false);
                     }}
                 >
                     {yesText? yesText:"Ok"}

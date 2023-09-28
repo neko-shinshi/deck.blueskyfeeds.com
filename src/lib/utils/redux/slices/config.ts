@@ -2,11 +2,9 @@ import { createSlice } from '@reduxjs/toolkit'
 
 interface Config {
     colorMode: "light" | "dark" | "system"
-    maskNsfw: boolean
-    hideNsfw: boolean
     showScrollbars: boolean
     altTextPrompt: boolean
-    offsetLeft: boolean
+    offsetLeft: boolean // align to left or to avatar
     fontSize: "xs" | "sm" | "base" | "lg" | "xl"
     primaryDid: string
     basicKey: string
@@ -14,8 +12,6 @@ interface Config {
 
 const initialState:Config = {
     colorMode: "system",
-    maskNsfw: true,
-    hideNsfw: false,
     showScrollbars: false,
     altTextPrompt: true,
     offsetLeft: true,

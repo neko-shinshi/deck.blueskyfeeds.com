@@ -1,27 +1,36 @@
-import {forwardRef, useImperativeHandle, useState} from "react";
+import {useEffect, useState} from "react";
 import {getAgent} from "@/lib/utils/bsky";
 import {BsFillInfoCircleFill} from "react-icons/bs";
 import Link from "next/link";
 import {HiAtSymbol} from "react-icons/hi";
 import clsx from "clsx";
 import {useDispatch, useSelector} from "react-redux";
-import {addOrUpdateUser} from "@/lib/utils/redux/slices/users"
+import {addOrUpdateUser, UserData} from "@/lib/utils/redux/slices/users"
 import {setConfigValue} from "@/lib/utils/redux/slices/config";
 import {useForm} from "react-hook-form";
+import {encrypt, parseKey} from "@/lib/utils/crypto";
 
-const FormSignIn = forwardRef(function FormSignIn(props:{signInCallback?:any}, ref) {
-    useImperativeHandle(ref, () => {
-        return {
-            resetForm (username) {
-                reset({service: "bsky.social", username});
-                setSubmitting(false);
+export default function FormSignIn ({openState, initialUser=null, completeCallback}:{openState:boolean, initialUser?:UserData, completeCallback?:any}) {
+    useEffect( () => {
+        if (openState) {
+            if (!initialUser) {
+                reset({service:"bsky.social", username:""});
+            } else {
+                const {service, usernameOrEmail: username} = initialUser;
+                reset({service, username});
             }
-        };
-    }, []);
+
+            setSubmitting(false);
+        }
+    }, [openState, initialUser]);
+
     const [warning, setWarning] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     //@ts-ignore
     const users = useSelector((state) => state.users.val);
+
+    //@ts-ignore
+    const config = useSelector((state) => state.config);
     const dispatch = useDispatch();
     const useFormReturn = useForm();
     const {
@@ -59,16 +68,20 @@ const FormSignIn = forwardRef(function FormSignIn(props:{signInCallback?:any}, r
                 console.log("OK!");
                 const {did, handle, refreshJwt, accessJwt} = agent.session;
                 const {data} = await agent.getProfile({actor:did});
-                if (users.length === 0) {
+                if (users.filter(x => x.active).length === 0) {
                     // This user is now the primary!
                     dispatch(setConfigValue({primaryDid: did}))
                 }
                 const {displayName, avatar} = data;
 
-                dispatch(addOrUpdateUser({service, usernameOrEmail, password, did, displayName, avatar, handle, refreshJwt, accessJwt}));
+                const keyString = config.basicKey;
+                const key = await parseKey(keyString);
+                const encryptedPassword = await encrypt(key, password);
 
-                if (props.signInCallback) {
-                    props.signInCallback();
+
+                dispatch(addOrUpdateUser({service, usernameOrEmail, encryptedPassword, did, displayName, avatar, handle, refreshJwt, accessJwt}));
+                if (completeCallback) {
+                    completeCallback();
                 }
             }
 
@@ -109,8 +122,10 @@ const FormSignIn = forwardRef(function FormSignIn(props:{signInCallback?:any}, r
                     <div className="mt-1 relative">
                         <input
                             type="text"
+                            disabled={!!initialUser}
                             className={clsx("pl-8 appearance-none block w-full px-3 py-2",
                                 errors.username && "border-red-600",
+                                !!initialUser && "bg-gray-400",
                                 "border border-2 border-gray-300 rounded-md shadow-sm placeholder-gray-400",
                                 "focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm")}
                             {...register("username", {required: `Username or email is required`})}
@@ -209,6 +224,4 @@ const FormSignIn = forwardRef(function FormSignIn(props:{signInCallback?:any}, r
             </form>
         </div>
     </>
-});
-
-export default FormSignIn;
+}

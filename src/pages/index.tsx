@@ -1,5 +1,4 @@
 import HeadExtended from "@/lib/components/layout/HeadExtended";
-import clsx from "clsx";
 import {useEffect, useRef, useState} from "react";
 import Image from "next/image";
 import AvatarSelfMain from "@/lib/components/layout/AvatarSelfMain";
@@ -11,10 +10,9 @@ import {useDispatch, useSelector} from "react-redux";
 import PopupFormSignIn from "@/lib/components/layout/PopupFormSignIn";
 import PopupUserSelect from "@/lib/components/layout/PopupUserSelect";
 import FormSignIn from "@/lib/components/layout/FormSignIn";
-import {useForm} from "react-hook-form";
-import {useReduxSync} from "@/lib/components/providers/ReduxSyncProvider";
 import {increment} from "@/lib/utils/redux/slices/test";
-import {decrypt, encrypt, parseKey} from "@/lib/utils/crypto";
+import {makeKey} from "@/lib/utils/crypto";
+import {setConfigValue} from "@/lib/utils/redux/slices/config";
 
 
 const widths = ["w-[19rem]", "w-[21rem]", "w-[24rem]"];
@@ -24,28 +22,30 @@ const App = () => {
     const users = useSelector((state) => state.users.val);
     //@ts-ignore
     const config = useSelector((state) => state.config);
+
     //@ts-ignore
-    const testNum = useSelector((state) => state.tests.val);
+   // const tests = useSelector((state) => state.tests.val);
+
     const dispatch = useDispatch();
-    const readyState = useReduxSync();
+
+    // Close all popups when logged out
+    useEffect(() => {
+        if (users && users.length === 0) {
+            setPopupState(false);
+        }
+    }, [users]);
+
 
     useEffect(() => {
         console.log("config", config);
+        if (config && !config.basicKey) {
+            makeKey().then(key => {
+                dispatch(setConfigValue({basicKey: key}));
+            });
+        }
     }, [config]);
 
-
-    const ref = useRef(null);
-    useEffect( () => {
-        if (ref.current && users && users.length === 0) {
-            ref.current.resetForm ("");
-        }
-    }, [ref, users]);
-
-    const cipherRef = useRef(null);
-    const plainRef = useRef(null);
-
-    const [popupState, setPopupState] = useState<"users"|"login"|false>(false);
-    const useFormReturn = useForm();
+    const [popupState, setPopupState] = useState<"users"|"login"|"column-users"|"add-column"|"manage-column"|"settings"|"new-post"|false>(false);
 
     const column = () => {
         {
@@ -89,24 +89,34 @@ const App = () => {
             isOpen={popupState === "login"}
             setOpen={setPopupState}/>
 
-        <PopupUserSelect isOpen={popupState === "users"} setOpen={setPopupState}/>
+        <PopupUserSelect
+            isOpen={popupState === "users"}
+            setOpen={setPopupState}
+            title="Saved Accounts"
+        />
+
+        <PopupUserSelect
+            isOpen={popupState === "column-users"}
+            setOpen={setPopupState}
+            title="Select User to add Column with"
+            selectCallback={() => {
+            }}
+        />
 
 
         <div className="h-screen w-full">
             {
 
-                /*
                 (!users || users.length === 0) && <div className="w-full h-screen grid place-items-center bg-white">
                     <div className="border border-2 border-black p-4 rounded-xl">
-                        <FormSignIn ref={ref}/>
+                        <FormSignIn openState={!users || users.length === 0}/>
                     </div>
-
-                </div>*/
+                </div>
             }
 
 
             {
-/*
+
                 users && users.length > 0 &&
                 <div className="w-full h-full flex pr-2 py-2">
                     <div className="w-16 flex flex-col justify-between shrink-0">
@@ -125,7 +135,25 @@ const App = () => {
                             <div className="px-2 h-0.5 w-full">
                                 <div className="h-full w-full bg-gray-400" />
                             </div>
-                            <div className="w-10 h-10 bg-gray-900 hover:bg-gray-500 rounded-full border border-black grid place-items-center">
+                            <div className="w-10 h-10 bg-gray-900 hover:bg-gray-500 rounded-full border border-black grid place-items-center"
+                                 onClick={() => {
+                                     const activeUsers = users.filter(x => x.active);
+                                     switch (activeUsers.length) {
+                                         case 0: {
+                                             // Force login
+                                             setPopupState("users");
+                                             break;
+                                         }
+                                         case 1: {
+                                             // Open the add UI now
+                                             break;
+                                         }
+                                         default: {
+                                             setPopupState("column-users");
+                                         }
+                                     }
+                                 }}
+                            >
                                 <FaPlus className="w-4 h-4" aria-label="Add Column"/>
                             </div>
 
@@ -163,14 +191,19 @@ const App = () => {
 
 
                     </div>
-                </div>*/
+                </div>
             }
 
-            <button onClick={() => {
+            {
+                /*
+                for sync testing
+                 <button onClick={() => {
                 dispatch(increment({inc:2}));
-            }}> Click Me </button>
+            }}>Click Me</button>
 
-            {testNum}
+            <div>{tests}</div>
+                 */
+            }
 
 
         </div>

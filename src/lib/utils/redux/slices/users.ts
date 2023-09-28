@@ -1,9 +1,9 @@
 import { createSlice } from '@reduxjs/toolkit'
 
-interface UserData {
+export interface UserData {
     service: string
     usernameOrEmail: string
-    password: string
+    encryptedPassword: string
     refreshJwt: string,
     accessJwt: string
     did: string
@@ -19,10 +19,10 @@ const slice = createSlice({
     initialState,
     reducers:{
         addOrUpdateUser: (users, action) => {
-            const {service, usernameOrEmail, password, did, displayName, avatar, handle, refreshJwt, accessJwt} = action.payload;
+            const {service, usernameOrEmail, encryptedPassword, did, displayName, avatar, handle, refreshJwt, accessJwt} = action.payload;
 
             const user = {
-                service, usernameOrEmail, password,
+                service, usernameOrEmail, encryptedPassword,
                 refreshJwt, accessJwt, avatar,
                 did, handle, displayName, active: true
             };
@@ -35,30 +35,31 @@ const slice = createSlice({
             }
         },
         removeUser: (users, action) => {
-            const index = users.val.findIndex(x => x.did === action.payload);
-            if (index >= 0) {
-                users.val.splice(index, 1);
-            }
+            const {did} = action.payload;
+            users.val = users.val.filter(x => x.did !== did);
         },
-        setUserInactive: (users, action) => {
-            const index = users.val.findIndex(x => x.did === action.payload);
-            if (index >= 0) {
-                users.val[index].active = false;
+        logOut: (users, action) => {
+            const {did} = action.payload;
+            const user = users.val.find(x => x.did === did);
+            if (user) {
+                user.active = false;
+                user.encryptedPassword = "";
+                user.refreshJwt = "";
+                user.accessJwt = "";
             }
         },
         setUserOrder: (users, action) => {
-            const newUsers = action.payload.reduce((acc, x) => {
+            const {order} = action.payload;
+            users.val = order.reduce((acc, x) => {
                 const user = users.val.find(y => y.did === x);
                 if (user) {
                     acc.push(user);
                 }
                 return acc;
             }, []);
-
-            users.val = newUsers;
         }
     }
 });
 
-export const {addOrUpdateUser, removeUser, setUserInactive, setUserOrder} = slice.actions
+export const {addOrUpdateUser, removeUser, logOut, setUserOrder} = slice.actions
 export default slice.reducer

@@ -3,13 +3,22 @@ import { createSlice } from '@reduxjs/toolkit'
 interface Page {
     id: string // uuid
     columns: Column[]
+    maskNsfw: boolean,
+    hideNsfw: boolean
 }
 
 interface Column {
     id: string // uuid
-    type: "home" | "feed" | "notifs" | "users"
+    type: "home" | "feed" | "notifs" | "users" | "firehose"
     width: number
     active: boolean
+}
+
+interface ColumnFirehose extends Column {
+    type: "firehose",
+    showReplies: boolean,
+    keywords: string[]
+    users: string[]
 }
 
 interface ColumnHome extends Column {
