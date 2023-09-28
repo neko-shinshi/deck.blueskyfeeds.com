@@ -20,6 +20,7 @@ const FormSignIn = forwardRef(function FormSignIn(props:{signInCallback?:any}, r
     }, []);
     const [warning, setWarning] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    //@ts-ignore
     const users = useSelector((state) => state.users.val);
     const dispatch = useDispatch();
     const useFormReturn = useForm();
@@ -39,7 +40,7 @@ const FormSignIn = forwardRef(function FormSignIn(props:{signInCallback?:any}, r
         clearErrors();
         trigger();
         console.log("submit");
-        handleSubmit(async (data) => {
+        handleSubmit(async (data:any) => {
             if (submitting) {
                 console.log("duplicate submit")
                 return;

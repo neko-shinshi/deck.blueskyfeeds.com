@@ -29,11 +29,11 @@ function timestampAction(action) {
 
 const storageSyncMiddleware = (store) => (next) => (action) => {
     try {
-        if (action.type !== "REHYDRATE" && action.type !== "PERSIST" && action.payload.__terminate !== true) {
+        if (action.type !== "REHYDRATE" && action.type !== "PERSIST" && action.payload?.__terminate !== true) {
             localStorage?.setItem('SYNC-KEY', JSON.stringify(timestampAction(action)));
         }
     } catch (e) {
-        console.error("sync", e);
+       // console.error("sync", e);
     }
     return next(action);
 }

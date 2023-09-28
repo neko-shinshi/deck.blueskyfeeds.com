@@ -19,8 +19,11 @@ import {increment} from "@/lib/utils/redux/slices/test";
 const widths = ["w-[19rem]", "w-[21rem]", "w-[24rem]"];
 
 const App = () => {
+    //@ts-ignore
     const users = useSelector((state) => state.users.val);
+    //@ts-ignore
     const config = useSelector((state) => state.config);
+    //@ts-ignore
     const testNum = useSelector((state) => state.tests.val);
     const dispatch = useDispatch();
     const readyState = useReduxSync();
@@ -80,12 +83,7 @@ const App = () => {
 
         <PopupFormSignIn
             isOpen={popupState === "login"}
-            setOpen={setPopupState}
-            onCloseCallback={() => {
-                if (users.length > 0) {
-                    setPopupState("users");
-                }
-            }}/>
+            setOpen={setPopupState}/>
 
         <PopupUserSelect isOpen={popupState === "users"} setOpen={setPopupState}/>
 

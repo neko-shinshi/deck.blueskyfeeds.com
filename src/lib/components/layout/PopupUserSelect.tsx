@@ -16,7 +16,9 @@ import {RxDragHandleDots2} from "react-icons/rx";
 import PopupConfirmation from "@/lib/components/layout/PopupConfirmation";
 
 export default function PopupUserSelect({isOpen, setOpen, selectCallback}:{isOpen:boolean,setOpen:any, selectCallback?:any}) {
+    //@ts-ignore
     const users = useSelector((state) => state.users.val);
+    //@ts-ignore
     const config = useSelector((state) => state.config);
     const dispatch = useDispatch();
     const [userIds, setUserIds] = useState<string[]>([]);

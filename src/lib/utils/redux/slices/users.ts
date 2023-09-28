@@ -41,7 +41,7 @@ const slice = createSlice({
             }
         },
         setUserInactive: (users, action) => {
-            const index = users.findIndex(x => x.did === action.payload);
+            const index = users.val.findIndex(x => x.did === action.payload);
             if (index >= 0) {
                 users.val[index].active = false;
             }

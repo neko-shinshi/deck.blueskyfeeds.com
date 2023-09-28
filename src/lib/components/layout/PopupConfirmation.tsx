@@ -29,7 +29,7 @@ export default function PopupConfirmation(
         setOpen={setOpen}>
         <div className="bg-white rounded-xl p-4">
             <div className="mt-3 text-center sm:mt-5">
-                <div as="h3" className="text-lg leading-6 font-medium text-gray-900">
+                <div className="text-lg leading-6 font-medium text-gray-900">
                     {title}
                 </div>
                 <div className="mt-2">
