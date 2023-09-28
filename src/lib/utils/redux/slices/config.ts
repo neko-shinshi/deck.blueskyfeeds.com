@@ -9,6 +9,7 @@ interface Config {
     offsetLeft: boolean
     fontSize: "xs" | "sm" | "base" | "lg" | "xl"
     primaryDid: string
+    basicKey: string
 }
 
 const initialState:Config = {
@@ -19,7 +20,8 @@ const initialState:Config = {
     altTextPrompt: true,
     offsetLeft: true,
     fontSize: "base",
-    primaryDid: ""
+    primaryDid: "",
+    basicKey: ""
 };
 
 const slice = createSlice({

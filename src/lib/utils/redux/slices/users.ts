@@ -12,16 +12,14 @@ interface UserData {
     active: boolean
     avatar: string
 }
-const initialState:UserData[] = [];
+const initialState:{val:UserData[]} = {val: []};
 
 const slice = createSlice({
     name:"users",
     initialState,
     reducers:{
         addOrUpdateUser: (users, action) => {
-            const {service, usernameOrEmail, password, agent, data} = action.payload;
-            const {did, handle, refreshJwt, accessJwt} = agent.session;
-            const {displayName, avatar} = data;
+            const {service, usernameOrEmail, password, did, displayName, avatar, handle, refreshJwt, accessJwt} = action.payload;
 
             const user = {
                 service, usernameOrEmail, password,
@@ -29,40 +27,35 @@ const slice = createSlice({
                 did, handle, displayName, active: true
             };
 
-            const index = users.findIndex(x => x.did === did);
+            const index = users.val.findIndex(x => x.did === did);
             if (index >= 0) {
-                users[index] = user;
+                users.val[index] = user;
             } else {
-                users.push(user);
+                users.val.push(user);
             }
         },
         removeUser: (users, action) => {
-            const index = users.findIndex(x => x.did === action.payload);
+            const index = users.val.findIndex(x => x.did === action.payload);
             if (index >= 0) {
-                users.splice(index, 1);
+                users.val.splice(index, 1);
             }
         },
         setUserInactive: (users, action) => {
             const index = users.findIndex(x => x.did === action.payload);
             if (index >= 0) {
-                users[index].active = false;
+                users.val[index].active = false;
             }
         },
         setUserOrder: (users, action) => {
             const newUsers = action.payload.reduce((acc, x) => {
-                const user = users.find(y => y.did === x);
+                const user = users.val.find(y => y.did === x);
                 if (user) {
                     acc.push(user);
                 }
                 return acc;
             }, []);
 
-            users.length = 0;
-            newUsers.forEach(x => {
-                users.push(x);
-            });
-
-
+            users.val = newUsers;
         }
     }
 });

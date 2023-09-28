@@ -1,16 +1,16 @@
 import { createSlice } from '@reduxjs/toolkit'
 
-interface Pages {
-    pages: Column[]
+interface Page {
+    id: string // uuid
+    columns: Column[]
 }
 
 interface Column {
-    id: string // type
-    type: "home" | "feed" | "notifications" | "users"
+    id: string // uuid
+    type: "home" | "feed" | "notifs" | "users"
     width: number
+    active: boolean
 }
-
-
 
 interface ColumnHome extends Column {
     type: "home"
@@ -24,7 +24,7 @@ interface ColumnFeed extends Column {
 }
 
 interface ColumnNotifications extends Column {
-    type: "notifications"
+    type: "notifs"
     users: string[]
 }
 
@@ -35,23 +35,20 @@ interface ColumnUsers {
 }
 
 
-const initialState:Pages[] = [];
+const initialState:{val: Page[]} = {val:[]};
 
 const slice = createSlice({
     name:"pages",
     initialState,
     reducers:{
-        addUser: (state, action) =>{
-            state.push(action.payload);
+        addColumn: (pages, action) => {
+            const {pageId, columnId, type, ...data} = action.payload;
         },
-        removeUser: (state, action) => {
-            const index = state.findIndex(x => x.did === action.payload);
-            if (index >= 0) {
-                state.splice(index, 1);
-            }
-        }
+        removeColumn: (pages, action) => {
+            const { columnId} = action.payload;
+        },
     }
 });
 
-export const {addUser, removeUser, setStatus, setOrder} = slice.actions
+export const {addColumn} = slice.actions
 export default slice.reducer

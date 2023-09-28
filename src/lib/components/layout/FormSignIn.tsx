@@ -1,13 +1,13 @@
-import {forwardRef, useEffect, useImperativeHandle, useRef, useState} from "react";
+import {forwardRef, useImperativeHandle, useState} from "react";
 import {getAgent} from "@/lib/utils/bsky";
 import {BsFillInfoCircleFill} from "react-icons/bs";
 import Link from "next/link";
 import {HiAtSymbol} from "react-icons/hi";
 import clsx from "clsx";
-import {useForm} from "react-hook-form";
 import {useDispatch, useSelector} from "react-redux";
 import {addOrUpdateUser} from "@/lib/utils/redux/slices/users"
 import {setConfigValue} from "@/lib/utils/redux/slices/config";
+import {useForm} from "react-hook-form";
 
 const FormSignIn = forwardRef(function FormSignIn({signInCallback}, ref) {
     useImperativeHandle(ref, () => {
@@ -20,9 +20,8 @@ const FormSignIn = forwardRef(function FormSignIn({signInCallback}, ref) {
     }, []);
     const [warning, setWarning] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    const users = useSelector((state) => state.users);
+    const users = useSelector((state) => state.users.val);
     const dispatch = useDispatch();
-
     const useFormReturn = useForm();
     const {
         register,
@@ -57,15 +56,19 @@ const FormSignIn = forwardRef(function FormSignIn({signInCallback}, ref) {
                 setError("fail", {type: "unknown", message:`Unknown Error, try again later or contact @blueskyfeeds.com`});
             } else {
                 console.log("OK!");
-                const {did} = agent.session;
+                const {did, handle, refreshJwt, accessJwt} = agent.session;
                 const {data} = await agent.getProfile({actor:did});
                 if (users.length === 0) {
                     // This user is now the primary!
                     dispatch(setConfigValue({primaryDid: did}))
                 }
-                dispatch(addOrUpdateUser({agent, service, usernameOrEmail, password, data}));
+                const {displayName, avatar} = data;
 
-                signInCallback();
+                dispatch(addOrUpdateUser({service, usernameOrEmail, password, did, displayName, avatar, handle, refreshJwt, accessJwt}));
+
+                if (signInCallback) {
+                    signInCallback();
+                }
             }
 
             setSubmitting(false);

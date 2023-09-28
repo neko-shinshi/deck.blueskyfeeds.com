@@ -1,6 +1,6 @@
 import HeadExtended from "@/lib/components/layout/HeadExtended";
 import clsx from "clsx";
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import Image from "next/image";
 import AvatarSelfMain from "@/lib/components/layout/AvatarSelfMain";
 import {BsFillGearFill} from "react-icons/bs";
@@ -11,25 +11,67 @@ import {useDispatch, useSelector} from "react-redux";
 import PopupFormSignIn from "@/lib/components/layout/PopupFormSignIn";
 import PopupUserSelect from "@/lib/components/layout/PopupUserSelect";
 import FormSignIn from "@/lib/components/layout/FormSignIn";
+import {useForm} from "react-hook-form";
+import {useReduxSync} from "@/lib/components/providers/ReduxSyncProvider";
+import {increment} from "@/lib/utils/redux/slices/test";
 
 
 const widths = ["w-[19rem]", "w-[21rem]", "w-[24rem]"];
 
 const App = () => {
-    const users = useSelector((state) => state.users);
+    const users = useSelector((state) => state.users.val);
     const config = useSelector((state) => state.config);
+    const testNum = useSelector((state) => state.tests.val);
     const dispatch = useDispatch();
+    const readyState = useReduxSync();
 
     useEffect(() => {
         console.log("config", config);
     }, [config]);
 
-    useEffect(() => {
-        console.log("users", users);
-    }, [users]);
+
+    const ref = useRef(null);
+    useEffect( () => {
+        if (ref.current && users && users.length === 0) {
+            ref.current.resetForm ("");
+        }
+    }, [ref, users]);
 
     const [popupState, setPopupState] = useState<"users"|"login"|false>(false);
+    const useFormReturn = useForm();
 
+    const column = () => {
+        {
+            /*
+            data.map(({key:colKey, rows}, i) => {
+                return <div
+                    key={colKey}
+                    className={clsx(i+1 < data.length? "snap-start" : "snap-end", "shrink-0 h-full", widths[Math.floor(Math.random()*widths.length)])}>
+                    <div className="h-[2rem]">Header {i+1}
+                    </div>
+                    <div className="flex flex-col overflow-y-hidden hover:overflow-y-auto scrollbar scrollbar-thins pr-4 hover:pr-0 h-[calc(100%-3rem)] text-black">
+                        {
+                            rows.map(({key:rowKey, height}) => {
+                                return <div
+                                    key={rowKey}
+                                    className={clsx("bg-yellow-100 w-full shrink-0 h-[120px] flex justify-between p-1")}
+                                >
+                                    <div>Front</div>
+
+                                    <div>Back</div>
+                                </div>
+                            })
+                        }
+
+                        <div className="h-[30px]">
+
+                        </div>
+                    </div>
+                </div>
+            })*/
+        }
+
+    }
 
     return <>
         <HeadExtended
@@ -51,20 +93,21 @@ const App = () => {
         <div className="h-screen w-full">
             {
 
+                /*
                 (!users || users.length === 0) && <div className="w-full h-screen grid place-items-center bg-white">
                     <div className="border border-2 border-black p-4 rounded-xl">
-                        <FormSignIn />
+                        <FormSignIn ref={ref}/>
                     </div>
 
-                </div>
+                </div>*/
             }
 
 
             {
+/*
                 users && users.length > 0 &&
                 <div className="w-full h-full flex pr-2 py-2">
                     <div className="w-16 flex flex-col justify-between shrink-0">
-                        {/* top controls */}
                         <div className="flex flex-col place-items-center gap-2">
                             <div className="w-12 h-12 bg-gray-900 hover:bg-gray-500 rounded-full border border-black grid place-items-center">
                                 <LuMessageSquarePlus className="w-6 h-6" aria-label="New Post"/>
@@ -76,7 +119,6 @@ const App = () => {
                                 <div className="h-full w-full bg-gray-400" />
                             </div>
                         </div>
-                        {/* bottom controls */}
                         <div className="flex flex-col place-items-center mb-4 gap-2">
                             <div className="px-2 h-0.5 w-full">
                                 <div className="h-full w-full bg-gray-400" />
@@ -85,7 +127,6 @@ const App = () => {
                                 <FaPlus className="w-4 h-4" aria-label="Add Column"/>
                             </div>
 
-                            {/* spacer */}
                             <div className="w-full h-[1rem]"/>
 
                             <div className="w-10 h-10 bg-gray-900 hover:bg-gray-500 rounded-full border border-black grid place-items-center">
@@ -112,46 +153,22 @@ const App = () => {
                         </div>
                     </div>
 
-                    {/* line */}
                     <div className="py-0.5 h-full w-0.5 mr-1">
                         <div className="h-full w-full bg-gray-100" />
                     </div>
 
                     <div className="flex flex-row overflow-x-scroll scrollbar scrollbar-thin h-full gap-0.5 snap-x">
-                        {
-                            /*
-                            data.map(({key:colKey, rows}, i) => {
-                                return <div
-                                    key={colKey}
-                                    className={clsx(i+1 < data.length? "snap-start" : "snap-end", "shrink-0 h-full", widths[Math.floor(Math.random()*widths.length)])}>
-                                    <div className="h-[2rem]">Header {i+1}
-                                    </div>
-                                    <div className="flex flex-col overflow-y-hidden hover:overflow-y-auto scrollbar scrollbar-thins pr-4 hover:pr-0 h-[calc(100%-3rem)] text-black">
-                                        {
-                                            rows.map(({key:rowKey, height}) => {
-                                                return <div
-                                                    key={rowKey}
-                                                    className={clsx("bg-yellow-100 w-full shrink-0 h-[120px] flex justify-between p-1")}
-                                                >
-                                                    <div>Front</div>
-
-                                                    <div>Back</div>
-                                                </div>
-                                            })
-                                        }
-
-                                        <div className="h-[30px]">
-
-                                        </div>
-                                    </div>
-                                </div>
-                            })*/
-                        }
 
 
                     </div>
-                </div>
+                </div>*/
             }
+
+            <button onClick={() => {
+                dispatch(increment({inc:2}));
+            }}> Click Me </button>
+
+            {testNum}
 
 
         </div>
