@@ -9,7 +9,7 @@ import {addOrUpdateUser} from "@/lib/utils/redux/slices/users"
 import {setConfigValue} from "@/lib/utils/redux/slices/config";
 import {useForm} from "react-hook-form";
 
-const FormSignIn = forwardRef(function FormSignIn({signInCallback}, ref) {
+const FormSignIn = forwardRef(function FormSignIn(props:{signInCallback?:any}, ref) {
     useImperativeHandle(ref, () => {
         return {
             resetForm (username) {
@@ -66,8 +66,8 @@ const FormSignIn = forwardRef(function FormSignIn({signInCallback}, ref) {
 
                 dispatch(addOrUpdateUser({service, usernameOrEmail, password, did, displayName, avatar, handle, refreshJwt, accessJwt}));
 
-                if (signInCallback) {
-                    signInCallback();
+                if (props.signInCallback) {
+                    props.signInCallback();
                 }
             }
 
