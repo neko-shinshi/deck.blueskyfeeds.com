@@ -5,12 +5,14 @@ import Link from "next/link";
 import {HiAtSymbol} from "react-icons/hi";
 import clsx from "clsx";
 import {useDispatch, useSelector} from "react-redux";
-import {addOrUpdateUser, UserData, UserStatusType} from "@/lib/utils/redux/slices/users"
-import {setConfigValue} from "@/lib/utils/redux/slices/config";
+import {addOrUpdateUser, resetUsers, UserData, UserStatusType} from "@/lib/utils/redux/slices/users"
+import {resetConfig, setConfigValue} from "@/lib/utils/redux/slices/config";
 import {useForm} from "react-hook-form";
 import {encrypt, makeKey, parseKey} from "@/lib/utils/crypto";
+import {resetPages} from "@/lib/utils/redux/slices/pages";
 
-export default function FormSignIn ({openState, initialUser=null, completeCallback}:{openState:boolean, initialUser?:UserData, completeCallback?:any}) {
+export default function FormSignIn ({openState, initialUser=null, completeCallback, orImport=false}:
+{openState:boolean, initialUser?:UserData, completeCallback?:any, orImport?:boolean}) {
     useEffect( () => {
         if (openState) {
             if (!initialUser) {
@@ -19,15 +21,16 @@ export default function FormSignIn ({openState, initialUser=null, completeCallba
                 const {service, usernameOrEmail: username} = initialUser;
                 reset({service, username});
             }
-
             setSubmitting(false);
+        } else {
+            reset({service:"bsky.social", username:""});
         }
     }, [openState, initialUser]);
 
     const [warning, setWarning] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     //@ts-ignore
-    const users = useSelector((state) => state.users.val);
+    const users = useSelector((state) => state.users);
 
     //@ts-ignore
     const config = useSelector((state) => state.config);
@@ -68,7 +71,7 @@ export default function FormSignIn ({openState, initialUser=null, completeCallba
                 console.log("OK!");
                 const {did, handle, refreshJwt, accessJwt} = agent.session;
                 const {data} = await agent.getProfile({actor:did});
-                if (users.filter(x => x.status.type === UserStatusType.ACTIVE).length === 0) {
+                if (Object.values(users.dict).filter(x => x.status.type === UserStatusType.ACTIVE).length === 0) {
                     // This user is now the primary!
                     dispatch(setConfigValue({primaryDid: did}))
                 }
@@ -82,7 +85,13 @@ export default function FormSignIn ({openState, initialUser=null, completeCallba
                 const key = await parseKey(keyString);
                 const encryptedPassword = await encrypt(key, password);
 
+                if (users.order.length === 0) {
+                    // First user logged in, pre-fill columns
+
+                }
+
                 dispatch(addOrUpdateUser({service, usernameOrEmail, encryptedPassword, did, displayName, avatar, handle, refreshJwt, accessJwt}));
+
                 if (completeCallback) {
                     completeCallback();
                 }
@@ -110,10 +119,45 @@ export default function FormSignIn ({openState, initialUser=null, completeCallba
     }
 
     return <>
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md space-y-4">
             <h1 className="mt-3 text-center text-2xl font-extrabold text-gray-900 ">
                 <span>Login with a Bluesky App Password</span>
             </h1>
+
+            {
+                orImport &&
+                <div className="text-blue-500 font-semibold text-center hover:underline hover:text-blue-800"
+                     onClick={() => {
+                         const input = document.createElement('input');
+                         input.type = 'file';
+                         input.accept = "application/json"
+                         input.onchange = () => {
+                             const file = input.files[0];
+                             const reader = new FileReader();
+                             reader.readAsText(file,'UTF-8');
+                             reader.onload = async (readerEvent) => {
+                                 try {
+                                     const content = JSON.parse(readerEvent.target.result as string);
+                                     console.log(content);
+                                     let {config, pages, users} = content;
+                                     config.basicKey = await makeKey();
+                                     dispatch(setConfigValue(config));
+                                     dispatch(resetUsers(users));
+                                     dispatch(resetPages(pages));
+                                     alert("Your settings have been recovered, but you'll need to login to each account again to continue");
+                                 } catch (e) {
+                                     console.log(e);
+                                     alert("error recovering data");
+                                 }
+                             }
+                         }
+                         input.click();
+                     }}
+                >
+                    Or Import using a JSON Backup
+                </div>
+            }
+
         </div>
 
         <div className="mt-4 sm:mx-auto sm:w-full sm:max-w-md">
@@ -214,6 +258,7 @@ export default function FormSignIn ({openState, initialUser=null, completeCallba
                         {errors.fail.message as string}
                     </div>
                 }
+
                 <div>
                     <button
                         type="submit"

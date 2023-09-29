@@ -4,10 +4,6 @@ import {useDispatch, useSelector} from "react-redux";
 import {store} from "@/lib/utils/redux/store";
 
 export default function RefreshHandler({currentPage}) {
-    //@ts-ignore
-    const memory = useSelector((state) => state.memory);
-    const dispatch = useDispatch();
-
     useEffect(() => {
         let hbMap = new Map();
         const bc = new BroadcastChannel("HEARTBEAT");
@@ -120,6 +116,11 @@ export default function RefreshHandler({currentPage}) {
         }
     }, []);
 
+
+    // FOR TESTING
+    //@ts-ignore
+    const memory = useSelector((state) => state.memory);
+    const dispatch = useDispatch();
     return <>
         {/*
             memory && <>

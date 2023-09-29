@@ -17,7 +17,7 @@ interface Config {
     thumbnailSize: ThumnailSize
 }
 
-const initialState:Config = {
+export const initialState:Config = {
     colorMode: ColorMode.DARK,
     showScrollbars: true,
     altTextPrompt: true,
@@ -41,7 +41,7 @@ const slice = createSlice({
                 }
             }
         },
-        resetConfig: state => {
+        resetConfig: (state, action) => {
             for (const [key, value] of Object.entries(initialState)) {
                 state[key] = value;
             }

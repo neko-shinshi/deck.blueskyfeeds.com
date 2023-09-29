@@ -3,7 +3,7 @@ import { persistReducer, persistStore } from 'redux-persist';
 import storage from "redux-persist/lib/storage";
 import config from "@/lib/utils/redux/slices/config";
 import pages from "@/lib/utils/redux/slices/pages";
-import users from "@/lib/utils/redux/slices/users";
+import users, {UserStatusType} from "@/lib/utils/redux/slices/users";
 import memory from "@/lib/utils/redux/slices/memory";
 import {combineReducers} from "redux";
 import thunk from 'redux-thunk';
@@ -44,4 +44,22 @@ export const store = configureStore({
 // export default the store
 export const persistor = persistStore(store);
 
+export const exportJSON = async () => {
+    let state = JSON.parse(JSON.stringify(await store.getState()));
+    delete state.memory;
+    delete state._persist;
+
+    Object.values(state.users.dict).forEach(user => {
+        state.users.dict[user.did] = {
+            ...user,
+            status:{type: UserStatusType.LOGGED_OUT},
+            encryptedPassword: "",
+            refreshJwt:"", accessJwt:""
+        };
+    });
+    state.config.basicKey = "";
+    state.config.primaryDid = "";
+
+    return state;
+}
 

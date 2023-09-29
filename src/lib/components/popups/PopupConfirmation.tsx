@@ -1,16 +1,17 @@
 import Popup from "@/lib/components/popups/Popup";
 import clsx from "clsx";
+import {useEffect, useState} from "react";
 
 export default function PopupConfirmation(
     {
         isOpen,
         setOpen,
-        title,
-        message,
-        yesText,
-        noText,
+        title:_title,
+        message:_message,
+        yesText:_yesText="",
+        noText:_noText="",
         yesCallback,
-        buttonClass=""
+        buttonClass:_buttonClass=""
     }: {
         isOpen:boolean
         setOpen:(boolean) => void,
@@ -21,7 +22,22 @@ export default function PopupConfirmation(
         yesCallback: () => void,
         buttonClass?:string
     }) {
+    const [title, setTitle] = useState("");
+    const [message, setMessage] = useState("");
+    const [yesText, setYesText] = useState("");
+    const [noText, setNoText] = useState("");
+    const [buttonClass, setButtonClass] = useState("");
 
+    useEffect(() => {
+        if (isOpen) {
+            setTitle(_title);
+            setMessage(_message);
+            setYesText(_yesText);
+            setNoText(_noText);
+            setButtonClass(_buttonClass);
+        }
+
+    }, [_title, _message, _yesText, _noText , _buttonClass, isOpen]);
 
 
     return <Popup

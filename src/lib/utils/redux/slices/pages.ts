@@ -3,7 +3,7 @@ import {randomUuid} from "@/lib/utils/random";
 import {ColumnFeed, ColumnType, PageColumn} from "@/lib/utils/types-constants/column";
 
 
-const makeInitialState = () => {
+export const makeInitialState = () => {
     const id = randomUuid();
     const defaultPage:PageColumn = {
         name: "My First Page",
@@ -12,11 +12,10 @@ const makeInitialState = () => {
         hideCw: false,
         cwLabels: [] // Default show everything
     }
+    let dict = {};
+    dict[id] = defaultPage;
 
-    return {
-        order: [id],
-        dict: {id: defaultPage}
-    }
+    return {order: [id], dict}
 }
 
 const initialState:{order:string[], dict:{[id:string]: PageColumn}} = makeInitialState();
@@ -50,11 +49,11 @@ const slice = createSlice({
         removeColumn: (pages, action) => {
             const { columnId} = action.payload;
         },
-        resetPages: state => {
-            for (const [key, value] of Object.entries(makeInitialState())) {
+        resetPages: (state, action) => {
+            for (const [key, value] of Object.entries(action.payload)) {
                 state[key] = value;
             }
-        }
+        },
     }
 });
 

@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit'
 
 export enum UserStatusType {
-    ACTIVE, LOGGED_OUT, RATE_LIMITED
+    ACTIVE="ACTIVE", LOGGED_OUT="LOGGED_OUT", RATE_LIMITED="RATE_LIMITED"
 }
 
 export interface UserStatus {
@@ -14,6 +14,7 @@ export interface UserStatusRateLimited extends UserStatus {
 }
 
 export interface UserData {
+    did: string
     service: string
     usernameOrEmail: string
     encryptedPassword: string
@@ -24,7 +25,8 @@ export interface UserData {
     status: UserStatus
     avatar: string
 }
-const initialState:{order:string[], dict:{[did:string]: UserData}} = {dict: {}, order:[]};
+
+export const initialState:{order:string[], dict:{[did:string]: UserData}} = {dict: {}, order:[]};
 
 const slice = createSlice({
     name:"users",
@@ -36,10 +38,10 @@ const slice = createSlice({
             const user = {
                 service, usernameOrEmail, encryptedPassword,
                 refreshJwt, accessJwt, avatar,
-                handle, displayName, status: {type: UserStatusType.ACTIVE}
+                handle, did, displayName, status: {type: UserStatusType.ACTIVE}
             };
 
-            users[did] = user;
+            users.dict[did] = user;
 
             const index = users.order.findIndex(x => x === did);
             if (index < 0) {
@@ -72,13 +74,13 @@ const slice = createSlice({
             existingIds.filter(did => order.indexOf(did) < 0).forEach(did => {
                 delete users.dict[did];
             });
-
         },
-        resetUsers: state => {
-            for (const [key, value] of Object.entries(initialState)) {
+        resetUsers: (state, action) => {
+            for (const [key, value] of Object.entries(action.payload)) {
                 state[key] = value;
             }
         }
+
     }
 });
 

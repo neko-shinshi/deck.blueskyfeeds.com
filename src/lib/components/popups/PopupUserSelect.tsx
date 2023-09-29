@@ -4,8 +4,16 @@ import Image from "next/image";
 import {BsInfo} from "react-icons/bs";
 import {PiCrownSimpleBold, PiCrownSimpleFill} from "react-icons/pi";
 import {MdDeleteForever, MdLogout} from "react-icons/md";
-import {resetConfig, setConfigValue} from "@/lib/utils/redux/slices/config";
-import {logOut, removeUser, resetUsers, setUserOrder, UserData, UserStatusType} from "@/lib/utils/redux/slices/users";
+import {initialState as configInitialState, resetConfig, setConfigValue} from "@/lib/utils/redux/slices/config";
+import {
+    initialState as usersInitialState,
+    logOut,
+    removeUser,
+    resetUsers,
+    setUserOrder,
+    UserData,
+    UserStatusType
+} from "@/lib/utils/redux/slices/users";
 import {FaPlus} from "react-icons/fa";
 import {useEffect, useState} from "react";
 import clsx from "clsx";
@@ -16,10 +24,9 @@ import {RxDragHandleDots2} from "react-icons/rx";
 import PopupConfirmation from "@/lib/components/popups/PopupConfirmation";
 import {BiLogInCircle} from "react-icons/bi";
 import PopupFormSignIn from "@/lib/components/popups/PopupFormSignIn";
-import {PopupUsers} from "@/pages";
-import {resetPages} from "@/lib/utils/redux/slices/pages";
-import {makeKey} from "@/lib/utils/crypto";
+import {makeInitialState as makePageInitialState, resetPages} from "@/lib/utils/redux/slices/pages";
 import {resetMemory} from "@/lib/utils/redux/slices/memory";
+import {PopupUsers} from "@/lib/components/major/LeftControls";
 
 enum PopupState {
     Logout,
@@ -33,9 +40,9 @@ interface PopupConfig {
     did?: string
 }
 
-export default function PopupUserSelect({isOpen, setOpen, popupConfig}:{isOpen:boolean,setOpen:any, popupConfig:PopupUsers}) {
+export default function PopupUserSelect({isOpen, setOpen, popupConfig:_popupConfig}:{isOpen:boolean,setOpen:any, popupConfig:PopupUsers}) {
     //@ts-ignore
-    const users = useSelector((state) => state.users.val);
+    const users = useSelector((state) => state.users);
     //@ts-ignore
     const config = useSelector((state) => state.config);
     const dispatch = useDispatch();
@@ -44,11 +51,20 @@ export default function PopupUserSelect({isOpen, setOpen, popupConfig}:{isOpen:b
     const [loginOpen, setLoginOpen] = useState(false);
     const [initialUser, setInitialUser] = useState<UserData>(null);
 
-    const [userPopup, setUserPopup] = useState<false|PopupConfig>(false)
+    const [userPopup, setUserPopup] = useState<false|PopupConfig>(false);
+
+    const [popupConfig, setPopupConfig] = useState<PopupUsers>(null);
 
     useEffect(() => {
-        if (Array.isArray(users)) {
-            setUserIds(users.map(x => x.did));
+        if (isOpen && _popupConfig) {
+            setPopupConfig(_popupConfig);
+        }
+    }, [_popupConfig, isOpen]);
+
+
+    useEffect(() => {
+        if (Array.isArray(users.order)) {
+            setUserIds(users.order);
         }
     }, [users]);
 
@@ -83,7 +99,7 @@ export default function PopupUserSelect({isOpen, setOpen, popupConfig}:{isOpen:b
             {
                 user &&
                 <div ref={setNodeRef} style={style}
-                     className={clsx(user.active? "bg-yellow-100" : "bg-gray-400",
+                     className={clsx(user.status.type === UserStatusType.ACTIVE? "bg-yellow-100" : "bg-gray-400",
                          "flex place-items-center justify-stretch gap-1 rounded-xl border border-black overflow-hidden")}>
 
 
@@ -189,20 +205,20 @@ export default function PopupUserSelect({isOpen, setOpen, popupConfig}:{isOpen:b
             setOpen={setUserPopup}
             title={userPopup? userPopup.title : ""}
             message=""
+            yesText="Yes"
             yesCallback={ async () => {
                 if (!userPopup) {return}
 
                 const did = userPopup.did
-                if (config.primaryDid === did) {
+                if (userPopup.state !== PopupState.RemoveAll && config.primaryDid === did) {
                     // Choose a new primary randomly
-                    const remainingUsers = users.filter(x => x.status.type === UserStatusType.ACTIVE && x.did !== did);
-                    console.log(remainingUsers);
-                    console.log(users);
+                    const remainingUsers = Object.values(users.dict).filter(x => x.status.type === UserStatusType.ACTIVE && x.did !== did);
                     if (remainingUsers.length === 0) {
                         console.log("no users");
                         dispatch(setConfigValue({primaryDid: ""}));
                     } else {
                         const newPrimary = remainingUsers[Math.floor(Math.random()*remainingUsers.length)].did;
+                        console.log("new primary", newPrimary);
                         dispatch(setConfigValue({primaryDid: newPrimary}));
                     }
                 }
@@ -216,12 +232,10 @@ export default function PopupUserSelect({isOpen, setOpen, popupConfig}:{isOpen:b
                         break;
                     }
                     case PopupState.RemoveAll: {
-                        dispatch(resetConfig());
-                        dispatch(resetPages());
-                        dispatch(resetUsers());
-                        dispatch(resetMemory());
-
-                        location.reload();
+                        dispatch(resetConfig(configInitialState));
+                        dispatch(resetPages(makePageInitialState()));
+                        dispatch(resetUsers(usersInitialState));
+                        dispatch(resetMemory())
                         break;
                     }
                 }
@@ -245,10 +259,13 @@ export default function PopupUserSelect({isOpen, setOpen, popupConfig}:{isOpen:b
                 <DndContext onDragEnd={handleDragEnd}>
                     <SortableContext items={userIds} strategy={verticalListSortingStrategy}>
                         {
-                            userIds.map(did => {
-                                const user = users.find(x => x.did === did);
-                                return <UserItem key={did} user={user} did={did}/>
-                            })
+                            userIds.reduce((acc, did) => {
+                                const user = users.dict[did];
+                                if (user) {
+                                    acc.push(<UserItem key={did} user={user} did={did}/>)
+                                }
+                                return acc;
+                            }, [])
                         }
                     </SortableContext>
                 </DndContext>
@@ -267,16 +284,14 @@ export default function PopupUserSelect({isOpen, setOpen, popupConfig}:{isOpen:b
                                 <div className="text-base font-bold">Add Account</div>
                             </div>
                         </div>
-                        <div className="bg-red-100 flex place-items-center justify-stretch gap-2 rounded-xl border border-black p-1 hover:bg-gray-400"
-                             onClick={() => setUserPopup({state: PopupState.RemoveAll, title:"Remove All Accounts?"})}>
-                            <div className="w-10 h-10 aspect-square grid place-items-center border border-black rounded-full">
-                                <MdDeleteForever className="w-7 h-7" aria-label="Remove All Accounts"/>
-                            </div>
-
-                            <div className="grow">
-                                <div className="text-base font-bold">Remove All Accounts</div>
-                            </div>
+                    <div className="flex justify-end">
+                        <div className="bg-red-100 flex place-items-center justify-stretch rounded-xl border border-black p-2 hover:bg-gray-400"
+                             onClick={() => setUserPopup({state: PopupState.RemoveAll, title:"Remove All Accounts and Return to Login page?"})}>
+                            <MdDeleteForever className="w-6 h-6" aria-label="Remove All Accounts"/>
+                            <div className="text-base font-bold">Remove All Accounts</div>
                         </div>
+                    </div>
+
                     </>
                 }
             </>

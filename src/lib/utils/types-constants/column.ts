@@ -38,6 +38,7 @@ export interface ColumnFirehose extends ColumnConfig {
     showReplies: boolean,
     keywords: string[]
     users: string[] // filter these users
+    icon: string // base64 icon
 }
 
 export interface ColumnNotifications extends ColumnConfig {
@@ -48,7 +49,8 @@ export interface ColumnNotifications extends ColumnConfig {
 
 export interface ColumnSearch extends ColumnConfig {
     type: ColumnType.SEARCH
-    string: string
+    string: string // search this string
+    icon: string // base64 icon
 }
 
 export interface ColumnHome extends ObservedColumn {
@@ -62,7 +64,8 @@ export interface ColumnFeed extends ObservedColumn {
 
 export interface ColumnUsers extends ObservedColumn {
     type: ColumnType.USERS
-    showReplies: boolean,
+    showReplies: boolean
     keywords: string[]
     uris: string[] // query these users
+    icon: string // base64 icon
 }
