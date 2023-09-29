@@ -144,7 +144,7 @@ export default function FormSignIn ({openState, initialUser=null, completeCallba
                                      dispatch(setConfigValue(config));
                                      dispatch(resetUsers(users));
                                      dispatch(resetPages(pages));
-                                     alert("Your settings have been recovered, but you'll need to login to each account again to continue");
+                                     alert("Your settings have been restored. Login to each account again to continue");
                                  } catch (e) {
                                      console.log(e);
                                      alert("error recovering data");
