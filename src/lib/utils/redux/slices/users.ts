@@ -1,18 +1,30 @@
 import { createSlice } from '@reduxjs/toolkit'
 
+export enum UserStatusType {
+    ACTIVE, LOGGED_OUT, RATE_LIMITED
+}
+
+export interface UserStatus {
+    type: UserStatusType
+}
+
+export interface UserStatusRateLimited extends UserStatus {
+    type: UserStatusType.RATE_LIMITED,
+    nextInterval: number
+}
+
 export interface UserData {
     service: string
     usernameOrEmail: string
     encryptedPassword: string
     refreshJwt: string,
     accessJwt: string
-    did: string
     handle: string
     displayName: string
-    active: boolean
+    status: UserStatus
     avatar: string
 }
-const initialState:{val:UserData[]} = {val: []};
+const initialState:{order:string[], dict:{[did:string]: UserData}} = {dict: {}, order:[]};
 
 const slice = createSlice({
     name:"users",
@@ -24,42 +36,51 @@ const slice = createSlice({
             const user = {
                 service, usernameOrEmail, encryptedPassword,
                 refreshJwt, accessJwt, avatar,
-                did, handle, displayName, active: true
+                handle, displayName, status: {type: UserStatusType.ACTIVE}
             };
 
-            const index = users.val.findIndex(x => x.did === did);
-            if (index >= 0) {
-                users.val[index] = user;
-            } else {
-                users.val.push(user);
+            users[did] = user;
+
+            const index = users.order.findIndex(x => x === did);
+            if (index < 0) {
+                users.order.push(did);
             }
         },
         removeUser: (users, action) => {
             const {did} = action.payload;
-            users.val = users.val.filter(x => x.did !== did);
+            delete users.dict[did];
+            users.order = users.order.filter(x => x !== did);
         },
         logOut: (users, action) => {
             const {did} = action.payload;
-            const user = users.val.find(x => x.did === did);
+            const user = users.dict[did];
             if (user) {
-                user.active = false;
+                user.status = {type: UserStatusType.LOGGED_OUT};
                 user.encryptedPassword = "";
                 user.refreshJwt = "";
                 user.accessJwt = "";
             }
         },
         setUserOrder: (users, action) => {
-            const {order} = action.payload;
-            users.val = order.reduce((acc, x) => {
-                const user = users.val.find(y => y.did === x);
-                if (user) {
-                    acc.push(user);
-                }
-                return acc;
-            }, []);
+            let {order} = action.payload;
+
+            const existingIds = Object.keys(users.dict);
+            order = order.filter(did => existingIds.indexOf(did) >= 0); // only keep dids that are currently saved
+            users.order = order;
+
+            // remove users that are not in input order list
+            existingIds.filter(did => order.indexOf(did) < 0).forEach(did => {
+                delete users.dict[did];
+            });
+
+        },
+        resetUsers: state => {
+            for (const [key, value] of Object.entries(initialState)) {
+                state[key] = value;
+            }
         }
     }
 });
 
-export const {addOrUpdateUser, removeUser, logOut, setUserOrder} = slice.actions
+export const {addOrUpdateUser, removeUser, logOut, setUserOrder, resetUsers} = slice.actions
 export default slice.reducer

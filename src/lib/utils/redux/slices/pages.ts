@@ -1,63 +1,62 @@
 import { createSlice } from '@reduxjs/toolkit'
+import {randomUuid} from "@/lib/utils/random";
+import {ColumnFeed, ColumnType, PageColumn} from "@/lib/utils/types-constants/column";
 
-interface Page {
-    id: string // uuid
-    columns: Column[]
-    maskNsfw: boolean,
-    hideNsfw: boolean
+
+const makeInitialState = () => {
+    const id = randomUuid();
+    const defaultPage:PageColumn = {
+        name: "My First Page",
+        columns: [],
+        maskCw: true,
+        hideCw: false,
+        cwLabels: [] // Default show everything
+    }
+
+    return {
+        order: [id],
+        dict: {id: defaultPage}
+    }
 }
 
-interface Column {
-    id: string // uuid
-    type: "home" | "feed" | "notifs" | "users" | "firehose"
-    width: number
-    active: boolean
-}
-
-interface ColumnFirehose extends Column {
-    type: "firehose",
-    showReplies: boolean,
-    keywords: string[]
-    users: string[]
-}
-
-interface ColumnHome extends Column {
-    type: "home"
-    user: string
-}
-
-interface ColumnFeed extends Column {
-    type: "feed"
-    uri: string
-    user: string
-}
-
-interface ColumnNotifications extends Column {
-    type: "notifs"
-    users: string[]
-}
-
-interface ColumnUsers {
-    type: "users"
-    user: string
-    uris: string[]
-}
-
-
-const initialState:{val: Page[]} = {val:[]};
+const initialState:{order:string[], dict:{[id:string]: PageColumn}} = makeInitialState();
 
 const slice = createSlice({
     name:"pages",
     initialState,
     reducers:{
         addColumn: (pages, action) => {
-            const {pageId, columnId, type, ...data} = action.payload;
+            const {pageId, columnId, ...data} = action.payload;
+            switch (ColumnType[data.type as keyof typeof ColumnType]) {
+                case ColumnType.HOME: {
+
+                    break;
+                }
+                case ColumnType.FEED: {
+                    const columnData = data as ColumnFeed;
+                    break;
+                }
+                case ColumnType.NOTIFS: {
+                    break;
+                }
+                case ColumnType.USERS: {
+                    break;
+                }
+                case ColumnType.FIREHOSE: {
+                    break;
+                }
+            }
         },
         removeColumn: (pages, action) => {
             const { columnId} = action.payload;
         },
+        resetPages: state => {
+            for (const [key, value] of Object.entries(makeInitialState())) {
+                state[key] = value;
+            }
+        }
     }
 });
 
-export const {addColumn} = slice.actions
+export const {addColumn, resetPages} = slice.actions
 export default slice.reducer

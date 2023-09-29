@@ -1,7 +1,7 @@
-import Popup from "@/lib/components/layout/Popup";
+import Popup from "@/lib/components/popups/Popup";
 import {useEffect, useRef} from "react";
 import clsx from "clsx";
-import FormSignIn from "@/lib/components/layout/FormSignIn";
+import FormSignIn from "@/lib/components/FormSignIn";
 import {UserData} from "@/lib/utils/redux/slices/users";
 
 export default function PopupFormSignIn({isOpen, setOpen, initialUser=null}:{isOpen:boolean, setOpen:any, initialUser?: UserData}) {

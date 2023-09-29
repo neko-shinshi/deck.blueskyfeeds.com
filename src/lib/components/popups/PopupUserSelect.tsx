@@ -1,11 +1,11 @@
-import Popup from "@/lib/components/layout/Popup";
+import Popup from "@/lib/components/popups/Popup";
 import {useDispatch, useSelector} from "react-redux";
 import Image from "next/image";
 import {BsInfo} from "react-icons/bs";
 import {PiCrownSimpleBold, PiCrownSimpleFill} from "react-icons/pi";
 import {MdDeleteForever, MdLogout} from "react-icons/md";
-import {setConfigValue} from "@/lib/utils/redux/slices/config";
-import {logOut, removeUser, setUserOrder, UserData} from "@/lib/utils/redux/slices/users";
+import {resetConfig, setConfigValue} from "@/lib/utils/redux/slices/config";
+import {logOut, removeUser, resetUsers, setUserOrder, UserData, UserStatusType} from "@/lib/utils/redux/slices/users";
 import {FaPlus} from "react-icons/fa";
 import {useEffect, useState} from "react";
 import clsx from "clsx";
@@ -13,11 +13,27 @@ import {DndContext} from '@dnd-kit/core';
 import {SortableContext, useSortable, arrayMove, verticalListSortingStrategy} from '@dnd-kit/sortable'
 import {CSS} from '@dnd-kit/utilities';
 import {RxDragHandleDots2} from "react-icons/rx";
-import PopupConfirmation from "@/lib/components/layout/PopupConfirmation";
+import PopupConfirmation from "@/lib/components/popups/PopupConfirmation";
 import {BiLogInCircle} from "react-icons/bi";
-import PopupFormSignIn from "@/lib/components/layout/PopupFormSignIn";
+import PopupFormSignIn from "@/lib/components/popups/PopupFormSignIn";
+import {PopupUsers} from "@/pages";
+import {resetPages} from "@/lib/utils/redux/slices/pages";
+import {makeKey} from "@/lib/utils/crypto";
+import {resetMemory} from "@/lib/utils/redux/slices/memory";
 
-export default function PopupUserSelect({isOpen, setOpen, selectCallback, title}:{isOpen:boolean,setOpen:any, selectCallback?:any, title:string}) {
+enum PopupState {
+    Logout,
+    Remove,
+    RemoveAll
+}
+
+interface PopupConfig {
+    state: PopupState,
+    title: string
+    did?: string
+}
+
+export default function PopupUserSelect({isOpen, setOpen, popupConfig}:{isOpen:boolean,setOpen:any, popupConfig:PopupUsers}) {
     //@ts-ignore
     const users = useSelector((state) => state.users.val);
     //@ts-ignore
@@ -27,6 +43,8 @@ export default function PopupUserSelect({isOpen, setOpen, selectCallback, title}
     const [mode, setMode] = useState<"select"|"view">("select");
     const [loginOpen, setLoginOpen] = useState(false);
     const [initialUser, setInitialUser] = useState<UserData>(null);
+
+    const [userPopup, setUserPopup] = useState<false|PopupConfig>(false)
 
     useEffect(() => {
         if (Array.isArray(users)) {
@@ -48,14 +66,13 @@ export default function PopupUserSelect({isOpen, setOpen, selectCallback, title}
     }
 
     function UserItem ({user, did}) {
-        const [userPopup, setUserPopup] = useState<false|"Logout"|"Remove">(false)
         const {
             attributes,
             listeners,
             setNodeRef,
             transform,
             transition,
-        } = useSortable({id: did, disabled: !!selectCallback});
+        } = useSortable({id: did, disabled: !!popupConfig?.selectCallback});
 
         const style = {
             transform: CSS.Transform.toString(transform),
@@ -68,41 +85,13 @@ export default function PopupUserSelect({isOpen, setOpen, selectCallback, title}
                 <div ref={setNodeRef} style={style}
                      className={clsx(user.active? "bg-yellow-100" : "bg-gray-400",
                          "flex place-items-center justify-stretch gap-1 rounded-xl border border-black overflow-hidden")}>
-                    <PopupConfirmation
-                        isOpen={!!userPopup}
-                        setOpen={setUserPopup}
-                        title={userPopup?`${userPopup} user @${user?.handle}?`: ""}
-                        message=""
-                        yesCallback={() => {
-                            if (config.primaryDid === did) {
-                                // Choose a new primary randomly
-                                const remainingUsers = users.filter(x => x.active && x.did !== did);
-                                console.log(remainingUsers);
-                                console.log(users);
-                                if (remainingUsers.length === 0) {
-                                    console.log("no users");
-                                    dispatch(setConfigValue({primaryDid: ""}));
-                                } else {
-                                    const newPrimary = remainingUsers[Math.floor(Math.random()*remainingUsers.length)].did;
-                                    dispatch(setConfigValue({primaryDid: newPrimary}));
-                                }
-                            }
-                            if (userPopup === "Logout") {
-                                dispatch(logOut({did}));
-                            } else {
-                                dispatch(removeUser({did}));
-                            }
-                        }}/>
+
 
                     <div className={clsx("flex place-items-center justify-stretch grow gap-1 p-1",
-                        selectCallback && "hover:bg-yellow-300")}
-                         onClick={ () => {
-                             if (selectCallback) {
-                                 selectCallback(did);
-                             }
-                         }}>
+                        popupConfig?.selectCallback && "hover:bg-yellow-300")}
+                         onClick={ () => popupConfig?.selectCallback && popupConfig?.selectCallback(did)}>
                         {
-                            !selectCallback && <RxDragHandleDots2 className="w-5 h-5" {...attributes} {...listeners}/>
+                            !popupConfig?.selectCallback && <RxDragHandleDots2 className="w-5 h-5" {...attributes} {...listeners}/>
                         }
 
                         <div className="w-10 h-10 aspect-square relative border border-black rounded-full">
@@ -128,10 +117,10 @@ export default function PopupUserSelect({isOpen, setOpen, selectCallback, title}
                     </div>
 
                     {
-                        !selectCallback &&
+                        !popupConfig?.selectCallback &&
                         <div className="flex gap-3 p-1">
                             {
-                                user.active &&
+                                user.status.type === UserStatusType.ACTIVE &&
                                 <div className="bg-white hover:bg-gray-100 border border-black rounded-full h-8 w-8 grid place-items-center">
                                     {
                                         did === config.primaryDid?
@@ -158,15 +147,15 @@ export default function PopupUserSelect({isOpen, setOpen, selectCallback, title}
                             }
 
                             {
-                                user.active &&
+                                user.status.type === UserStatusType.ACTIVE &&
                                 <div className="bg-white hover:bg-gray-100 border border-black rounded-full h-8 w-8 grid place-items-center"
-                                     onClick={() => setUserPopup("Logout")}
+                                     onClick={() => setUserPopup({state:PopupState.Logout, did: did, title: `Logout user @${user.handle}?`})}
                                 >
                                     <MdLogout className="w-5 h-5 text-red-500"/>
                                 </div>
                             }
                             {
-                                !user.active && <>
+                                user.status.type !== UserStatusType.ACTIVE && <>
                                     <div className="bg-white hover:bg-gray-100 border border-black rounded-full h-8 w-8 grid place-items-center"
                                          onClick={() => {
                                              setInitialUser(user);
@@ -177,7 +166,7 @@ export default function PopupUserSelect({isOpen, setOpen, selectCallback, title}
                                     </div>
 
                                     <div className="bg-white hover:bg-gray-100 border border-black rounded-full h-8 w-8 grid place-items-center"
-                                         onClick={() => setUserPopup("Remove")}
+                                         onClick={() => setUserPopup({state:PopupState.Remove, did: did, title: `Remove user @${user.handle}?`})}
                                     >
                                         <MdDeleteForever className="w-5 h-5 text-red-500"/>
                                     </div>
@@ -195,6 +184,49 @@ export default function PopupUserSelect({isOpen, setOpen, selectCallback, title}
         setOpen={setOpen}
         className="bg-white rounded-2xl p-4 w-5/12 text-black space-y-2">
 
+        <PopupConfirmation
+            isOpen={!!userPopup}
+            setOpen={setUserPopup}
+            title={userPopup? userPopup.title : ""}
+            message=""
+            yesCallback={ async () => {
+                if (!userPopup) {return}
+
+                const did = userPopup.did
+                if (config.primaryDid === did) {
+                    // Choose a new primary randomly
+                    const remainingUsers = users.filter(x => x.status.type === UserStatusType.ACTIVE && x.did !== did);
+                    console.log(remainingUsers);
+                    console.log(users);
+                    if (remainingUsers.length === 0) {
+                        console.log("no users");
+                        dispatch(setConfigValue({primaryDid: ""}));
+                    } else {
+                        const newPrimary = remainingUsers[Math.floor(Math.random()*remainingUsers.length)].did;
+                        dispatch(setConfigValue({primaryDid: newPrimary}));
+                    }
+                }
+                switch (userPopup.state) {
+                    case PopupState.Logout: {
+                        dispatch(logOut({did}));
+                        break;
+                    }
+                    case PopupState.Remove: {
+                        dispatch(removeUser({did}));
+                        break;
+                    }
+                    case PopupState.RemoveAll: {
+                        dispatch(resetConfig());
+                        dispatch(resetPages());
+                        dispatch(resetUsers());
+                        dispatch(resetMemory());
+
+                        location.reload();
+                        break;
+                    }
+                }
+            }}/>
+
         <PopupFormSignIn
             isOpen={loginOpen}
             setOpen={setLoginOpen} initialUser={initialUser}/>
@@ -208,7 +240,7 @@ export default function PopupUserSelect({isOpen, setOpen, selectCallback, title}
         {
             mode === "select" && <>
                 <h1 className="text-center text-2xl font-extrabold text-gray-900 ">
-                    <span>{title}</span>
+                    <span>{popupConfig?.title}</span>
                 </h1>
                 <DndContext onDragEnd={handleDragEnd}>
                     <SortableContext items={userIds} strategy={verticalListSortingStrategy}>
@@ -221,20 +253,31 @@ export default function PopupUserSelect({isOpen, setOpen, selectCallback, title}
                     </SortableContext>
                 </DndContext>
                 {
-                    !selectCallback &&
-                    <div className="bg-yellow-100 flex place-items-center justify-stretch gap-2 rounded-xl border border-black p-1 hover:bg-gray-400"
-                         onClick={() => {
-                             setInitialUser(null);
-                             setLoginOpen(true);
-                         }}>
-                        <div className="w-10 h-10 aspect-square grid place-items-center border border-black rounded-full">
-                            <FaPlus className="w-5 h-5" aria-label="Add User"/>
-                        </div>
+                    !popupConfig?.selectCallback && <>
+                        <div className="bg-yellow-100 flex place-items-center justify-stretch gap-2 rounded-xl border border-black p-1 hover:bg-gray-400"
+                             onClick={() => {
+                                 setInitialUser(null);
+                                 setLoginOpen(true);
+                             }}>
+                            <div className="w-10 h-10 aspect-square grid place-items-center border border-black rounded-full">
+                                <FaPlus className="w-5 h-5" aria-label="Add Account"/>
+                            </div>
 
-                        <div className="grow">
-                            <div className="text-base font-bold">Add User</div>
+                            <div className="grow">
+                                <div className="text-base font-bold">Add Account</div>
+                            </div>
                         </div>
-                    </div>
+                        <div className="bg-red-100 flex place-items-center justify-stretch gap-2 rounded-xl border border-black p-1 hover:bg-gray-400"
+                             onClick={() => setUserPopup({state: PopupState.RemoveAll, title:"Remove All Accounts?"})}>
+                            <div className="w-10 h-10 aspect-square grid place-items-center border border-black rounded-full">
+                                <MdDeleteForever className="w-7 h-7" aria-label="Remove All Accounts"/>
+                            </div>
+
+                            <div className="grow">
+                                <div className="text-base font-bold">Remove All Accounts</div>
+                            </div>
+                        </div>
+                    </>
                 }
             </>
         }

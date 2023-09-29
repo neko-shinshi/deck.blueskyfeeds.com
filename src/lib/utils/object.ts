@@ -1,4 +1,4 @@
-export const dotObjectStringPath = (o, path) => {
+export const getPathOfObject = (o, path) => {
     let oo = o;
     path.split(".").forEach(x => {
         if (!oo) {
@@ -7,6 +7,14 @@ export const dotObjectStringPath = (o, path) => {
         oo = oo[x];
     });
     return oo;
+}
+
+export const setPathOfObject = (o, path, v) => {
+    const pathO = path.split(".");
+    while(pathO.length > 1){
+        o = o[pathO.shift()];
+    }
+    o[pathO.shift()] = v;
 }
 
 export const objectToDotNotation = (o, header=null) => {

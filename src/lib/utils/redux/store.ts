@@ -4,13 +4,13 @@ import storage from "redux-persist/lib/storage";
 import config from "@/lib/utils/redux/slices/config";
 import pages from "@/lib/utils/redux/slices/pages";
 import users from "@/lib/utils/redux/slices/users";
-import tests from "@/lib/utils/redux/slices/test";
+import memory from "@/lib/utils/redux/slices/memory";
 import {combineReducers} from "redux";
 import thunk from 'redux-thunk';
 
 const persistedReducer = persistReducer(
-    {key: 'root', storage},
-    combineReducers({config, pages, users, tests})
+    {key: 'root', storage, blacklist:['memory']},
+    combineReducers({config, pages, users, memory})
 );
 
 const SyncChannel = new BroadcastChannel("DECK_SYNC");

@@ -5,10 +5,10 @@ import Link from "next/link";
 import {HiAtSymbol} from "react-icons/hi";
 import clsx from "clsx";
 import {useDispatch, useSelector} from "react-redux";
-import {addOrUpdateUser, UserData} from "@/lib/utils/redux/slices/users"
+import {addOrUpdateUser, UserData, UserStatusType} from "@/lib/utils/redux/slices/users"
 import {setConfigValue} from "@/lib/utils/redux/slices/config";
 import {useForm} from "react-hook-form";
-import {encrypt, parseKey} from "@/lib/utils/crypto";
+import {encrypt, makeKey, parseKey} from "@/lib/utils/crypto";
 
 export default function FormSignIn ({openState, initialUser=null, completeCallback}:{openState:boolean, initialUser?:UserData, completeCallback?:any}) {
     useEffect( () => {
@@ -68,16 +68,19 @@ export default function FormSignIn ({openState, initialUser=null, completeCallba
                 console.log("OK!");
                 const {did, handle, refreshJwt, accessJwt} = agent.session;
                 const {data} = await agent.getProfile({actor:did});
-                if (users.filter(x => x.active).length === 0) {
+                if (users.filter(x => x.status.type === UserStatusType.ACTIVE).length === 0) {
                     // This user is now the primary!
                     dispatch(setConfigValue({primaryDid: did}))
                 }
                 const {displayName, avatar} = data;
+                let keyString = config.basicKey;
+                if (!keyString) {
+                    keyString = await makeKey();
+                    dispatch(setConfigValue({basicKey: keyString}));
+                }
 
-                const keyString = config.basicKey;
                 const key = await parseKey(keyString);
                 const encryptedPassword = await encrypt(key, password);
-
 
                 dispatch(addOrUpdateUser({service, usernameOrEmail, encryptedPassword, did, displayName, avatar, handle, refreshJwt, accessJwt}));
                 if (completeCallback) {

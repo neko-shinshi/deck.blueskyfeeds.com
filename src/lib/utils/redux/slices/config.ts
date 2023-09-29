@@ -1,23 +1,33 @@
-import { createSlice } from '@reduxjs/toolkit'
+import {createSlice} from '@reduxjs/toolkit'
+import {FontSize} from "@/lib/utils/types-constants/font-size";
+import {ColorMode} from "@/lib/utils/types-constants/color-mode";
+import {RefreshTimingType} from "@/lib/utils/types-constants/refresh-timings";
+import {ThumnailSize} from "@/lib/utils/types-constants/thumnail-size";
 
 interface Config {
-    colorMode: "light" | "dark" | "system"
+    colorMode: ColorMode
     showScrollbars: boolean
     altTextPrompt: boolean
     offsetLeft: boolean // align to left or to avatar
-    fontSize: "xs" | "sm" | "base" | "lg" | "xl"
+    fontSize: FontSize
     primaryDid: string
     basicKey: string
+    width: number
+    refreshMs: RefreshTimingType
+    thumbnailSize: ThumnailSize
 }
 
 const initialState:Config = {
-    colorMode: "system",
-    showScrollbars: false,
+    colorMode: ColorMode.DARK,
+    showScrollbars: true,
     altTextPrompt: true,
     offsetLeft: true,
-    fontSize: "base",
+    fontSize: FontSize.Medium,
     primaryDid: "",
-    basicKey: ""
+    basicKey: "",
+    width: 21,
+    refreshMs: RefreshTimingType["1m"],
+    thumbnailSize: ThumnailSize.LARGE
 };
 
 const slice = createSlice({
@@ -26,11 +36,18 @@ const slice = createSlice({
     reducers:{
         setConfigValue: (state, action) => {
             for (const [key, value] of Object.entries(action.payload)) {
-                state[key] = value;
+                if (key !== "__terminate") {
+                    state[key] = value;
+                }
             }
         },
+        resetConfig: state => {
+            for (const [key, value] of Object.entries(initialState)) {
+                state[key] = value;
+            }
+        }
     }
 });
 
-export const {setConfigValue} = slice.actions
+export const {setConfigValue, resetConfig} = slice.actions
 export default slice.reducer
