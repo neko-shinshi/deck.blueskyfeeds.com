@@ -4,14 +4,6 @@ export enum UserStatusType {
     ACTIVE="ACTIVE", LOGGED_OUT="LOGGED_OUT", RATE_LIMITED="RATE_LIMITED"
 }
 
-export interface UserStatus {
-    type: UserStatusType
-}
-
-export interface UserStatusRateLimited extends UserStatus {
-    type: UserStatusType.RATE_LIMITED,
-    nextInterval: number
-}
 
 export interface UserData {
     did: string
@@ -22,7 +14,7 @@ export interface UserData {
     accessJwt: string
     handle: string
     displayName: string
-    status: UserStatus
+    status: UserStatusType
     avatar: string
 }
 
@@ -38,7 +30,7 @@ const slice = createSlice({
             const user = {
                 service, usernameOrEmail, encryptedPassword,
                 refreshJwt, accessJwt, avatar,
-                handle, did, displayName, status: {type: UserStatusType.ACTIVE}
+                handle, did, displayName, status: UserStatusType.ACTIVE
             };
 
             users.dict[did] = user;
@@ -57,7 +49,7 @@ const slice = createSlice({
             const {did} = action.payload;
             const user = users.dict[did];
             if (user) {
-                user.status = {type: UserStatusType.LOGGED_OUT};
+                user.status = UserStatusType.LOGGED_OUT;
                 user.encryptedPassword = "";
                 user.refreshJwt = "";
                 user.accessJwt = "";

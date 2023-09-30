@@ -71,7 +71,7 @@ export default function FormSignIn ({openState, initialUser=null, completeCallba
                 console.log("OK!");
                 const {did, handle, refreshJwt, accessJwt} = agent.session;
                 const {data} = await agent.getProfile({actor:did});
-                if (Object.values(users.dict).filter(x => x.status.type === UserStatusType.ACTIVE).length === 0) {
+                if (Object.values(users.dict).filter(x => (x as UserData).status === UserStatusType.ACTIVE).length === 0) {
                     // This user is now the primary!
                     dispatch(setConfigValue({primaryDid: did}))
                 }
@@ -106,7 +106,7 @@ export default function FormSignIn ({openState, initialUser=null, completeCallba
                     break;
                 }
                 case 429: {
-                    setError("fail", {type: err.status, message:`Too many attempts to login, please wait`});
+                    setError("fail", {type: err.status, message:`Rate Limited or too many attempts to Login, please try again later`});
                     break;
                 }
                 default: {

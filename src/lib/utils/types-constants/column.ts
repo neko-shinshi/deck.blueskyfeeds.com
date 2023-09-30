@@ -25,6 +25,7 @@ export interface ColumnConfig {
     type: ColumnType
     active: boolean
     width: number
+    columns: number
     refreshMs: RefreshTimingType
     thumbnailSize: ThumnailSize
 }

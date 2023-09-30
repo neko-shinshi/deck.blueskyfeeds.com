@@ -1,4 +1,4 @@
-import {UserStatusType} from "@/lib/utils/redux/slices/users";
+import {UserData, UserStatusType} from "@/lib/utils/redux/slices/users";
 import AvatarSelfMain from "@/lib/components/AvatarSelfMain";
 import Image from "next/image";
 import {BsFillGearFill} from "react-icons/bs";
@@ -10,6 +10,7 @@ import PopupFormSignIn from "@/lib/components/popups/PopupFormSignIn";
 import PopupUserSelect from "@/lib/components/popups/PopupUserSelect";
 import {useEffect, useState} from "react";
 import PopupGlobalSettings from "@/lib/components/popups/PopupGlobalSettings";
+import PopupColumnPickType from "@/lib/components/popups/PopupColumnPickType";
 
 
 export enum PopupState {
@@ -22,7 +23,7 @@ export enum PopupState {
     SEARCH
 }
 
-interface PopupConfig {
+export interface PopupConfig {
     state: PopupState,
 }
 
@@ -35,6 +36,7 @@ export interface PopupUsers extends PopupConfig {
     state: PopupState.USERS,
     title: string,
     selectCallback?: any
+    loggedInCallback?: any
 }
 
 export default function LeftControls ({currentPage, setCurrentPage}) {
@@ -42,16 +44,12 @@ export default function LeftControls ({currentPage, setCurrentPage}) {
     const users = useSelector((state) => state.users);
     //@ts-ignore
     const config = useSelector((state) => state.config);
-    const [popupState, setPopupState] = useState<PopupConfig|false>(false);
+    const [popupState, updatePopupState] = useState<PopupConfig|false>(false);
 
-
-
-    // Close all popups when no accounts
-    useEffect(() => {
-        if (users && users.order.length === 0) {
-            setPopupState(false);
-        }
-    }, [users]);
+    const setPopupState = (v) => {
+        console.log("set", v)
+        updatePopupState(v);
+    }
 
     return <>
         <PopupFormSignIn
@@ -66,9 +64,12 @@ export default function LeftControls ({currentPage, setCurrentPage}) {
 
         <PopupGlobalSettings isOpen={popupState && popupState.state === PopupState.SETTINGS} setOpen={setPopupState}/>
 
+        <PopupColumnPickType isOpen={popupState && popupState.state === PopupState.ADD_COLUMN} setOpen={setPopupState}/>
+
         <div className="w-16 flex flex-col justify-between shrink-0">
             <div className="flex flex-col place-items-center gap-2">
-                <div className="w-12 h-12 bg-gray-900 hover:bg-gray-500 rounded-full border border-black grid place-items-center">
+                <div className="w-12 h-12 bg-gray-900 hover:bg-gray-500 rounded-full border border-black grid place-items-center"
+                >
                     <LuMessageSquarePlus className="w-6 h-6" aria-label="New Post"/>
                 </div>
                 <div className="w-12 h-12 bg-gray-900 hover:bg-gray-500 rounded-full border border-black grid place-items-center">
@@ -84,16 +85,21 @@ export default function LeftControls ({currentPage, setCurrentPage}) {
                 </div>
                 <div className="w-10 h-10 bg-gray-900 hover:bg-gray-500 rounded-full border border-black grid place-items-center"
                      onClick={() => {
-                         const activeUsers = Object.values(users.dict).filter(x => x.status.type === UserStatusType.ACTIVE);
+                         const activeUsers = Object.values(users.dict).filter(x => (x as UserData).status === UserStatusType.ACTIVE);
                          switch (activeUsers.length) {
                              case 0: {
                                  // Show user list screen to force user to login
-                                 setPopupState({state:PopupState.USERS});
+                                 setPopupState({
+                                     state:PopupState.USERS,
+                                     title:"Login to an Account First",
+                                     loggedInCallback:()=> {
+                                         setPopupState({state:PopupState.ADD_COLUMN});
+                                     }});
                                  break;
                              }
                              case 1: {
                                  // Open the add UI now
-                                 setPopupState({state:PopupState.MANAGE_COLUMN});
+                                 setPopupState({state:PopupState.ADD_COLUMN});
                                  break;
                              }
                              default: {

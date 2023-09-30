@@ -19,6 +19,13 @@ const App = () => {
 
 
     const [currentPage, setCurrentPage] = useState(""); // PageId
+    const [mode, setMode] = useState<"start"|"main">("start");
+
+    useEffect(()=> {
+        if (users && users.order.length > 0 && mode === "start") {
+            setMode("main");
+        }
+    }, [users]);
 
 
     const column = () => {
@@ -66,7 +73,7 @@ const App = () => {
         <div className="h-screen w-full">
             {
 
-                (!users || users.order.length === 0) && <div className="w-full h-screen grid place-items-center bg-white">
+                mode === "start" && <div className="w-full h-screen grid place-items-center bg-white">
                     <div className="border border-2 border-black p-4 rounded-xl">
                         <FormSignIn openState={!users || users.order.length === 0} orImport={true}/>
                     </div>
@@ -75,7 +82,7 @@ const App = () => {
 
 
             {
-                users && users.order.length > 0 &&
+                mode === "main" &&
                 <div className="w-full h-full flex pr-2 py-2">
                     <LeftControls currentPage={currentPage} setCurrentPage={setCurrentPage}/>
 

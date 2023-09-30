@@ -4,9 +4,6 @@ import { ThemeProvider } from "next-themes"
 import {Provider} from "react-redux";
 import {store, persistor} from "@/lib/utils/redux/store";
 import { PersistGate } from "redux-persist/integration/react";
-import {ReduxSyncProvider} from "@/lib/components/providers/ReduxSyncProvider";
-
-
 
 export default function App({ Component, pageProps: { session, ...pageProps }}: AppProps) {
     const LoadingObject = () => {
