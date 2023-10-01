@@ -85,6 +85,8 @@ export default function LeftControls ({currentPage, setCurrentPage}) {
                 </div>
                 <div className="w-10 h-10 bg-gray-900 hover:bg-gray-500 rounded-full border border-black grid place-items-center"
                      onClick={() => {
+                         setPopupState({state:PopupState.ADD_COLUMN});
+                         /*
                          const activeUsers = Object.values(users.dict).filter(x => (x as UserData).status === UserStatusType.ACTIVE);
                          switch (activeUsers.length) {
                              case 0: {
@@ -99,13 +101,13 @@ export default function LeftControls ({currentPage, setCurrentPage}) {
                              }
                              case 1: {
                                  // Open the add UI now
-                                 setPopupState({state:PopupState.ADD_COLUMN});
+
                                  break;
                              }
                              default: {
                                  setPopupState({state:PopupState.USERS});
                              }
-                         }
+                         }*/
                      }}
                 >
                     <FaPlus className="w-4 h-4" aria-label="Add Column"/>
@@ -130,7 +132,7 @@ export default function LeftControls ({currentPage, setCurrentPage}) {
                         }
                     }} />
 
-                <div className="text-xs">v0.0.1</div>
+                <div className="text-2xs">v0.0.1</div>
 
                 <a className="w-10 h-10 bg-gray-900 hover:bg-gray-500 rounded-full border border-black relative" href="https://ko-fi.com/anianimalsmoe" target="_blank" rel="noreferrer">
                     <Image unoptimized fill alt="ko-fi icon" src="/ko-fi off-center.png"/>

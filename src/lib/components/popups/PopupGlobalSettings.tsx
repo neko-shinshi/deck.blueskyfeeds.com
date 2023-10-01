@@ -15,6 +15,7 @@ import {makeInitialState as makePageInitialState, resetPages} from "@/lib/utils/
 import {resetMemory} from "@/lib/utils/redux/slices/memory";
 import PopupConfirmation from "@/lib/components/popups/PopupConfirmation";
 import {MdDeleteForever} from "react-icons/md";
+import recoverDataFromJson from "@/lib/utils/client/recoverDataFromJson";
 
 export default function PopupGlobalSettings(
     {isOpen, setOpen}: {isOpen:boolean,setOpen:any}) {
@@ -38,7 +39,8 @@ export default function PopupGlobalSettings(
                 dispatch(resetConfig(configInitialState));
                 dispatch(resetPages(makePageInitialState()));
                 dispatch(resetUsers(usersInitialState));
-                dispatch(resetMemory())
+                dispatch(resetMemory());
+
             }}/>
 
         <h1 className="text-center text-2xl font-extrabold text-gray-900 ">
@@ -71,6 +73,21 @@ export default function PopupGlobalSettings(
         >
             Download JSON Config Backup
         </button>
+
+        <button
+            type="button"
+            className={clsx("w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm",
+                "text-sm font-medium text-white",
+                "focus:outline-none focus:ring-2 focus:ring-offset-2",
+                "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500")
+            }
+            onClick={() => recoverDataFromJson(dispatch)}
+        >
+            Recover from JSON Backup
+        </button>
+
+
+
 
         <div className="flex justify-end">
             <button

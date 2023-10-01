@@ -13,12 +13,13 @@ interface ColumnThread extends ColumnStatus {
 export interface MemoryState {
     columns: {[id:string]: {postUris:string[], lastTs:number, status:ColumnStatus}}
     posts: {[uri:string]: Post}
-    firehose:{cursor: string, lastTs: number}
+    firehose:{cursor: string, lastTs: number},
+    mode:"start"|"main"
 }
 
 // don't persist this, start from scratch when first connected if main, recover from last point
 // lastTs is to make sure old fetch or collision does not spoil data
-const initialState:MemoryState = {posts:{}, columns:{}, firehose:{cursor:"", lastTs: 0}};
+const initialState:MemoryState = {posts:{}, columns:{}, firehose:{cursor:"", lastTs: 0}, mode:"start"};
 
 const slice = createSlice({
     name:"memory",

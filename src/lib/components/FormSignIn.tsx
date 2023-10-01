@@ -10,9 +10,34 @@ import {resetConfig, setConfigValue} from "@/lib/utils/redux/slices/config";
 import {useForm} from "react-hook-form";
 import {encrypt, makeKey, parseKey} from "@/lib/utils/crypto";
 import {resetPages} from "@/lib/utils/redux/slices/pages";
+import {updateMemory} from "@/lib/utils/redux/slices/memory";
+import recoverDataFromJson from "@/lib/utils/client/recoverDataFromJson";
 
 export default function FormSignIn ({openState, initialUser=null, completeCallback, orImport=false}:
 {openState:boolean, initialUser?:UserData, completeCallback?:any, orImport?:boolean}) {
+    //@ts-ignore
+    const users = useSelector((state) => state.users);
+    //@ts-ignore
+    const config = useSelector((state) => state.config);
+    //@ts-ignore
+    const page = useSelector((state) => state.page);
+
+    const [warning, setWarning] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
+
+    const dispatch = useDispatch();
+    const useFormReturn = useForm();
+    const {
+        register,
+        reset,
+        clearErrors,
+        setError,
+        trigger,
+        formState: { errors },
+        handleSubmit,
+    } = useFormReturn;
+
+
     useEffect( () => {
         if (openState) {
             if (!initialUser) {
@@ -26,25 +51,6 @@ export default function FormSignIn ({openState, initialUser=null, completeCallba
             reset({service:"bsky.social", username:""});
         }
     }, [openState, initialUser]);
-
-    const [warning, setWarning] = useState(false);
-    const [submitting, setSubmitting] = useState(false);
-    //@ts-ignore
-    const users = useSelector((state) => state.users);
-
-    //@ts-ignore
-    const config = useSelector((state) => state.config);
-    const dispatch = useDispatch();
-    const useFormReturn = useForm();
-    const {
-        register,
-        reset,
-        clearErrors,
-        setError,
-        trigger,
-        formState: { errors },
-        handleSubmit,
-    } = useFormReturn;
 
 
 
@@ -90,6 +96,7 @@ export default function FormSignIn ({openState, initialUser=null, completeCallba
 
                 }
 
+                dispatch(updateMemory({mode:"main"}));
                 dispatch(addOrUpdateUser({service, usernameOrEmail, encryptedPassword, did, displayName, avatar, handle, refreshJwt, accessJwt}));
 
                 if (completeCallback) {
@@ -127,32 +134,7 @@ export default function FormSignIn ({openState, initialUser=null, completeCallba
             {
                 orImport &&
                 <div className="text-blue-500 font-semibold text-center hover:underline hover:text-blue-800"
-                     onClick={() => {
-                         const input = document.createElement('input');
-                         input.type = 'file';
-                         input.accept = "application/json"
-                         input.onchange = () => {
-                             const file = input.files[0];
-                             const reader = new FileReader();
-                             reader.readAsText(file,'UTF-8');
-                             reader.onload = async (readerEvent) => {
-                                 try {
-                                     const content = JSON.parse(readerEvent.target.result as string);
-                                     console.log(content);
-                                     let {config, pages, users} = content;
-                                     config.basicKey = await makeKey();
-                                     dispatch(setConfigValue(config));
-                                     dispatch(resetUsers(users));
-                                     dispatch(resetPages(pages));
-                                     alert("Your settings have been restored. Login to each account again to continue");
-                                 } catch (e) {
-                                     console.log(e);
-                                     alert("error recovering data");
-                                 }
-                             }
-                         }
-                         input.click();
-                     }}
+                     onClick={() => recoverDataFromJson(dispatch)}
                 >
                     Or Import using a JSON Backup
                 </div>
@@ -268,6 +250,23 @@ export default function FormSignIn ({openState, initialUser=null, completeCallba
                         }>
                         Login
                     </button>
+
+
+                </div>
+
+                <div className="text-blue-500 font-semibold text-center hover:underline hover:text-blue-800"
+                     onClick={() => {
+                         if (page.order.length === 1) {
+                             const pageId = page.order[0];
+                             dispatch()
+
+                             dispatch(updateMemory({mode:"main"}));
+                         }
+
+                     }}
+                >
+                    <div className="text-sm">Or see Firehose posts directly</div>
+                    <div className="text-xs">(Some features only work when igned in)</div>
                 </div>
             </form>
         </div>

@@ -1,6 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit'
 import {randomUuid} from "@/lib/utils/random";
-import {ColumnFeed, ColumnType, PageColumn} from "@/lib/utils/types-constants/column";
+import {ColumnConfig, ColumnFeed, ColumnType, PageColumn} from "@/lib/utils/types-constants/column";
 
 
 export const makeInitialState = () => {
@@ -25,14 +25,15 @@ const slice = createSlice({
     initialState,
     reducers:{
         addColumn: (pages, action) => {
-            const {pageId, columnId, ...data} = action.payload;
-            switch (ColumnType[data.type as keyof typeof ColumnType]) {
+            const {pageId, column} = action.payload;
+            const {id, type} = column as ColumnConfig;
+            switch (ColumnType[type as keyof typeof ColumnType]) {
                 case ColumnType.HOME: {
 
                     break;
                 }
                 case ColumnType.FEED: {
-                    const columnData = data as ColumnFeed;
+                    const data = column as ColumnFeed;
                     break;
                 }
                 case ColumnType.NOTIFS: {
