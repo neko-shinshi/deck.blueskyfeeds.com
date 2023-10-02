@@ -1,11 +1,11 @@
 import { createSlice } from '@reduxjs/toolkit'
 import {randomUuid} from "@/lib/utils/random";
-import {ColumnConfig, ColumnFeed, ColumnType, PageColumn} from "@/lib/utils/types-constants/column";
+import {ColumnConfig, ColumnFeed, ColumnType, PageOfColumns} from "@/lib/utils/types-constants/column";
 
 
 export const makeInitialState = () => {
     const id = randomUuid();
-    const defaultPage:PageColumn = {
+    const defaultPage:PageOfColumns = {
         name: "My First Page",
         columns: [],
         maskCw: true,
@@ -18,7 +18,7 @@ export const makeInitialState = () => {
     return {order: [id], dict}
 }
 
-const initialState:{order:string[], dict:{[id:string]: PageColumn}} = makeInitialState();
+const initialState:{order:string[], dict:{[id:string]: PageOfColumns}} = makeInitialState();
 
 const slice = createSlice({
     name:"pages",

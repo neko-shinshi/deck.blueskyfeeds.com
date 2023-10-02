@@ -77,21 +77,22 @@ export default function RefreshHandler({currentPage}) {
         // Fetch messages, or ping for new messages
         const fetchInterval = setInterval(async () => {
             if (mainId === myId) {
-                const memory = await store.getState().memory;
+                const pagesToUpdate = [...new Set([...openPages, currentPage])];
+
                 // only fetch columns in pages that are open, and accounts that are logged in
-                for (const pageId of openPages) {
+                for (const pageId of pagesToUpdate) {
 
                 }
             }
         }, 8*1000);
 
         // Send a heartbeat
-        const sendInterval = setInterval(() => {
+        const sendInterval = setInterval(async () => {
             bc.postMessage({id:myId, page: currentPage, type:"hb"});
         }, 0.5*1000);
 
         // Determine main
-        const checkInterval = setInterval(() => {
+        const checkInterval = setInterval(async () => {
             const ids = [...hbMap.keys(), myId];
             let oldMainId = mainId;
             mainId = ids.reduce((a,b) => a < b? a : b); // Smallest ID (oldest) is the main
@@ -102,7 +103,7 @@ export default function RefreshHandler({currentPage}) {
                     console.log("New main");
                 }
             }
-            openPages = [...new Set([...hbMap.values(), currentPage])];
+            openPages = [...new Set([...hbMap.values(), currentPage].filter(x => x !== ""))];
             hbMap.clear();
         }, 2*1000);
 

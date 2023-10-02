@@ -5,22 +5,23 @@ import Link from "next/link";
 import {HiAtSymbol} from "react-icons/hi";
 import clsx from "clsx";
 import {useDispatch, useSelector} from "react-redux";
-import {addOrUpdateUser, resetUsers, UserData, UserStatusType} from "@/lib/utils/redux/slices/users"
+import {addOrUpdateUser, resetUsers} from "@/lib/utils/redux/slices/users"
 import {resetConfig, setConfigValue} from "@/lib/utils/redux/slices/config";
 import {useForm} from "react-hook-form";
 import {encrypt, makeKey, parseKey} from "@/lib/utils/crypto";
 import {resetPages} from "@/lib/utils/redux/slices/pages";
 import {updateMemory} from "@/lib/utils/redux/slices/memory";
 import recoverDataFromJson from "@/lib/utils/client/recoverDataFromJson";
+import {UserData, UserStatusType} from "@/lib/utils/types-constants/account";
 
-export default function FormSignIn ({openState, initialUser=null, completeCallback, orImport=false}:
-{openState:boolean, initialUser?:UserData, completeCallback?:any, orImport?:boolean}) {
+export default function FormSignIn ({openState, initialUser=null, completeCallback, orImport=false, setCurrentPage}:
+{openState:boolean, initialUser?:UserData, completeCallback?:any, orImport?:boolean, setCurrentPage:any}) {
     //@ts-ignore
     const users = useSelector((state) => state.users);
     //@ts-ignore
     const config = useSelector((state) => state.config);
     //@ts-ignore
-    const page = useSelector((state) => state.page);
+    const pages = useSelector((state) => state.pages);
 
     const [warning, setWarning] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -256,11 +257,14 @@ export default function FormSignIn ({openState, initialUser=null, completeCallba
 
                 <div className="text-blue-500 font-semibold text-center hover:underline hover:text-blue-800"
                      onClick={() => {
-                         if (page.order.length === 1) {
-                             const pageId = page.order[0];
-                             dispatch()
+                         if (pages.order.length === 1) {
+                             const pageId = pages.order[0];
 
-                             dispatch(updateMemory({mode:"main"}));
+
+                             // add firehose column to page[0]
+
+                             console.log(pageId);
+                            // dispatch(updateMemory({mode:"main"}));
                          }
 
                      }}

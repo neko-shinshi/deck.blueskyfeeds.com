@@ -1,25 +1,32 @@
 // POST
 export interface Post {
+    uri: string
+    cid: string
     authorUri: string
     replyUris: string[]
     repostUris: string[]
     likeUris: string[]
-    text: string
-    lang: string[]
+    textParts: TextPart[]
+    langs: string[] // Max 3
     labels: string[]
     parentUri: string
     rootUri: string
-    facets: PostFacet[]
-    embeds: PostEmbed[]
+    embed: PostEmbed
+    quoteUri: string
+    tags: string[] // Max 8
     postTs: number // post's timestamp
-    lastTs: number
+    lastTs: number // last update timestamp
 }
+
+interface TextPart {
+    text: string,
+    facet?: PostFacet
+}
+
 
 // FACETS
 interface PostFacet {
-    type: "Tag" | "Link",
-    start: number
-    end: number
+    type: "Tag" | "Link"| "Mention",
 }
 
 interface PostFacetTag extends PostFacet {
@@ -32,10 +39,15 @@ interface PostFacetLink extends PostFacet {
     url: string // fetch data from here instead of trusting bluesky
 }
 
+interface PostFacetMention extends PostFacet {
+    type: "Mention"
+    did: string // fetch data instead of trusting bluesky
+}
+
 
 // EMBEDS
 interface PostEmbed {
-    type: "Media" | "Quote" | "Link"
+    type: "Media" | "Link"
 }
 
 interface PostEmbedMedia extends PostEmbed {
@@ -44,14 +56,9 @@ interface PostEmbedMedia extends PostEmbed {
     alt: string
 }
 
-interface PostEmbedRecord extends PostEmbed {
-    type: "Quote"
-    uri: string // download and refer to this post manually
-}
-
 interface PostEmbedLink extends PostEmbed {
     type: "Link"
-    url: string // fetch data from here instead of trusting bluesky
+    url: string // fetch data from here instead of trusting bluesky, put alert if different?
     title: string
     description: string
     thumb: string

@@ -1,4 +1,3 @@
-import {UserData, UserStatusType} from "@/lib/utils/redux/slices/users";
 import AvatarSelfMain from "@/lib/components/AvatarSelfMain";
 import Image from "next/image";
 import {BsFillGearFill} from "react-icons/bs";

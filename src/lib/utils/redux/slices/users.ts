@@ -1,22 +1,6 @@
 import { createSlice } from '@reduxjs/toolkit'
+import {UserData, UserStatusType} from "@/lib/utils/types-constants/account";
 
-export enum UserStatusType {
-    ACTIVE="ACTIVE", LOGGED_OUT="LOGGED_OUT", RATE_LIMITED="RATE_LIMITED"
-}
-
-
-export interface UserData {
-    did: string
-    service: string
-    usernameOrEmail: string
-    encryptedPassword: string
-    refreshJwt: string,
-    accessJwt: string
-    handle: string
-    displayName: string
-    status: UserStatusType
-    avatar: string
-}
 
 export const initialState:{order:string[], dict:{[did:string]: UserData}} = {dict: {}, order:[]};
 

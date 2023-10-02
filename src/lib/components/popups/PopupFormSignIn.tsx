@@ -1,7 +1,7 @@
 import Popup from "@/lib/components/popups/Popup";
 import clsx from "clsx";
 import FormSignIn from "@/lib/components/FormSignIn";
-import {UserData} from "@/lib/utils/redux/slices/users";
+import {UserData} from "@/lib/utils/types-constants/account";
 
 export default function PopupFormSignIn({isOpen, setOpen, initialUser=null, completeCallback}:
         {isOpen:boolean, setOpen:any, initialUser?: UserData, completeCallback?:any}) {

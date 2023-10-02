@@ -20,6 +20,9 @@ const App = () => {
     const [currentPage, setCurrentPage] = useState(""); // PageId
 
 
+
+
+
     const column = () => {
         {
             /*
@@ -67,7 +70,7 @@ const App = () => {
 
                 memory && memory.mode === "start" && <div className="w-full h-screen grid place-items-center bg-white">
                     <div className="border border-2 border-black p-4 rounded-xl">
-                        <FormSignIn openState={!users || users.order.length === 0} orImport={true}/>
+                        <FormSignIn openState={!users || users.order.length === 0} orImport={true} setCurrentPage={setCurrentPage}/>
                     </div>
                 </div>
             }

@@ -11,8 +11,6 @@ import {
     removeUser,
     resetUsers,
     setUserOrder,
-    UserData,
-    UserStatusType
 } from "@/lib/utils/redux/slices/users";
 import {FaPlus} from "react-icons/fa";
 import {useEffect, useState} from "react";
@@ -27,6 +25,7 @@ import PopupFormSignIn from "@/lib/components/popups/PopupFormSignIn";
 import {makeInitialState as makePageInitialState, resetPages} from "@/lib/utils/redux/slices/pages";
 import {resetMemory} from "@/lib/utils/redux/slices/memory";
 import {PopupUsers} from "@/lib/components/major/LeftControls";
+import {UserData, UserStatusType} from "@/lib/utils/types-constants/account";
 
 enum PopupState {
     Logout,

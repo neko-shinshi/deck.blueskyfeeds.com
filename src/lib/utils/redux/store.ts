@@ -3,10 +3,11 @@ import { persistReducer, persistStore } from 'redux-persist';
 import storage from "redux-persist/lib/storage";
 import config from "@/lib/utils/redux/slices/config";
 import pages from "@/lib/utils/redux/slices/pages";
-import users, {UserData, UserStatusType} from "@/lib/utils/redux/slices/users";
+import {UserData, UserStatusType} from "@/lib/utils/types-constants/account";
 import memory from "@/lib/utils/redux/slices/memory";
 import {combineReducers} from "redux";
 import thunk from 'redux-thunk';
+import users from "@/lib/utils/redux/slices/users";
 
 const persistedReducer = persistReducer(
     {key: 'root', storage, blacklist:['memory']},
