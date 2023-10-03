@@ -5,7 +5,7 @@ import {ThumnailSize} from "@/lib/utils/types-constants/thumnail-size";
 
 export interface PageOfColumns {
     name: string // for display
-    columns: ColumnConfig[]
+    columns: string[]
     maskCw: boolean
     hideCw: boolean
     cwLabels: CwType[] // CwLabel type
@@ -21,16 +21,23 @@ export enum ColumnType {
 }
 
 export interface ColumnConfig {
-    id: string // uuid
+    id: string
     type: ColumnType
+    name: string
     active: boolean
-    width: number
     columns: number
-    refreshMs: RefreshTimingType
+
+    // Use global defaults first
+    width: number
     thumbnailSize: ThumnailSize
+    icon: string // base64 icon
 }
 
-interface ObservedColumn extends ColumnConfig {
+export interface FetchedColumn {
+    refreshMs: RefreshTimingType // Uses global default
+}
+
+export interface ObservedColumn {
     observer: string
 }
 
@@ -39,51 +46,71 @@ export interface ColumnFirehose extends ColumnConfig {
     showReplies: boolean,
     keywords: string[]
     users: string[] // filter these users
-    icon: string // base64 icon
 }
 
-export interface ColumnNotifications extends ColumnConfig {
+export interface ColumnNotifications extends ColumnConfig, FetchedColumn {
     type: ColumnType.NOTIFS
-    users: string[] // filter these signed-in users
+    hideUsers: string[] // filter these signed-in users
     allowedTypes: NotificationType[]
 }
 
-export interface ColumnSearch extends ColumnConfig {
+export interface ColumnSearch extends ColumnConfig, FetchedColumn {
     type: ColumnType.SEARCH
     string: string // search this string
-    icon: string // base64 icon
 }
 
-export interface ColumnHome extends ObservedColumn {
+export interface ColumnHome extends ColumnConfig, ObservedColumn, FetchedColumn {
     type: ColumnType.HOME
 }
 
-export interface ColumnFeed extends ObservedColumn {
+export interface ColumnFeed extends ColumnConfig, ObservedColumn, FetchedColumn {
     type: ColumnType.FEED
     uri: string
 }
 
-export interface ColumnUsers extends ObservedColumn {
+export interface ColumnUsers extends ColumnConfig, ObservedColumn, FetchedColumn {
     type: ColumnType.USERS
+    uris: string[] // query these users
     showReplies: boolean
     keywords: string[]
-    uris: string[] // query these users
-    icon: string // base64 icon
 }
 
+export interface InColumn {
+    id: string
+    type: ColumnType
+}
+
+export interface InHome extends InColumn {
+    observer: string
+}
+
+export interface InColumnFeed extends InColumn {
+    type: ColumnType.FEED
+    uri: string
+}
+
+export interface InColumnUsers extends InColumn {
+    type: ColumnType.USERS
+    uris: string[] // query these users
+}
+
+
+
+
+// Column Modes
 export interface ColumnMode {
     mode:"config"|"thread"|"profile"
     parent?: ColumnMode // All modes should parent all the way to root
 }
 
 // Look at a thread in detail
-export interface ColumnThread extends ColumnMode {
+export interface ColumnModeThread extends ColumnMode {
     mode: "thread"
     uri: string // selected post, search back to root and show each child up to 2 levels down
 }
 
 // Look at a profile in detail
-export interface ColumnProfile extends ColumnMode {
+export interface ColumnModeProfile extends ColumnMode {
     mode: "profile"
     did: string // user's did
     viewer: string // default to the column did or the primary did, or blank

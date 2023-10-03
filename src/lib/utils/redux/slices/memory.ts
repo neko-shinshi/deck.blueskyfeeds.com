@@ -6,7 +6,6 @@ import {ColumnMode} from "@/lib/utils/types-constants/column";
 
 
 export interface MemoryState {
-    mode:"start"|"main"
     columns: {[id:string]: {postUris:string[], lastTs:number, mode?:ColumnMode, cursor:string}} // load more resets to the top
 
     firehose:{cursor: string, lastTs: number} // firehose reference
@@ -17,7 +16,7 @@ export interface MemoryState {
 
 // don't persist this, start from scratch when first connected if main, recover from last point
 // lastTs is to make sure old fetch or collision does not spoil data
-const initialState:MemoryState = {posts:{}, columns:{}, firehose:{cursor:"", lastTs: 0}, mode:"start", accounts:{}};
+const initialState:MemoryState = {posts:{}, columns:{}, firehose:{cursor:"", lastTs: 0}, accounts:{}};
 
 const slice = createSlice({
     name:"memory",

@@ -6,16 +6,18 @@ import {HiAtSymbol} from "react-icons/hi";
 import clsx from "clsx";
 import {useDispatch, useSelector} from "react-redux";
 import {addOrUpdateUser, resetUsers} from "@/lib/utils/redux/slices/users"
-import {resetConfig, setConfigValue} from "@/lib/utils/redux/slices/config";
+import {resetConfig, setConfigValue, startApp} from "@/lib/utils/redux/slices/config";
 import {useForm} from "react-hook-form";
 import {encrypt, makeKey, parseKey} from "@/lib/utils/crypto";
-import {resetPages} from "@/lib/utils/redux/slices/pages";
+import {addColumn, resetPages} from "@/lib/utils/redux/slices/pages";
 import {updateMemory} from "@/lib/utils/redux/slices/memory";
 import recoverDataFromJson from "@/lib/utils/client/recoverDataFromJson";
 import {UserData, UserStatusType} from "@/lib/utils/types-constants/account";
+import {randomUuid} from "@/lib/utils/random";
+import {ColumnType} from "@/lib/utils/types-constants/column";
 
 export default function FormSignIn ({openState, initialUser=null, completeCallback, orImport=false, setCurrentPage}:
-{openState:boolean, initialUser?:UserData, completeCallback?:any, orImport?:boolean, setCurrentPage:any}) {
+{openState:boolean, initialUser?:UserData, completeCallback?:any, orImport?:boolean, setCurrentPage?:any}) {
     //@ts-ignore
     const users = useSelector((state) => state.users);
     //@ts-ignore
@@ -77,6 +79,7 @@ export default function FormSignIn ({openState, initialUser=null, completeCallba
             } else {
                 console.log("OK!");
                 const {did, handle, refreshJwt, accessJwt} = agent.session;
+                const now = new Date().getTime();
                 const {data} = await agent.getProfile({actor:did});
                 if (Object.values(users.dict).filter(x => (x as UserData).status === UserStatusType.ACTIVE).length === 0) {
                     // This user is now the primary!
@@ -92,13 +95,16 @@ export default function FormSignIn ({openState, initialUser=null, completeCallba
                 const key = await parseKey(keyString);
                 const encryptedPassword = await encrypt(key, password);
 
-                if (users.order.length === 0) {
+                if (users.order.length === 0 && pages.pages.order.length > 0) {
                     // First user logged in, pre-fill columns
+                    const pageId = pages.pages.order[0];
+                    dispatch(addColumn({pageId, config:{id:randomUuid(), type:ColumnType.NOTIFS}, defaults: config}));
+                    dispatch(addColumn({pageId, config:{id:randomUuid(), type:ColumnType.HOME, observer: did}, defaults: config}));
 
                 }
 
-                dispatch(updateMemory({mode:"main"}));
-                dispatch(addOrUpdateUser({service, usernameOrEmail, encryptedPassword, did, displayName, avatar, handle, refreshJwt, accessJwt}));
+                dispatch(addOrUpdateUser({service, usernameOrEmail, encryptedPassword, did, displayName, avatar, handle, refreshJwt, accessJwt, lastTs:now}));
+                dispatch(startApp());
 
                 if (completeCallback) {
                     completeCallback();
@@ -255,23 +261,22 @@ export default function FormSignIn ({openState, initialUser=null, completeCallba
 
                 </div>
 
-                <div className="text-blue-500 font-semibold text-center hover:underline hover:text-blue-800"
-                     onClick={() => {
-                         if (pages.order.length === 1) {
-                             const pageId = pages.order[0];
+                {
+                    false &&
+                    <div className="text-blue-500 font-semibold text-center hover:underline hover:text-blue-800"
+                         onClick={() => {
+                             if (pages.pages.order.length >= 1) {
+                                 const pageId = pages.pages.order[0];
+                                 dispatch(addColumn({pageId, config:{id:randomUuid(), type:ColumnType.FIREHOSE}, defaults: config}));
+                                 dispatch(startApp());
+                             }
+                         }}
+                    >
+                        <div className="text-sm">Or see Firehose posts directly</div>
+                        <div className="text-xs">(Some features only work when signed in)</div>
+                    </div>
+                }
 
-
-                             // add firehose column to page[0]
-
-                             console.log(pageId);
-                            // dispatch(updateMemory({mode:"main"}));
-                         }
-
-                     }}
-                >
-                    <div className="text-sm">Or see Firehose posts directly</div>
-                    <div className="text-xs">(Some features only work when igned in)</div>
-                </div>
             </form>
         </div>
     </>

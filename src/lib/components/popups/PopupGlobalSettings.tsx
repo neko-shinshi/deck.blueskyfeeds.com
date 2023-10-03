@@ -5,10 +5,7 @@ import {exportJSON} from "@/lib/utils/redux/store";
 import {useState} from "react";
 import {
     initialState as usersInitialState,
-    logOut,
-    removeUser,
     resetUsers,
-    UserStatusType
 } from "@/lib/utils/redux/slices/users";
 import {initialState as configInitialState, resetConfig, setConfigValue} from "@/lib/utils/redux/slices/config";
 import {makeInitialState as makePageInitialState, resetPages} from "@/lib/utils/redux/slices/pages";
@@ -16,6 +13,7 @@ import {resetMemory} from "@/lib/utils/redux/slices/memory";
 import PopupConfirmation from "@/lib/components/popups/PopupConfirmation";
 import {MdDeleteForever} from "react-icons/md";
 import recoverDataFromJson from "@/lib/utils/client/recoverDataFromJson";
+import PopupPageList from "@/lib/components/popups/PopupPageList";
 
 export default function PopupGlobalSettings(
     {isOpen, setOpen}: {isOpen:boolean,setOpen:any}) {
@@ -23,7 +21,7 @@ export default function PopupGlobalSettings(
     const config = useSelector((state) => state.config);
     const dispatch = useDispatch();
     const [busy, setBusy] = useState(false);
-    const [confirmPopupOpen, setConfirmPopupOpen] = useState(false)
+    const [popupType, setPopupType] = useState<"confirm"|"page"|false>(false)
 
     return <Popup
         isOpen={isOpen}
@@ -31,8 +29,8 @@ export default function PopupGlobalSettings(
         className="bg-white rounded-2xl p-4 w-5/12 text-black space-y-2">
 
         <PopupConfirmation
-            isOpen={confirmPopupOpen}
-            setOpen={setConfirmPopupOpen}
+            isOpen={popupType === "confirm"}
+            setOpen={setPopupType}
             title="Remove All Accounts and Return to Login page?"
             message=""
             yesCallback={ async () => {
@@ -43,9 +41,24 @@ export default function PopupGlobalSettings(
 
             }}/>
 
+        <PopupPageList isOpen={popupType === "page"} setOpen={setPopupType}/>
+
         <h1 className="text-center text-2xl font-extrabold text-gray-900 ">
             <span>Settings</span>
         </h1>
+
+        <button
+            type="button"
+            className={clsx("w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm",
+                "text-sm font-medium text-white",
+                "focus:outline-none focus:ring-2 focus:ring-offset-2",
+                "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500")
+            }
+            onClick={() => setPopupType("page")}
+        >
+            Switch Page
+        </button>
+
 
         <button
             type="button"
@@ -97,10 +110,10 @@ export default function PopupGlobalSettings(
                     "focus:outline-none focus:ring-2 focus:ring-offset-2",
                     "bg-red-600 hover:bg-red-700 focus:ring-red-500")
                 }
-                onClick={ async () => setConfirmPopupOpen(true)}
+                onClick={ async () => setPopupType("confirm")}
             >
-                <MdDeleteForever className="w-6 h-6" aria-label="Remove All Accounts"/>
-                Remove All Accounts
+                <MdDeleteForever className="w-6 h-6"/>
+                Delete Data & Reset
             </button>
         </div>
 

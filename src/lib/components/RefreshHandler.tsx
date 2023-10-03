@@ -2,6 +2,7 @@ import {useEffect} from "react";
 import {MemoryState, updateMemory} from "@/lib/utils/redux/slices/memory";
 import {useDispatch, useSelector} from "react-redux";
 import {store} from "@/lib/utils/redux/store";
+import {ColumnType} from "@/lib/utils/types-constants/column";
 
 export default function RefreshHandler({currentPage}) {
     useEffect(() => {
@@ -10,6 +11,7 @@ export default function RefreshHandler({currentPage}) {
         bc.onmessage = async (message) => {
             const {data} = message;
             const {id, page, type, memory:inMemory} = data;
+
             switch (type) {
                 case "hb": {
                     hbMap.set(id, page);
@@ -29,13 +31,15 @@ export default function RefreshHandler({currentPage}) {
                 case "ack": {
                     if (id === myId && inMemory) {
                         console.log("receive ack", inMemory);
-                        const {columns, posts, firehose:{cursor, lastTs}} = inMemory as MemoryState;
+                        const {columns, posts, firehose:{cursor, lastTs}, accounts} = inMemory as MemoryState;
                         let command:any = {};
                         const memory = await store.getState().memory;
+                        // update firehose
                         if (memory.firehose.lastTs < lastTs) {
                             command.firehose = {cursor, lastTs};
                         }
 
+                        // update posts
                         for (const [uri, post] of Object.entries(posts)) {
                             const existing = memory.posts[uri];
                             if (!existing || existing.lastTs < post.lastTs) {
@@ -43,12 +47,22 @@ export default function RefreshHandler({currentPage}) {
                             }
                         }
 
+                        // update columns
                         for (const [id, column] of Object.entries(columns)) {
                             const existing = memory.columns[id];
                             if (!existing || existing.lastTs < column.lastTs) {
                                 command[`columns.${id}`] = column;
                             }
                         }
+
+                        // update account fetch
+                        for (const [did, account] of Object.entries(accounts)) {
+                            const existing = memory.accounts[did];
+                            if (!existing || existing.lastTs < account.lastTs) {
+                                command[`accounts.${did}`] = account;
+                            }
+                        }
+
                         console.log("command", command);
 
                         if (Object.keys(command).length > 0) {
@@ -68,9 +82,31 @@ export default function RefreshHandler({currentPage}) {
         bc.postMessage({type:"syn", id: myId});
 
         // Reconnect to firehose
+        let firehose;
         const firehoseInterval = setInterval(async () => {
             if (mainId === myId) {
                 // Connect to firehose if enabled and not done so
+                const pages = await store.getState().pages;
+                const hasFirehose = [...new Set([...openPages, currentPage])].find(pageId => {
+                    const page = pages.pages.dict[pageId];
+                    return page && page.columns.find(y => {
+                        const col = pages.columnDict(y);
+                        return col.active && col.type === ColumnType.FIREHOSE;
+                    });
+                });
+
+                if (hasFirehose) {
+                    if (!firehose) {
+                        //firehose = new FirehoseSubscription('wss://bsky.social', signal);
+                        //firehose.run(3000);
+                    }
+                } else {
+                    if (firehose) {
+                        // stop the firehose
+                     //   controller.abort();
+                       // firehose = null;
+                    }
+                }
             }
         }, 30*1000);
 
@@ -80,8 +116,10 @@ export default function RefreshHandler({currentPage}) {
                 const pagesToUpdate = [...new Set([...openPages, currentPage])];
 
                 // only fetch columns in pages that are open, and accounts that are logged in
-                for (const pageId of pagesToUpdate) {
+                const pages = await store.getState().pages;
 
+                for (const pageId of pagesToUpdate) {
+                    const page = pages.pages.dict[pageId];
                 }
             }
         }, 8*1000);
@@ -92,7 +130,7 @@ export default function RefreshHandler({currentPage}) {
         }, 0.5*1000);
 
         // Determine main
-        const checkInterval = setInterval(async () => {
+        const mainSelectInterval = setInterval(async () => {
             const ids = [...hbMap.keys(), myId];
             let oldMainId = mainId;
             mainId = ids.reduce((a,b) => a < b? a : b); // Smallest ID (oldest) is the main
@@ -112,7 +150,7 @@ export default function RefreshHandler({currentPage}) {
             clearInterval(fetchInterval);
             clearInterval(firehoseInterval);
             clearInterval(sendInterval);
-            clearInterval(checkInterval);
+            clearInterval(mainSelectInterval);
             bc.close();
         }
     }, []);

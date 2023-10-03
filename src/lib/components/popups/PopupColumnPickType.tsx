@@ -6,9 +6,9 @@ import {PiUserListBold} from "react-icons/pi";
 import {BsFillBellFill, BsFillLightningChargeFill} from "react-icons/bs";
 import {FaPlus} from "react-icons/fa";
 import clsx from "clsx";
-import PopupUserSelect from "@/lib/components/popups/PopupUserSelect";
+import PopupUserList from "@/lib/components/popups/PopupUserList";
 import {useState} from "react";
-import {PopupConfig, PopupState, PopupUsers} from "@/lib/components/major/LeftControls";
+import {PopupConfig, PopupState, PopupUsers} from "@/lib/components/major/MainControls";
 import {useSelector} from "react-redux";
 
 const columnData = [
@@ -30,7 +30,7 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
         isOpen={isOpen}
         setOpen={setOpen}
         className="bg-white rounded-2xl p-4 w-2xl text-black">
-        <PopupUserSelect
+        <PopupUserList
             isOpen={openPopupState && openPopupState.state === PopupState.USERS}
             setOpen={setOpenPopupState}
             popupConfig={openPopupState && openPopupState.state === PopupState.USERS && openPopupState as PopupUsers}/>

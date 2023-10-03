@@ -6,10 +6,13 @@ import {BiSearch} from "react-icons/bi";
 import {FaPlus} from "react-icons/fa";
 import {useSelector} from "react-redux";
 import PopupFormSignIn from "@/lib/components/popups/PopupFormSignIn";
-import PopupUserSelect from "@/lib/components/popups/PopupUserSelect";
+import PopupUserList from "@/lib/components/popups/PopupUserList";
 import {useEffect, useState} from "react";
 import PopupGlobalSettings from "@/lib/components/popups/PopupGlobalSettings";
 import PopupColumnPickType from "@/lib/components/popups/PopupColumnPickType";
+import ColumnIcon from "@/lib/components/ColumnIcon";
+import {DndContext} from "@dnd-kit/core";
+import {SortableContext, verticalListSortingStrategy} from "@dnd-kit/sortable";
 
 
 export enum PopupState {
@@ -38,11 +41,14 @@ export interface PopupUsers extends PopupConfig {
     loggedInCallback?: any
 }
 
-export default function LeftControls ({currentPage, setCurrentPage}) {
+export default function MainControls ({currentPage, setCurrentPage, columnIds, handleColumnDragEnd}) {
     //@ts-ignore
     const users = useSelector((state) => state.users);
     //@ts-ignore
     const config = useSelector((state) => state.config);
+    //@ts-ignore
+    const pages = useSelector((state) => state.pages);
+
     const [popupState, updatePopupState] = useState<PopupConfig|false>(false);
 
     const setPopupState = (v) => {
@@ -55,7 +61,7 @@ export default function LeftControls ({currentPage, setCurrentPage}) {
             isOpen={popupState && popupState.state === PopupState.LOGIN}
             setOpen={setPopupState}/>
 
-        <PopupUserSelect
+        <PopupUserList
             isOpen={popupState && popupState.state === PopupState.USERS}
             setOpen={setPopupState}
             popupConfig={popupState && popupState.state === PopupState.USERS && popupState as PopupUsers}
@@ -78,6 +84,22 @@ export default function LeftControls ({currentPage, setCurrentPage}) {
                     <div className="h-full w-full bg-gray-400" />
                 </div>
             </div>
+            
+            <div className="flex flex-col place-items-center justify-start overflow-y-auto grow gap-2 py-2">
+                <DndContext onDragEnd={handleColumnDragEnd}>
+                    <SortableContext items={columnIds} strategy={verticalListSortingStrategy}>
+                    {
+                        columnIds.map(colId => {
+                            const column = pages.columnDict[colId];
+                            return <div key={colId} className="border border-black rounded-full overflow-hidden w-8 h-8 shrink-0 hover:bg-black">
+                                <ColumnIcon config={column}/>
+                            </div>
+                        })
+                    }
+                    </SortableContext>
+                </DndContext>
+            </div>
+
             <div className="flex flex-col place-items-center mb-4 gap-2">
                 <div className="px-2 h-0.5 w-full">
                     <div className="h-full w-full bg-gray-400" />

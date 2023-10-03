@@ -2,17 +2,17 @@
 export interface Post {
     uri: string
     cid: string
-    authorUri: string
-    replyUris: string[]
-    repostUris: string[]
-    likeUris: string[]
+    authorDid: string
+    replyCount: number
+    repostCount: number
+    likeCount: number
     textParts: TextPart[]
     langs: string[] // Max 3
     labels: string[]
     parentUri: string
     rootUri: string
     embed: PostEmbed
-    quoteUri: string
+    quoteUri: string // called embed.record
     tags: string[] // Max 8
     postTs: number // post's timestamp
     lastTs: number // last update timestamp
@@ -26,7 +26,7 @@ interface TextPart {
 
 // FACETS
 interface PostFacet {
-    type: "Tag" | "Link"| "Mention",
+    type: "Tag" | "Link" | "Mention",
 }
 
 interface PostFacetTag extends PostFacet {
@@ -47,7 +47,7 @@ interface PostFacetMention extends PostFacet {
 
 // EMBEDS
 interface PostEmbed {
-    type: "Media" | "Link"
+    type: "Media" | "External"
 }
 
 interface PostEmbedMedia extends PostEmbed {
@@ -56,8 +56,8 @@ interface PostEmbedMedia extends PostEmbed {
     alt: string
 }
 
-interface PostEmbedLink extends PostEmbed {
-    type: "Link"
+interface PostEmbedExternal extends PostEmbed {
+    type: "External"
     url: string // fetch data from here instead of trusting bluesky, put alert if different?
     title: string
     description: string

@@ -4,13 +4,10 @@ export interface Account {
     handle: string
     displayName: string
     avatar: string
-    lastTs: number
-
-    // Fetched data (if scroll into view prefetch all user info)
-    postCount: number
-    followingCount: number
-    followerCount: number
-    lastFetchTs: number
+    lastTs: number // also update this when updating lastFetchTs if less
+    postsCount: number
+    followsCount: number
+    followersCount: number
 }
 
 export enum UserStatusType {

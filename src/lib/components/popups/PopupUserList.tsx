@@ -24,7 +24,7 @@ import {BiLogInCircle} from "react-icons/bi";
 import PopupFormSignIn from "@/lib/components/popups/PopupFormSignIn";
 import {makeInitialState as makePageInitialState, resetPages} from "@/lib/utils/redux/slices/pages";
 import {resetMemory} from "@/lib/utils/redux/slices/memory";
-import {PopupUsers} from "@/lib/components/major/LeftControls";
+import {PopupUsers} from "@/lib/components/major/MainControls";
 import {UserData, UserStatusType} from "@/lib/utils/types-constants/account";
 
 enum PopupState {
@@ -39,7 +39,7 @@ interface PopupConfig {
     did?: string
 }
 
-export default function PopupUserSelect({isOpen, setOpen, popupConfig}:{isOpen:boolean,setOpen:any, popupConfig:PopupUsers}) {
+export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boolean,setOpen:any, popupConfig:PopupUsers}) {
     //@ts-ignore
     const users = useSelector((state) => state.users);
     //@ts-ignore
@@ -310,8 +310,8 @@ export default function PopupUserSelect({isOpen, setOpen, popupConfig}:{isOpen:b
                         <div className="flex justify-end">
                             <div className="bg-red-100 flex place-items-center justify-stretch rounded-xl border border-black p-2 hover:bg-gray-400"
                                  onClick={() => setUserPopup({state: PopupState.RemoveAll, title:"Remove All Accounts and Return to Login page?"})}>
-                                <MdDeleteForever className="w-6 h-6" aria-label="Remove All Accounts"/>
-                                <div className="text-base font-bold">Remove All Accounts</div>
+                                <MdDeleteForever className="w-6 h-6" d/>
+                                <div className="text-base font-bold">Delete Data & Reset</div>
                             </div>
                         </div>
                     </>

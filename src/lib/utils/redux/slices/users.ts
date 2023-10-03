@@ -9,12 +9,13 @@ const slice = createSlice({
     initialState,
     reducers:{
         addOrUpdateUser: (users, action) => {
-            const {service, usernameOrEmail, encryptedPassword, did, displayName, avatar, handle, refreshJwt, accessJwt} = action.payload;
+            const {service, usernameOrEmail, encryptedPassword, did, displayName, avatar, handle, refreshJwt, accessJwt, followsCount, followersCount, postsCount, lastTs} = action.payload;
+
 
             const user = {
                 service, usernameOrEmail, encryptedPassword,
                 refreshJwt, accessJwt, avatar,
-                handle, did, displayName, status: UserStatusType.ACTIVE
+                handle, did, displayName, status: UserStatusType.ACTIVE, followsCount, followersCount, postsCount, lastTs
             };
 
             users.dict[did] = user;
