@@ -8,7 +8,7 @@ import {FaPlus} from "react-icons/fa";
 import clsx from "clsx";
 import PopupUserList from "@/lib/components/popups/PopupUserList";
 import {useState} from "react";
-import {PopupConfig, PopupState, PopupUsers} from "@/lib/components/major/MainControls";
+import {PopupConfig, PopupState, PopupUsers} from "@/lib/components/MainControls";
 import {useSelector} from "react-redux";
 
 const columnData = [
@@ -21,8 +21,6 @@ const columnData = [
 ];
 
 export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,setOpen:any}) {
-    //@ts-ignore
-    const users = useSelector((state) => state.users);
 
     const [openPopupState, setOpenPopupState] = useState<PopupConfig|false>(false);
 

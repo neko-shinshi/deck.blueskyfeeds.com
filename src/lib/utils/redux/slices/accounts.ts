@@ -1,21 +1,21 @@
 import { createSlice } from '@reduxjs/toolkit'
-import {UserData, UserStatusType} from "@/lib/utils/types-constants/account";
+import {Account} from "@/lib/utils/types-constants/user-data";
 
 
-export const initialState:{order:string[], dict:{[did:string]: UserData}} = {dict: {}, order:[]};
+export const initialState:{order:string[], dict:{[did:string]: Account}} = {dict: {}, order:[]};
 
 const slice = createSlice({
-    name:"users",
+    name:"accounts",
     initialState,
     reducers:{
-        addOrUpdateUser: (users, action) => {
-            const {service, usernameOrEmail, encryptedPassword, did, displayName, avatar, handle, refreshJwt, accessJwt, followsCount, followersCount, postsCount, lastTs} = action.payload;
-
+        addOrUpdateAccount: (users, action) => {
+            const {service, usernameOrEmail, encryptedPassword, did, displayName, avatar, handle, refreshJwt, accessJwt,
+                followsCount, followersCount, postsCount, lastTs} = action.payload;
 
             const user = {
                 service, usernameOrEmail, encryptedPassword,
                 refreshJwt, accessJwt, avatar,
-                handle, did, displayName, status: UserStatusType.ACTIVE, followsCount, followersCount, postsCount, lastTs
+                handle, did, displayName, active:true, followsCount, followersCount, postsCount, lastTs
             };
 
             users.dict[did] = user;
@@ -25,7 +25,7 @@ const slice = createSlice({
                 users.order.push(did);
             }
         },
-        removeUser: (users, action) => {
+        removeAccount: (users, action) => {
             const {did} = action.payload;
             delete users.dict[did];
             users.order = users.order.filter(x => x !== did);
@@ -34,13 +34,13 @@ const slice = createSlice({
             const {did} = action.payload;
             const user = users.dict[did];
             if (user) {
-                user.status = UserStatusType.LOGGED_OUT;
+                user.active = false;
                 user.encryptedPassword = "";
                 user.refreshJwt = "";
                 user.accessJwt = "";
             }
         },
-        setUserOrder: (users, action) => {
+        setAccountOrder: (users, action) => {
             let {order} = action.payload;
 
             const existingIds = Object.keys(users.dict);
@@ -52,7 +52,7 @@ const slice = createSlice({
                 delete users.dict[did];
             });
         },
-        resetUsers: (state, action) => {
+        resetAccounts: (state, action) => {
             for (const [key, value] of Object.entries(action.payload)) {
                 state[key] = value;
             }
@@ -61,5 +61,5 @@ const slice = createSlice({
     }
 });
 
-export const {addOrUpdateUser, removeUser, logOut, setUserOrder, resetUsers} = slice.actions
+export const {addOrUpdateAccount, removeAccount, logOut, setAccountOrder, resetAccounts} = slice.actions
 export default slice.reducer

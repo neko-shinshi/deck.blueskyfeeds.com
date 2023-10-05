@@ -5,8 +5,8 @@ import {exportJSON} from "@/lib/utils/redux/store";
 import {useState} from "react";
 import {
     initialState as usersInitialState,
-    resetUsers,
-} from "@/lib/utils/redux/slices/users";
+    resetAccounts,
+} from "@/lib/utils/redux/slices/accounts";
 import {initialState as configInitialState, resetConfig, setConfigValue} from "@/lib/utils/redux/slices/config";
 import {makeInitialState as makePageInitialState, resetPages} from "@/lib/utils/redux/slices/pages";
 import {resetMemory} from "@/lib/utils/redux/slices/memory";
@@ -36,7 +36,7 @@ export default function PopupGlobalSettings(
             yesCallback={ async () => {
                 dispatch(resetConfig(configInitialState));
                 dispatch(resetPages(makePageInitialState()));
-                dispatch(resetUsers(usersInitialState));
+                dispatch(resetAccounts(usersInitialState));
                 dispatch(resetMemory());
 
             }}/>

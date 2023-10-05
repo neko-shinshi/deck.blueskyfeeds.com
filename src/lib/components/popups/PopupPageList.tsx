@@ -40,7 +40,7 @@ export default function PopupPageList(
             const newIndex = userIds.indexOf(over.id);
 
             const result = arrayMove(userIds, oldIndex, newIndex);
-            dispatch(setUserOrder({order:result}));*/
+            dispatch(setAccountOrder({order:result}));*/
         }
     }
 

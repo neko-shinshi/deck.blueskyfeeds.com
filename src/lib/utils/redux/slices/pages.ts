@@ -55,7 +55,8 @@ const slice = createSlice({
                         columns: 1,
                         refreshMs: defaults.refreshMs,
                         thumbnailSize: defaults.thumbnailSize,
-                        width: defaults.columnWidth
+                        width: defaults.columnWidth,
+                        icon:""
                     }
                     newColumn = column;
                     break;
@@ -70,7 +71,8 @@ const slice = createSlice({
                         columns: 1,
                         refreshMs: defaults.refreshMs,
                         thumbnailSize: defaults.thumbnailSize,
-                        width: defaults.columnWidth
+                        width: defaults.columnWidth,
+                        icon:""
                     }
                     newColumn = column;
                     break;
@@ -118,11 +120,11 @@ const slice = createSlice({
 
             const existingIds = Object.keys(state.columnDict);
             order = order.filter(id => existingIds.indexOf(id) >= 0); // only keep dids that are currently saved
-            state.pages.dict[pageId].order = order;
+            state.pages.dict[pageId].columns = order;
         },
         updateColumn: (state, action) => {
             let {columnId, columnUpdate} = action.payload;
-            state.columnDict[columnId];
+            //state.columnDict[columnId];
 
         },
         removeColumn: (state, action) => {

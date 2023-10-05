@@ -1,8 +1,8 @@
 import {makeKey} from "@/lib/utils/crypto";
 import {setConfigValue} from "@/lib/utils/redux/slices/config";
-import {resetUsers} from "@/lib/utils/redux/slices/users";
+import {resetAccounts} from "@/lib/utils/redux/slices/accounts";
 import {resetPages} from "@/lib/utils/redux/slices/pages";
-import {updateMemory} from "@/lib/utils/redux/slices/memory";
+import {initializeColumn, updateMemory} from "@/lib/utils/redux/slices/memory";
 
 export default function recoverDataFromJson (dispatch) {
     const input = document.createElement('input');
@@ -19,9 +19,15 @@ export default function recoverDataFromJson (dispatch) {
                 let {config, pages, users} = content;
                 config.basicKey = await makeKey();
                 dispatch(setConfigValue(config));
-                dispatch(resetUsers(users));
+                dispatch(resetAccounts(users));
                 dispatch(resetPages(pages));
                 dispatch(updateMemory({mode:"main"}));
+
+                const ids = Object.keys(pages.columnDict);
+                if (ids.length > 0) {
+                    dispatch(initializeColumn({ids}));
+                }
+
                 alert("Your settings have been restored. Login to each account again to use logged in features");
             } catch (e) {
                 console.log(e);

@@ -13,6 +13,6 @@ module.exports = {
   },
   plugins: [
     require("tailwindcss-inner-border"),
-    require('tailwind-scrollbar')
+    require('tailwind-scrollbar'),
   ]
 }

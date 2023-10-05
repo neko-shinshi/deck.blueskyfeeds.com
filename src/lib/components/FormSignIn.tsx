@@ -1,25 +1,25 @@
 import {useEffect, useState} from "react";
-import {getAgent} from "@/lib/utils/bsky";
+import { getAgentLogin} from "@/lib/utils/bsky";
 import {BsFillInfoCircleFill} from "react-icons/bs";
 import Link from "next/link";
 import {HiAtSymbol} from "react-icons/hi";
 import clsx from "clsx";
 import {useDispatch, useSelector} from "react-redux";
-import {addOrUpdateUser, resetUsers} from "@/lib/utils/redux/slices/users"
-import {resetConfig, setConfigValue, startApp} from "@/lib/utils/redux/slices/config";
+import {addOrUpdateAccount, resetAccounts} from "@/lib/utils/redux/slices/accounts"
+import {setConfigValue, startApp} from "@/lib/utils/redux/slices/config";
 import {useForm} from "react-hook-form";
 import {encrypt, makeKey, parseKey} from "@/lib/utils/crypto";
-import {addColumn, resetPages} from "@/lib/utils/redux/slices/pages";
-import {updateMemory} from "@/lib/utils/redux/slices/memory";
+import {addColumn} from "@/lib/utils/redux/slices/pages";
+import {initializeColumn} from "@/lib/utils/redux/slices/memory";
 import recoverDataFromJson from "@/lib/utils/client/recoverDataFromJson";
-import {UserData, UserStatusType} from "@/lib/utils/types-constants/account";
+import {Account} from "@/lib/utils/types-constants/user-data";
 import {randomUuid} from "@/lib/utils/random";
 import {ColumnType} from "@/lib/utils/types-constants/column";
 
-export default function FormSignIn ({openState, initialUser=null, completeCallback, orImport=false, setCurrentPage}:
-{openState:boolean, initialUser?:UserData, completeCallback?:any, orImport?:boolean, setCurrentPage?:any}) {
+export default function FormSignIn ({openState, initialUser=null, completeCallback, orImport=false}:
+{openState:boolean, initialUser?:Account, completeCallback?:any, orImport?:boolean}) {
     //@ts-ignore
-    const users = useSelector((state) => state.users);
+    const accounts = useSelector((state) => state.accounts);
     //@ts-ignore
     const config = useSelector((state) => state.config);
     //@ts-ignore
@@ -73,7 +73,7 @@ export default function FormSignIn ({openState, initialUser=null, completeCallba
             usernameOrEmail = usernameOrEmail.indexOf(".") < 0? `${usernameOrEmail}.${service}` : usernameOrEmail;
 
 
-            const agent = await getAgent(service, usernameOrEmail, password);
+            const agent = await getAgentLogin(service, usernameOrEmail, password);
             if (!agent) {
                 setError("fail", {type: "unknown", message:`Unknown Error, try again later or contact @blueskyfeeds.com`});
             } else {
@@ -81,7 +81,7 @@ export default function FormSignIn ({openState, initialUser=null, completeCallba
                 const {did, handle, refreshJwt, accessJwt} = agent.session;
                 const now = new Date().getTime();
                 const {data} = await agent.getProfile({actor:did});
-                if (Object.values(users.dict).filter(x => (x as UserData).status === UserStatusType.ACTIVE).length === 0) {
+                if (Object.values(accounts.dict).filter(x => (x as Account).active)) {
                     // This user is now the primary!
                     dispatch(setConfigValue({primaryDid: did}))
                 }
@@ -95,16 +95,23 @@ export default function FormSignIn ({openState, initialUser=null, completeCallba
                 const key = await parseKey(keyString);
                 const encryptedPassword = await encrypt(key, password);
 
-                if (users.order.length === 0 && pages.pages.order.length > 0) {
+                if (accounts.order.length === 0 && pages.pages.order.length > 0) {
                     // First user logged in, pre-fill columns
                     const pageId = pages.pages.order[0];
-                    dispatch(addColumn({pageId, config:{id:randomUuid(), type:ColumnType.NOTIFS}, defaults: config}));
-                    dispatch(addColumn({pageId, config:{id:randomUuid(), type:ColumnType.HOME, observer: did}, defaults: config}));
-
+                    const notifId = randomUuid();
+                    const homeId = randomUuid();
+                    const a = {pageId, config:{id:notifId, type:ColumnType.NOTIFS}, defaults: config};
+                    console.log("a", a);
+                    const b = {pageId, config:{id:homeId, type:ColumnType.HOME, observer: did}, defaults: config};
+                    console.log("b", b)
+                    dispatch(addColumn(a));
+                    dispatch(addColumn(b));
+                    dispatch(initializeColumn({ids:[notifId, homeId]}));
+                    dispatch(startApp({pageId}));
                 }
 
-                dispatch(addOrUpdateUser({service, usernameOrEmail, encryptedPassword, did, displayName, avatar, handle, refreshJwt, accessJwt, lastTs:now}));
-                dispatch(startApp());
+                dispatch(addOrUpdateAccount({service, usernameOrEmail, encryptedPassword, did, displayName, avatar, handle, refreshJwt, accessJwt, lastTs:now}));
+
 
                 if (completeCallback) {
                     completeCallback();
@@ -268,7 +275,7 @@ export default function FormSignIn ({openState, initialUser=null, completeCallba
                              if (pages.pages.order.length >= 1) {
                                  const pageId = pages.pages.order[0];
                                  dispatch(addColumn({pageId, config:{id:randomUuid(), type:ColumnType.FIREHOSE}, defaults: config}));
-                                 dispatch(startApp());
+                                 //dispatch(startApp());
                              }
                          }}
                     >

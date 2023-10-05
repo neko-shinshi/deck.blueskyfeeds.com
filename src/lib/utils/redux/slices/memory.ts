@@ -1,7 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit'
 import {Post} from "@/lib/utils/types-constants/post";
 import {setPathOfObject} from "@/lib/utils/object";
-import {Account} from "@/lib/utils/types-constants/account";
+import {UserData} from "@/lib/utils/types-constants/user-data";
 import {ColumnMode} from "@/lib/utils/types-constants/column";
 
 
@@ -11,7 +11,8 @@ export interface MemoryState {
     firehose:{cursor: string, lastTs: number} // firehose reference
 
     posts: {[uri:string]: Post} // Saved post info
-    accounts:{[did:string]: Account} // SAVED ACCOUNT INFO
+    accounts:{[did:string]: UserData} // SAVED ACCOUNT INFO
+    alert?: string
 }
 
 // don't persist this, start from scratch when first connected if main, recover from last point
@@ -22,6 +23,23 @@ const slice = createSlice({
     name:"memory",
     initialState,
     reducers:{
+        showAlert: (memory, action) => {
+            const {msg} = action.payload;
+            memory.alert = msg;
+        },
+        initializeColumn: (memory, action) => {
+            const {ids} = action.payload;
+            if (Array.isArray(ids)) {
+                ids.forEach(id => {
+                    memory.columns[id] = {
+                        postUris:[],
+                        lastTs: 0,
+                        cursor: ""
+                    }
+                })
+            }
+        },
+
         updateMemory: (memory, action) => {
             for (const [path, value] of Object.entries(action.payload)) {
                 if (path !== "__terminate") {
@@ -37,5 +55,5 @@ const slice = createSlice({
     }
 });
 
-export const {updateMemory, resetMemory} = slice.actions
+export const {showAlert, initializeColumn, updateMemory, resetMemory} = slice.actions
 export default slice.reducer

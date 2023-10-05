@@ -1,10 +1,18 @@
 import {useEffect} from "react";
-import {MemoryState, updateMemory} from "@/lib/utils/redux/slices/memory";
+import {MemoryState, showAlert, updateMemory} from "@/lib/utils/redux/slices/memory";
 import {useDispatch, useSelector} from "react-redux";
 import {store} from "@/lib/utils/redux/store";
-import {ColumnType} from "@/lib/utils/types-constants/column";
+import {
+    ColumnConfig,
+    ColumnHome,
+    ColumnNotifications,
+    ColumnType,
+    FetchedColumn
+} from "@/lib/utils/types-constants/column";
+import {getAgent} from "@/lib/utils/bsky";
+import {logOut} from "@/lib/utils/redux/slices/accounts";
 
-export default function RefreshHandler({currentPage}) {
+export default function RefreshHandler({}) {
     useEffect(() => {
         let hbMap = new Map();
         const bc = new BroadcastChannel("HEARTBEAT");
@@ -86,11 +94,13 @@ export default function RefreshHandler({currentPage}) {
         const firehoseInterval = setInterval(async () => {
             if (mainId === myId) {
                 // Connect to firehose if enabled and not done so
-                const pages = await store.getState().pages;
-                const hasFirehose = [...new Set([...openPages, currentPage])].find(pageId => {
+                const state = await store.getState();
+                const pages = state.pages;
+                const config = state.config;
+                const hasFirehose = [...new Set([...openPages, config.currentPage])].find(pageId => {
                     const page = pages.pages.dict[pageId];
                     return page && page.columns.find(y => {
-                        const col = pages.columnDict(y);
+                        const col = pages.columnDict[y];
                         return col.active && col.type === ColumnType.FIREHOSE;
                     });
                 });
@@ -113,20 +123,146 @@ export default function RefreshHandler({currentPage}) {
         // Fetch messages, or ping for new messages
         const fetchInterval = setInterval(async () => {
             if (mainId === myId) {
-                const pagesToUpdate = [...new Set([...openPages, currentPage])];
+                console.log("try fetch")
+                const state = await store.getState();
+                const pages = state.pages;
+                const accounts = state.accounts;
+                const memory = state.memory;
+                const config = state.config;
+                const pagesToUpdate = [...new Set([...openPages, config.currentPage])];
+                console.log("pages", pagesToUpdate);
 
                 // only fetch columns in pages that are open, and accounts that are logged in
-                const pages = await store.getState().pages;
 
+                let columnIds = new Set<string>();
                 for (const pageId of pagesToUpdate) {
                     const page = pages.pages.dict[pageId];
+                    if (page) {
+                        page.columns.forEach(x => columnIds.add(x));
+                    }
                 }
+                const now = new Date().getTime();
+
+                let commands = new Map<string, ColumnConfig[]>();
+                for (const columnId of columnIds) {
+                    const col = pages.columnDict[columnId];
+                    if (!col || !("refreshMs" in col)) {continue;}
+                    const column = col as FetchedColumn & ColumnConfig;
+                    const lastObj = memory.columns[columnId];
+
+                    if (!lastObj || lastObj.lastTs + column.refreshMs < now) {
+                        console.log("refresh", column.name, );
+                        switch (column.type) {
+                            case ColumnType.NOTIFS: {
+                                const {hideUsers} = column as ColumnNotifications;
+                                console.log("notifs")
+                                Object.values(accounts.dict)
+                                    .filter(x => x.active && hideUsers.indexOf(x.did) < 0)
+                                    .forEach(x => {
+                                        let list = commands.get(x.did);
+                                        if (!list) {list = [];}
+                                        list.push(column);
+                                        commands.set(x.did, list);
+                                    });
+                                break;
+                            }
+                            case ColumnType.HOME: {
+                                const {observer} = column as ColumnHome;
+                                const userObj = accounts.dict[observer];
+                                console.log("home");
+                                if (userObj && userObj.active) {
+                                    let list = commands.get(observer);
+                                    if (!list) {list = [column];}
+                                    list.push(column);
+                                    commands.set(observer, list);
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+                console.log("commands", commands);
+                for (let [did, columns] of commands) {
+                    const userObj = accounts.dict[did];
+                    if (userObj) {
+                        console.log("user", userObj);
+
+                        let pass = true;
+                        let agent = await getAgent(userObj, config.basicKey);
+                        if (!agent) {
+                            agent = await getAgent(userObj, config.basicKey);
+                            if (!agent) {
+                                // dispatch logged out of user
+                                pass = false;
+                                store.dispatch(logOut({did}));
+                                store.dispatch(showAlert(`Error: ${userObj.displayName} logged out`));
+                            }
+                        }
+
+                        console.log("pass", pass);
+                        if (pass) {
+                            const now = new Date().getTime();
+                            const cols = columns as ColumnConfig[];
+
+                            let authorsFull = new Map<string, any>();
+                            let authorsPartial = new Map<string, any>();
+
+                            for (const col of cols) {
+                                console.log("col", col);
+                                switch (col.type) {
+                                    case ColumnType.HOME: {
+                                        try {
+                                            // {cursor, limit}
+                                            const {data} = await agent.getTimeline();
+                                            const {cursor, feed} = data;
+
+
+
+                                          //  console.log("home", data);
+                                            let o = {};
+                                          //  o[`columns.${col.id}`] = {lastTs:now, postUris:[], }
+
+                                            //store.dispatch(updateMemory({}))
+
+                                            // {feed:[], cursor:""}
+                                        } catch (e) {
+                                            console.error(e);
+                                        }
+                                        break;
+                                    }
+                                    case ColumnType.NOTIFS: {
+                                        try {
+                                            // cursor, limit, seenAt???: "datetimestring?"
+                                          //  const {data} = agent.listNotifications();
+                                          //  console.log("notifs", data);
+
+                                        } catch (e) {
+                                            console.error(e);
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+                }
+
+                /*
+                let o = {};
+                const path = `columns.${columnId}`;
+                o[path] = now;
+
+                store.dispatch(updateMemory(o));*/
+
             }
         }, 8*1000);
 
         // Send a heartbeat
         const sendInterval = setInterval(async () => {
-            bc.postMessage({id:myId, page: currentPage, type:"hb"});
+            const state = await store.getState();
+            const config = state.config;
+            bc.postMessage({id:myId, page: config.currentPage, type:"hb"});
         }, 0.5*1000);
 
         // Determine main
@@ -141,7 +277,9 @@ export default function RefreshHandler({currentPage}) {
                     console.log("New main");
                 }
             }
-            openPages = [...new Set([...hbMap.values(), currentPage].filter(x => x !== ""))];
+            const state = await store.getState();
+            const config = state.config;
+            openPages = [...new Set([...hbMap.values(), config.currentPage].filter(x => x !== ""))];
             hbMap.clear();
         }, 2*1000);
 

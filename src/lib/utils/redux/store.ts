@@ -3,15 +3,15 @@ import { persistReducer, persistStore } from 'redux-persist';
 import storage from "redux-persist/lib/storage";
 import config from "@/lib/utils/redux/slices/config";
 import pages from "@/lib/utils/redux/slices/pages";
-import {UserData, UserStatusType} from "@/lib/utils/types-constants/account";
+import {Account} from "@/lib/utils/types-constants/user-data";
 import memory from "@/lib/utils/redux/slices/memory";
 import {combineReducers} from "redux";
 import thunk from 'redux-thunk';
-import users from "@/lib/utils/redux/slices/users";
+import accounts from "@/lib/utils/redux/slices/accounts";
 
 const persistedReducer = persistReducer(
     {key: 'root', storage, blacklist:['memory']},
-    combineReducers({config, pages, users, memory})
+    combineReducers({config, pages, accounts, memory})
 );
 
 const SyncChannel = new BroadcastChannel("DECK_SYNC");
@@ -50,11 +50,11 @@ export const exportJSON = async () => {
     delete state.memory;
     delete state._persist;
 
-    let userDict = state.users.dict as {[did:string]: UserData};
+    let userDict = state.accounts.dict as {[did:string]: Account};
     Object.values(userDict).forEach(user => {
         userDict[user.did] = {
             ...user,
-            status: UserStatusType.LOGGED_OUT,
+            active:false,
             encryptedPassword: "",
             refreshJwt:"", accessJwt:""
         };

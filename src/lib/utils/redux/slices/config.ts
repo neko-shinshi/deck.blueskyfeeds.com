@@ -5,7 +5,6 @@ import {RefreshTimingType} from "@/lib/utils/types-constants/refresh-timings";
 import {ThumnailSize} from "@/lib/utils/types-constants/thumnail-size";
 
 interface Config {
-    started: boolean
     colorMode: ColorMode
     showScrollbars: boolean
     altTextPrompt: boolean
@@ -16,10 +15,10 @@ interface Config {
     columnWidth: number
     refreshMs: RefreshTimingType
     thumbnailSize: ThumnailSize
+    currentPage:string
 }
 
 export const initialState:Config = {
-    started:false,
 
     // Globals
     colorMode: ColorMode.DARK,
@@ -29,6 +28,7 @@ export const initialState:Config = {
     fontSize: FontSize.Medium,
     primaryDid: "",
     basicKey: "",
+    currentPage:"",
 
     // Globals Defaults
     columnWidth: 21,
@@ -40,8 +40,9 @@ const slice = createSlice({
     name:"config",
     initialState,
     reducers:{
-        startApp: (state) => {
-            state.started = true;
+        startApp: (state, action) => {
+            const {pageId} = action.payload;
+            state.currentPage = pageId;
         },
 
         setConfigValue: (state, action) => {

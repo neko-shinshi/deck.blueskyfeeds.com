@@ -8,10 +8,10 @@ import {initialState as configInitialState, resetConfig, setConfigValue} from "@
 import {
     initialState as usersInitialState,
     logOut,
-    removeUser,
-    resetUsers,
-    setUserOrder,
-} from "@/lib/utils/redux/slices/users";
+    removeAccount,
+    resetAccounts,
+    setAccountOrder,
+} from "@/lib/utils/redux/slices/accounts";
 import {FaPlus} from "react-icons/fa";
 import {useEffect, useState} from "react";
 import clsx from "clsx";
@@ -24,8 +24,8 @@ import {BiLogInCircle} from "react-icons/bi";
 import PopupFormSignIn from "@/lib/components/popups/PopupFormSignIn";
 import {makeInitialState as makePageInitialState, resetPages} from "@/lib/utils/redux/slices/pages";
 import {resetMemory} from "@/lib/utils/redux/slices/memory";
-import {PopupUsers} from "@/lib/components/major/MainControls";
-import {UserData, UserStatusType} from "@/lib/utils/types-constants/account";
+import {PopupUsers} from "@/lib/components/MainControls";
+import {Account} from "@/lib/utils/types-constants/user-data";
 
 enum PopupState {
     Logout,
@@ -41,7 +41,7 @@ interface PopupConfig {
 
 export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boolean,setOpen:any, popupConfig:PopupUsers}) {
     //@ts-ignore
-    const users = useSelector((state) => state.users);
+    const accounts = useSelector((state) => state.accounts);
     //@ts-ignore
     const config = useSelector((state) => state.config);
     const dispatch = useDispatch();
@@ -49,7 +49,7 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
     const [mode, setMode] = useState<"menu"|"select"|"view">("select");
     const [title, setTitle] = useState("");
     const [loginOpen, setLoginOpen] = useState(false);
-    const [initialUser, setInitialUser] = useState<UserData>(null);
+    const [initialUser, setInitialUser] = useState<Account>(null);
     const [userPopup, setUserPopup] = useState<false|PopupConfig>(false);
 
     useEffect(() => {
@@ -66,10 +66,10 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
 
 
     useEffect(() => {
-        if (Array.isArray(users.order)) {
-            setUserIds(users.order);
+        if (Array.isArray(accounts.order)) {
+            setUserIds(accounts.order);
         }
-    }, [users]);
+    }, [accounts]);
 
 
     function handleDragEnd(event) {
@@ -80,7 +80,7 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
             const newIndex = userIds.indexOf(over.id);
 
             const result = arrayMove(userIds, oldIndex, newIndex);
-            dispatch(setUserOrder({order:result}));
+            dispatch(setAccountOrder({order:result}));
         }
     }
 
@@ -102,20 +102,17 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
             {
                 user &&
                 <div ref={setNodeRef} style={style}
-                     className={clsx(user.status === UserStatusType.ACTIVE? "bg-yellow-100" : "bg-gray-400",
+                     className={clsx(user.status.active? "bg-yellow-100" : "bg-gray-400",
                          "flex place-items-center justify-stretch gap-1 rounded-xl border border-black overflow-hidden")}>
 
 
                     <div className={clsx("flex place-items-center justify-stretch grow gap-1 p-1",
                         mode === "select" && "hover:bg-yellow-300")}
                          onClick={ () => {
-                             switch (user.status) {
-                                 case UserStatusType.ACTIVE: {
-                                     break;
-                                 }
-                                 case UserStatusType.LOGGED_OUT: {
+                             if (user.active) {
 
-                                 }
+                             } else {
+
                              }
 
                              if (popupConfig?.selectCallback) {
@@ -153,7 +150,7 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
                         mode === "menu" &&
                         <div className="flex gap-3 p-1">
                             {
-                                user.status === UserStatusType.ACTIVE &&
+                                user.active &&
                                 <div className="bg-white hover:bg-gray-100 border border-black rounded-full h-8 w-8 grid place-items-center">
                                     {
                                         did === config.primaryDid?
@@ -180,7 +177,7 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
                             }
 
                             {
-                                user.status === UserStatusType.ACTIVE &&
+                                user.active &&
                                 <div className="bg-white hover:bg-gray-100 border border-black rounded-full h-8 w-8 grid place-items-center"
                                      onClick={() => setUserPopup({state:PopupState.Logout, did: did, title: `Logout user @${user.handle}?`})}
                                 >
@@ -188,7 +185,7 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
                                 </div>
                             }
                             {
-                                user.status !== UserStatusType.ACTIVE && <>
+                                !user.active && <>
                                     <div className="bg-white hover:bg-gray-100 border border-black rounded-full h-8 w-8 grid place-items-center"
                                          onClick={() => {
                                              setInitialUser(user);
@@ -229,7 +226,7 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
                 const did = userPopup.did
                 if (userPopup.state !== PopupState.RemoveAll && config.primaryDid === did) {
                     // Choose a new primary randomly
-                    const remainingUsers = Object.values(users.dict).filter(x => (x as UserData).status === UserStatusType.ACTIVE && (x as UserData).did !== did) as UserData[];
+                    const remainingUsers = Object.values(accounts.dict).filter(x => (x as Account).active && (x as Account).did !== did) as Account[];
                     if (remainingUsers.length === 0) {
                         console.log("no users");
                         dispatch(setConfigValue({primaryDid: ""}));
@@ -245,13 +242,13 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
                         break;
                     }
                     case PopupState.Remove: {
-                        dispatch(removeUser({did}));
+                        dispatch(removeAccount({did}));
                         break;
                     }
                     case PopupState.RemoveAll: {
                         dispatch(resetConfig(configInitialState));
                         dispatch(resetPages(makePageInitialState()));
-                        dispatch(resetUsers(usersInitialState));
+                        dispatch(resetAccounts(usersInitialState));
                         dispatch(resetMemory())
                         break;
                     }
@@ -283,7 +280,7 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
                     <SortableContext items={userIds} strategy={verticalListSortingStrategy}>
                         {
                             userIds.reduce((acc, did) => {
-                                const user = users.dict[did];
+                                const user = accounts.dict[did];
                                 if (user) {
                                     acc.push(<UserItem key={did} user={user} did={did}/>)
                                 }

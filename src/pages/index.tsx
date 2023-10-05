@@ -3,50 +3,55 @@ import {useEffect, useState} from "react";
 import {useDispatch, useSelector} from "react-redux";
 import FormSignIn from "@/lib/components/FormSignIn";
 import RefreshHandler from "@/lib/components/RefreshHandler";
-import MainControls from "@/lib/components/major/MainControls";
+import MainControls from "@/lib/components/MainControls";
 import ColumnIcon from "@/lib/components/ColumnIcon";
 import clsx from "clsx";
-import {setUserOrder} from "@/lib/utils/redux/slices/users";
+import {setAccountOrder} from "@/lib/utils/redux/slices/accounts";
 import {DndContext} from "@dnd-kit/core";
 import {SortableContext, horizontalListSortingStrategy, arrayMove} from "@dnd-kit/sortable";
 import {setColumnOrder} from "@/lib/utils/redux/slices/pages";
+import MainColumns from "@/lib/components/MainColumns";
+import {initializeColumn} from "@/lib/utils/redux/slices/memory";
 
 
 
 const App = () => {
     //@ts-ignore
-    const users = useSelector((state) => state.users);
+    const accounts = useSelector((state) => state.accounts);
     //@ts-ignore
     const pages = useSelector((state) => state.pages);
     //@ts-ignore
     const config = useSelector((state) => state.config);
 
     const dispatch = useDispatch();
-    const [currentPage, setCurrentPage] = useState(""); // PageId
     const [columnIds, setColumnIds] = useState<string[]>([]);
 
+
     useEffect(() => {
-        if (config && config.started) {
-            setCurrentPage(pages.pages.order[0]);
+        const ids = Object.keys(pages.columnDict);
+        if (ids.length > 0) {
+            dispatch(initializeColumn({__terminate:true, ids}));
         }
-    }, [config]);
+    }, []);
 
 
     useEffect(() => {
-        if (currentPage && pages && pages.pages.dict[currentPage]) {
-            setColumnIds(pages.pages.dict[currentPage].columns.filter(colId => pages.columnDict[colId]));
+        if (config.currentPage && pages && pages.pages.dict[config.currentPage]) {
+            setColumnIds(pages.pages.dict[config.currentPage].columns.filter(colId => pages.columnDict[colId]));
         }
-    }, [currentPage, pages]);
+    }, [config, pages]);
 
     function handleColumnDragEnd(event) {
         const {active, over} = event;
 
         if (over && active.id !== over.id) {
+            console.log("old", columnIds);
             const oldIndex = columnIds.indexOf(active.id);
             const newIndex = columnIds.indexOf(over.id);
 
             const result = arrayMove(columnIds, oldIndex, newIndex);
-            dispatch(setColumnOrder({order:result, pageId: currentPage}));
+            console.log("new", result);
+            dispatch(setColumnOrder({order:result, pageId: config.currentPage}));
         }
     }
 
@@ -91,24 +96,24 @@ const App = () => {
 
 
 
-        <RefreshHandler currentPage={currentPage}/>
+        <RefreshHandler/>
 
         <div className="h-screen w-full">
             {
 
-                config && !config.started && <div className="w-full h-screen grid place-items-center bg-white">
+                config && !config.currentPage && <div className="w-full h-screen grid place-items-center bg-white">
                     <div className="border border-2 border-black p-4 rounded-xl">
-                        <FormSignIn openState={!users || users.order.length === 0} orImport={true} setCurrentPage={setCurrentPage}/>
+                        <FormSignIn openState={!accounts || accounts.order.length === 0} orImport={true} />
                     </div>
                 </div>
             }
 
 
             {
-                config && config.started &&
+                config && config.currentPage &&
                 <div className="w-full h-full flex pr-2 py-2">
-                    <MainControls currentPage={currentPage} setCurrentPage={setCurrentPage} columnIds={columnIds} handleColumnDragEnd={handleColumnDragEnd}/>
-
+                    <MainControls columnIds={columnIds} handleColumnDragEnd={handleColumnDragEnd}/>
+                    <MainColumns columnIds={columnIds} handleColumnDragEnd={handleColumnDragEnd}/>
 
                 </div>
             }

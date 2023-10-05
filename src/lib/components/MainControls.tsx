@@ -12,8 +12,8 @@ import PopupGlobalSettings from "@/lib/components/popups/PopupGlobalSettings";
 import PopupColumnPickType from "@/lib/components/popups/PopupColumnPickType";
 import ColumnIcon from "@/lib/components/ColumnIcon";
 import {DndContext} from "@dnd-kit/core";
-import {SortableContext, verticalListSortingStrategy} from "@dnd-kit/sortable";
-
+import {SortableContext, useSortable, verticalListSortingStrategy} from "@dnd-kit/sortable";
+import {CSS} from '@dnd-kit/utilities';
 
 export enum PopupState {
     LOGIN,
@@ -41,9 +41,9 @@ export interface PopupUsers extends PopupConfig {
     loggedInCallback?: any
 }
 
-export default function MainControls ({currentPage, setCurrentPage, columnIds, handleColumnDragEnd}) {
+export default function MainControls ({columnIds, handleColumnDragEnd}) {
     //@ts-ignore
-    const users = useSelector((state) => state.users);
+    const accounts = useSelector((state) => state.accounts);
     //@ts-ignore
     const config = useSelector((state) => state.config);
     //@ts-ignore
@@ -54,6 +54,26 @@ export default function MainControls ({currentPage, setCurrentPage, columnIds, h
     const setPopupState = (v) => {
         console.log("set", v)
         updatePopupState(v);
+    }
+
+    const ControlDraggable = ({column}) => {
+        const {
+            attributes,
+            listeners,
+            setNodeRef,
+            transform,
+            transition,
+        } = useSortable({id: column.id});
+
+        const style = {
+            transform: CSS.Transform.toString(transform),
+            transition,
+        };
+
+        return <div ref={setNodeRef} style={style} {...attributes} {...listeners}
+                    className="border border-black rounded-full overflow-hidden w-8 h-8 shrink-0 hover:bg-black">
+            <ColumnIcon config={column}/>
+        </div>
     }
 
     return <>
@@ -84,17 +104,18 @@ export default function MainControls ({currentPage, setCurrentPage, columnIds, h
                     <div className="h-full w-full bg-gray-400" />
                 </div>
             </div>
-            
+
             <div className="flex flex-col place-items-center justify-start overflow-y-auto grow gap-2 py-2">
                 <DndContext onDragEnd={handleColumnDragEnd}>
                     <SortableContext items={columnIds} strategy={verticalListSortingStrategy}>
                     {
-                        columnIds.map(colId => {
+                        columnIds.reduce((acc,colId) => {
                             const column = pages.columnDict[colId];
-                            return <div key={colId} className="border border-black rounded-full overflow-hidden w-8 h-8 shrink-0 hover:bg-black">
-                                <ColumnIcon config={column}/>
-                            </div>
-                        })
+                            if (column) {
+                                acc.push(<ControlDraggable key={colId} column={column}/>)
+                            }
+                            return acc;
+                        }, [])
                     }
                     </SortableContext>
                 </DndContext>
@@ -108,7 +129,7 @@ export default function MainControls ({currentPage, setCurrentPage, columnIds, h
                      onClick={() => {
                          setPopupState({state:PopupState.ADD_COLUMN});
                          /*
-                         const activeUsers = Object.values(users.dict).filter(x => (x as UserData).status === UserStatusType.ACTIVE);
+                         const activeUsers = Object.values(users.dict).filter(x => (x as UserData).active);
                          switch (activeUsers.length) {
                              case 0: {
                                  // Show user list screen to force user to login
@@ -143,10 +164,10 @@ export default function MainControls ({currentPage, setCurrentPage, columnIds, h
 
                 <AvatarSelfMain
                     className="w-10 h-10 border border-black rounded-full"
-                    avatar={config.primaryDid && users.dict[config.primaryDid]?.avatar}
+                    avatar={config.primaryDid && accounts.dict[config.primaryDid]?.avatar}
                     onClick={() => {
                         console.log("click avatar");
-                        if (users.order.length === 0) {
+                        if (accounts.order.length === 0) {
                             setPopupState({state: PopupState.LOGIN});
                         } else {
                             setPopupState({state: PopupState.USERS, title: "Saved Accounts"});
