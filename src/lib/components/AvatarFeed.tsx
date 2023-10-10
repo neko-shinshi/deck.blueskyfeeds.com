@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-export default function AvatarFeed ({avatar, uri, size=70}:{avatar:string, uri:string, size:number}) {
+export default function AvatarFeed ({avatar, uri, size=70}:{avatar:string, uri:string, size?:number}) {
     return <div className="w-14 h-14 aspect-square hover:blur-xs object-contain">
         <a href={`https://bsky.app/profile/${uri.slice(5).replace("app.bsky.feed.generator", "feed")}`}>
             {

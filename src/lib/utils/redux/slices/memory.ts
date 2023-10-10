@@ -11,13 +11,13 @@ export interface MemoryState {
     firehose:{cursor: string, lastTs: number} // firehose reference
 
     posts: {[uri:string]: Post} // Saved post info
-    accounts:{[did:string]: UserData} // SAVED ACCOUNT INFO
+    userData:{[did:string]: UserData} // SAVED ACCOUNT INFO
     alert?: string
 }
 
 // don't persist this, start from scratch when first connected if main, recover from last point
 // lastTs is to make sure old fetch or collision does not spoil data
-const initialState:MemoryState = {posts:{}, columns:{}, firehose:{cursor:"", lastTs: 0}, accounts:{}};
+const initialState:MemoryState = {posts:{}, columns:{}, firehose:{cursor:"", lastTs: 0}, userData:{}};
 
 const slice = createSlice({
     name:"memory",

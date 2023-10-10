@@ -8,9 +8,8 @@ export default function PopupFormSignIn({isOpen, setOpen, initialUser=null, comp
     return <Popup
         isOpen={isOpen}
         setOpen={setOpen}
-        className={clsx("bg-white rounded-lg",
-            "px-4 pt-5 pb-4 sm:p-6",
-            "text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md sm:w-full ")}
+        className={clsx("bg-theme_dark-L0 rounded-lg p-2",
+            "text-left overflow-hidden shadow-xl transform transition-all sm:align-middle sm:max-w-md sm:w-full ")}
     >
         <FormSignIn
             openState={isOpen}

@@ -102,12 +102,10 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
             {
                 user &&
                 <div ref={setNodeRef} style={style}
-                     className={clsx(user.status.active? "bg-yellow-100" : "bg-gray-400",
-                         "flex place-items-center justify-stretch gap-1 rounded-xl border border-black overflow-hidden")}>
+                     className={clsx(user.active? "bg-transparent" : "bg-red-800",
+                         "flex place-items-center justify-stretch gap-1 rounded-xl overflow-hidden hover:bg-gray-700 p-2")}>
 
-
-                    <div className={clsx("flex place-items-center justify-stretch grow gap-1 p-1",
-                        mode === "select" && "hover:bg-yellow-300")}
+                    <div className={clsx("flex place-items-center justify-stretch grow gap-1 p-1")}
                          onClick={ () => {
                              if (user.active) {
 
@@ -121,10 +119,10 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
                              }
                          }}>
                         {
-                            mode === "menu" && <RxDragHandleDots2 className="w-5 h-5" {...attributes} {...listeners}/>
+                            mode === "menu" && <RxDragHandleDots2 className="w-5 h-5 text-theme_dark-I0" {...attributes} {...listeners}/>
                         }
 
-                        <div className="w-10 h-10 aspect-square relative border border-black rounded-full">
+                        <div className="w-8 h-8 aspect-square relative border border-theme-dark-I0 rounded-full">
                             {
                                 user?.avatar? <Image
                                     unoptimized fill
@@ -141,14 +139,14 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
 
 
                         <div className="grow">
-                            <div className="text-base font-semibold">{user?.displayName}</div>
-                            <div className="text-sm">@{user?.handle}</div>
+                            <div className="text-sm font-semibold text-theme_dark-T0">{user?.displayName}</div>
+                            <div className="text-xs text-theme_dark-T1">@{user?.handle}</div>
                         </div>
                     </div>
 
                     {
                         mode === "menu" &&
-                        <div className="flex gap-3 p-1">
+                        <div className="flex gap-2 p-1">
                             {
                                 user.active &&
                                 <div className="bg-white hover:bg-gray-100 border border-black rounded-full h-8 w-8 grid place-items-center">
@@ -212,7 +210,7 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
     return <Popup
         isOpen={isOpen}
         setOpen={setOpen}
-        className="bg-white rounded-2xl p-4 w-5/12 text-black space-y-2">
+        className="bg-theme_dark-L1 rounded-2xl py-2">
 
         <PopupConfirmation
             isOpen={!!userPopup}
@@ -220,6 +218,7 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
             title={userPopup? userPopup.title : ""}
             message=""
             yesText="Yes"
+            buttonClass="bg-red-800"
             yesCallback={ async () => {
                 if (!userPopup) {return}
 
@@ -273,7 +272,7 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
 
         {
             (mode === "select" || mode === "menu") && <>
-                <h1 className="text-center text-2xl font-extrabold text-gray-900 ">
+                <h1 className="text-center text-base font-semibold text-theme_dark-T0 p-2">
                     <span>{title}</span>
                 </h1>
                 <DndContext onDragEnd={handleDragEnd}>
@@ -291,24 +290,24 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
                 </DndContext>
                 {
                     mode === "menu" && <>
-                        <div className="bg-yellow-100 flex place-items-center justify-stretch gap-2 rounded-xl border border-black p-1 hover:bg-gray-400"
+                        <div className="flex place-items-center justify-stretch gap-2 p-2 hover:bg-gray-700"
                              onClick={() => {
                                  setInitialUser(null);
                                  setLoginOpen(true);
                              }}>
-                            <div className="w-10 h-10 aspect-square grid place-items-center border border-black rounded-full">
-                                <FaPlus className="w-5 h-5" aria-label="Add Account"/>
+                            <div className="w-8 h-8 aspect-square grid place-items-center border border-text-theme_dark-I0 rounded-full">
+                                <FaPlus className="w-5 h-5 text-theme_dark-I0" aria-label="Add Account"/>
                             </div>
 
                             <div className="grow">
-                                <div className="text-base font-bold">Add Account</div>
+                                <div className="text-sm font-semibold text-theme_dark-T0">Add Account</div>
                             </div>
                         </div>
                         <div className="flex justify-end">
-                            <div className="bg-red-100 flex place-items-center justify-stretch rounded-xl border border-black p-2 hover:bg-gray-400"
+                            <div className="bg-red-800 flex place-items-center justify-stretch rounded-xl p-2 mr-2 hover:bg-gray-400"
                                  onClick={() => setUserPopup({state: PopupState.RemoveAll, title:"Remove All Accounts and Return to Login page?"})}>
                                 <MdDeleteForever className="w-6 h-6" d/>
-                                <div className="text-base font-bold">Delete Data & Reset</div>
+                                <div className="text-sm font-bold">Delete Data & Reset</div>
                             </div>
                         </div>
                     </>

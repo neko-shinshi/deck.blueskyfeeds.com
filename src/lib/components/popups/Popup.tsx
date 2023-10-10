@@ -46,7 +46,7 @@ export default function Popup(
                 leaveFrom="opacity-100"
                 leaveTo="opacity-0"
             >
-                <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-75 transition-opacity" />
+                <Dialog.Overlay className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" />
             </Transition.Child>
 
             <div className="fixed inset-0 overflow-y-auto">

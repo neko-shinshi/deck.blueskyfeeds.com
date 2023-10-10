@@ -16,10 +16,11 @@ interface Config {
     refreshMs: RefreshTimingType
     thumbnailSize: ThumnailSize
     currentPage:string
+    showTags: boolean
+    version: number
 }
 
 export const initialState:Config = {
-
     // Globals
     colorMode: ColorMode.DARK,
     showScrollbars: true,
@@ -33,7 +34,9 @@ export const initialState:Config = {
     // Globals Defaults
     columnWidth: 21,
     refreshMs: RefreshTimingType["1m"],
-    thumbnailSize: ThumnailSize.LARGE
+    thumbnailSize: ThumnailSize.LARGE,
+    showTags: true,
+    version: 1,
 };
 
 const slice = createSlice({

@@ -70,8 +70,9 @@ export default function MainControls ({columnIds, handleColumnDragEnd}) {
             transition,
         };
 
+
         return <div ref={setNodeRef} style={style} {...attributes} {...listeners}
-                    className="border border-black rounded-full overflow-hidden w-8 h-8 shrink-0 hover:bg-black">
+                    className="border border-theme_dark-I0 rounded-full overflow-hidden w-8 h-8 shrink-0 bg-theme_dark-I1 hover:bg-theme_dark-I2">
             <ColumnIcon config={column}/>
         </div>
     }
@@ -93,15 +94,15 @@ export default function MainControls ({columnIds, handleColumnDragEnd}) {
 
         <div className="w-16 flex flex-col justify-between shrink-0">
             <div className="flex flex-col place-items-center gap-2">
-                <div className="w-12 h-12 bg-gray-900 hover:bg-gray-500 rounded-full border border-black grid place-items-center"
+                <div className="w-12 h-12  bg-theme_dark-I1 hover:bg-theme_dark-I2 rounded-full border border-theme_dark-I0 grid place-items-center"
                 >
-                    <LuMessageSquarePlus className="w-6 h-6" aria-label="New Post"/>
+                    <LuMessageSquarePlus className="w-6 h-6 text-theme_dark-I0" aria-label="New Post"/>
                 </div>
-                <div className="w-12 h-12 bg-gray-900 hover:bg-gray-500 rounded-full border border-black grid place-items-center">
-                    <BiSearch className="w-6 h-6" aria-label="Search"/>
+                <div className="w-12 h-12 bg-theme_dark-I1 hover:bg-theme_dark-I2 rounded-full border border-theme_dark-I0 grid place-items-center">
+                    <BiSearch className="w-6 h-6 text-theme_dark-I0" aria-label="Search"/>
                 </div>
                 <div className="px-2 h-0.5 w-full">
-                    <div className="h-full w-full bg-gray-400" />
+                    <div className="h-full w-full bg-theme_dark-I0" />
                 </div>
             </div>
 
@@ -123,9 +124,9 @@ export default function MainControls ({columnIds, handleColumnDragEnd}) {
 
             <div className="flex flex-col place-items-center mb-4 gap-2">
                 <div className="px-2 h-0.5 w-full">
-                    <div className="h-full w-full bg-gray-400" />
+                    <div className="h-full w-full bg-theme_dark-I0" />
                 </div>
-                <div className="w-10 h-10 bg-gray-900 hover:bg-gray-500 rounded-full border border-black grid place-items-center"
+                <div className="w-10 h-10 bg-theme_dark-I1 hover:bg-theme_dark-I2 rounded-full border border-theme_dark_I0 grid place-items-center"
                      onClick={() => {
                          setPopupState({state:PopupState.ADD_COLUMN});
                          /*
@@ -152,18 +153,18 @@ export default function MainControls ({columnIds, handleColumnDragEnd}) {
                          }*/
                      }}
                 >
-                    <FaPlus className="w-4 h-4" aria-label="Add Column"/>
+                    <FaPlus className="w-4 h-4 text-theme_dark-I0" aria-label="Add Column"/>
                 </div>
 
                 <div className="w-full h-[1rem]"/>
 
-                <div className="w-10 h-10 bg-gray-900 hover:bg-gray-500 rounded-full border border-black grid place-items-center"
+                <div className="w-10 h-10 bg-theme_dark-I1 hover:bg-theme_dark-I2 rounded-full border border-theme_dark_I0 grid place-items-center"
                      onClick={() => setPopupState({state: PopupState.SETTINGS})}>
-                    <BsFillGearFill className="w-6 h-6" aria-label="Settings"/>
+                    <BsFillGearFill className="w-6 h-6 text-theme_dark-I0" aria-label="Settings"/>
                 </div>
 
                 <AvatarSelfMain
-                    className="w-10 h-10 border border-black rounded-full"
+                    className="w-10 h-10 border border-theme_dark_I0 rounded-full"
                     avatar={config.primaryDid && accounts.dict[config.primaryDid]?.avatar}
                     onClick={() => {
                         console.log("click avatar");
@@ -176,14 +177,14 @@ export default function MainControls ({columnIds, handleColumnDragEnd}) {
 
                 <div className="text-2xs">v0.0.1</div>
 
-                <a className="w-10 h-10 bg-gray-900 hover:bg-gray-500 rounded-full border border-black relative" href="https://ko-fi.com/anianimalsmoe" target="_blank" rel="noreferrer">
+                <a className="w-10 h-10 bg-theme_dark-I1 hover:bg-theme_dark-I2 rounded-full border border-theme_dark_I0 relative" href="https://ko-fi.com/anianimalsmoe" target="_blank" rel="noreferrer">
                     <Image unoptimized fill alt="ko-fi icon" src="/ko-fi off-center.png"/>
                 </a>
             </div>
         </div>
 
         <div className="py-0.5 h-full w-0.5 mr-1">
-            <div className="h-full w-full bg-gray-100" />
+            <div className="h-full w-full bg-theme_dark-I0 pr-0.5" />
         </div>
     </>
 }

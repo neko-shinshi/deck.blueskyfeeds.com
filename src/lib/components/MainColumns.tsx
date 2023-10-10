@@ -1,23 +1,24 @@
-import ColumnIcon from "@/lib/components/ColumnIcon";
 import {SortableContext, useSortable, horizontalListSortingStrategy} from "@dnd-kit/sortable";
 import {useSelector} from "react-redux";
-import {DndContext} from "@dnd-kit/core";
-import {useEffect, useState} from "react";
+import {DndContext, DragOverlay} from "@dnd-kit/core";
 import clsx from "clsx";
 import {CSS} from '@dnd-kit/utilities';
-import {RxDragHandleDots2} from "react-icons/rx";
-import {BsFillGearFill} from "react-icons/bs";
+import ColumnPosts from "@/lib/components/column/ColumnPosts"
+import {useEffect, useState} from "react";
+import ColumnThread from "@/lib/components/column/ColumnThread";
 
-const mapping = {
-
-}
 
 
 export default function MainColumns ({columnIds, handleColumnDragEnd}) {
     //@ts-ignore
     const pages = useSelector((state) => state.pages);
+    //@ts-ignore
+    const accounts = useSelector((state) => state.accounts);
+    //@ts-ignore
+    const memory = useSelector((state) => state.memory);
 
-    const ControlDraggable = ({column, i}) => {
+    const [draggingId, setDraggingId] = useState("");
+    const ControlDraggable = ({column, i, dragging=false}) => {
         const {
             attributes,
             listeners,
@@ -31,32 +32,34 @@ export default function MainColumns ({columnIds, handleColumnDragEnd}) {
             transition,
         };
 
+
         return <div ref={setNodeRef} style={style}
-                    className={clsx(i+1 < columnIds.length? "snap-start" : "snap-end", "shrink-0 h-full",`border border-black overflow-hidden w-[21rem]`)}>
-            <div className="h-[3rem] bg-red-800 flex place-items-center gap-2 justify-between">
-                <div className="flex place-items-center h-full gap-1 overflow-hidden">
-                    <RxDragHandleDots2 className="w-8 h-full p-1 hover:border border-black shrink-0" {...attributes} {...listeners}/>
-                    <div className="w-8 h-8 border border-black rounded-full shrink-0">
-                        <ColumnIcon config={column}/>
-                    </div>
+                    className={clsx(i+1 < columnIds.length? "snap-start" : "snap-end", "shrink-0 h-full",`overflow-hidden w-[21rem]`,
+                        dragging? "bg-theme_dark-L0 bg-opacity-50": (('observer' in column && !accounts.dict[column.observer].active)? "bg-red-900": "bg-transparent"))}>
+            {
+                memory.columns[column.id] && <>
+                {
+                    !memory.columns[column.id].mode && <ColumnPosts attributes={attributes} listeners={listeners} column={column}/>
+                }
+                {
+                    memory.columns[column.id].mode?.mode === "thread" && <ColumnThread thread={memory.columns[column.id].mode} column={column}/>
+                }
 
-                    <div className="line-clamp-2">{column.name}djasjd kasjlkj dlkasjkld aslkjakd saklj kjdsal dak ljk l</div>
-                </div>
-
-
-
-                <BsFillGearFill className="w-8 h-8 p-1 border border-black rounded-full mr-2 hover:bg-black shrink-0" />
-            </div>
-            <div className="flex flex-col overflow-y-hidden hover:overflow-y-auto scrollbar scrollbar-thins pr-4 hover:pr-0 h-[calc(100%-3rem)] text-black">
-            </div>
+                </>
+            }
         </div>
-
     };
 
-    return <div className="flex flex-row overflow-x-scroll scrollbar scrollbar-thin h-full gap-0.5 snap-x min-w-full">
-        <DndContext onDragEnd={handleColumnDragEnd}>
-            <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
+    const handleDragStart = (event) => {
+        setDraggingId(event.active.id);
+        console.log(event.active.id);
+    }
+    const handleDragEnd = (event) => {handleColumnDragEnd(event);}
 
+
+    return <div className="flex flex-row overflow-x-scroll scrollbar scrollbar-thin h-full gap-0.5 snap-x w-full">
+        <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+            <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
                 {
                     columnIds.reduce((acc, colId, i) => {
                         const column = pages.columnDict[colId];
@@ -67,7 +70,11 @@ export default function MainColumns ({columnIds, handleColumnDragEnd}) {
                     }, [])
                 }
             </SortableContext>
+            <DragOverlay>
+                {
+                    draggingId && <ControlDraggable column={pages.columnDict[draggingId]} i={-1} dragging={true}/>
+                }
+            </DragOverlay>
         </DndContext>
-
     </div>
 }

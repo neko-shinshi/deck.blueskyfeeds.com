@@ -2,6 +2,7 @@ import {NotificationType} from "@/lib/utils/types-constants/notification";
 import {CwType} from "@/lib/utils/types-constants/content-warning";
 import {RefreshTimingType} from "@/lib/utils/types-constants/refresh-timings";
 import {ThumnailSize} from "@/lib/utils/types-constants/thumnail-size";
+import {Post} from "@/lib/utils/types-constants/post";
 
 export interface PageOfColumns {
     name: string // for display
@@ -106,7 +107,8 @@ export interface ColumnMode {
 // Look at a thread in detail
 export interface ColumnModeThread extends ColumnMode {
     mode: "thread"
-    uri: string // selected post, search back to root and show each child up to 2 levels down
+    posts: Post[]
+    mainUri: string
 }
 
 // Look at a profile in detail

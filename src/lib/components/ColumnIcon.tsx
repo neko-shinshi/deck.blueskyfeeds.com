@@ -9,15 +9,15 @@ export default function ColumnIcon ({config}:{config:ColumnConfig}) {
 
     switch (config.type) {
         case ColumnType.NOTIFS: {
-            return <BsFillBellFill className="w-full h-full p-1"/>
+            return <BsFillBellFill className="w-full h-full p-1 text-theme_dark-I0"/>
         }
 
         case ColumnType.HOME: {
-            return <BiSolidHome className="w-full h-full p-1"/>
+            return <BiSolidHome className="w-full h-full p-1 text-theme_dark-I0"/>
         }
 
         default: {
-            return <BsListUl className="w-full h-full p-1"/>
+            return <BsListUl className="w-full h-full p-1 text-theme_dark-I0"/>
         }
     }
 

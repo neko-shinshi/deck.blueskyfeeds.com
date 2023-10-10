@@ -1,65 +1,88 @@
-// POST
-export interface Post {
-    uri: string
-    cid: string
-    authorDid: string
-    replyCount: number
-    repostCount: number
-    likeCount: number
-    textParts: TextPart[]
-    langs: string[] // Max 3
-    labels: string[]
-    parentUri: string
-    rootUri: string
-    embed: PostEmbed
-    quoteUri: string // called embed.record
-    tags: string[] // Max 8
-    postTs: number // post's timestamp
-    lastTs: number // last update timestamp
-}
 
-interface TextPart {
+export interface TextPart {
     text: string,
     facet?: PostFacet
 }
 
+export interface Post {
+    uri: string
+    cid: string // needed to like, repost etc
+    textParts?: TextPart[]
+    text: string
+    authorDid: string
+    labels: string[]
+    tags: string[] // Max 8
+    langs: string[] // Max 3
+    indexedAt: number // post's timestamp
+    lastTs: number // last update timestamp
+    replyCount: number
+    repostCount: number
+    likeCount: number
+    embed?: PostEmbed
+    reposterDid?: string
+    replyTo?: string
+}
+
 
 // FACETS
-interface PostFacet {
+export interface PostFacet {
     type: "Tag" | "Link" | "Mention",
 }
 
-interface PostFacetTag extends PostFacet {
+export interface PostFacetTag extends PostFacet {
     type: "Tag",
     tag: string
 }
 
-interface PostFacetLink extends PostFacet {
+export interface PostFacetLink extends PostFacet {
     type: "Link"
-    url: string // fetch data from here instead of trusting bluesky
+    uri: string // fetch data from here instead of trusting bluesky
 }
 
-interface PostFacetMention extends PostFacet {
+export interface PostFacetMention extends PostFacet {
     type: "Mention"
     did: string // fetch data instead of trusting bluesky
 }
 
-
 // EMBEDS
-interface PostEmbed {
-    type: "Media" | "External"
+export interface PostEmbed {
+    type: "Images" | "External" | "RecordWithMedia" | "Record"
 }
 
-interface PostEmbedMedia extends PostEmbed {
-    type: "Media"
-    url: string
-    alt: string
+export interface PostEmbedImages extends PostEmbed {
+    type: "Images"
+    images: { thumb:string, fullsize:string, alt:string }[] // Max 4
 }
 
-interface PostEmbedExternal extends PostEmbed {
+export interface PostEmbedExternal extends PostEmbed {
     type: "External"
-    url: string // fetch data from here instead of trusting bluesky, put alert if different?
+    url: string // fetch data from here instead of trusting bluesky
     title: string
     description: string
     thumb: string
+}
+
+export interface PostEmbedRecord extends PostEmbed {
+    type: "Record"
+    record: {
+        uri: string,
+        authorDid: string,
+        text: string,
+        labels: string[],
+        indexedAt: number,
+        embed?: PostEmbed
+    }
+}
+
+export interface PostEmbedRecordWithMedia extends PostEmbed {
+    type: "RecordWithMedia"
+    record: {
+        uri: string,
+        authorDid: string,
+        text: string,
+        labels: string[],
+        indexedAt: number,
+        embed?: PostEmbed
+    },
+    media: PostEmbedExternal | PostEmbedImages
 }

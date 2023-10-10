@@ -43,13 +43,13 @@ export default function PopupConfirmation(
     return <Popup
         isOpen={isOpen}
         setOpen={setOpen}>
-        <div className="bg-white rounded-xl p-4">
+        <div className="bg-theme_dark-L0 rounded-xl p-4">
             <div className="mt-3 text-center sm:mt-5">
-                <div className="text-lg leading-6 font-medium text-gray-900">
+                <div className="text-lg leading-6 font-medium text-theme_dark-T0">
                     {title}
                 </div>
                 <div className="mt-2">
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-theme_dark-T1">
                         {message}
                     </p>
                 </div>
@@ -57,14 +57,14 @@ export default function PopupConfirmation(
             <div className="mt-5 flex justify-between space-x-4">
                 <button
                     type="button"
-                    className="mt-3 w-full inline-flex justify-center rounded-md border border-2 border-black shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-black hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black sm:mt-0 sm:col-start-1 sm:text-sm"
+                    className="mt-3 w-full inline-flex justify-center rounded-md border border-2 border-black shadow-sm px-4 py-2 bg-theme_dark-L1 text-base font-medium text-theme_dark-T0 hover:bg-black hover:text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black sm:mt-0 sm:col-start-1 sm:text-sm"
                     onClick={() => setOpen(false)}
                 >
                     {noText? noText:"Cancel"}
                 </button>
                 <button
                     type="button"
-                    className={clsx(buttonClass || "bg-white text-black",
+                    className={clsx(buttonClass || "bg-theme_dark-L1 text-theme_dark-T0",
                         "mt-3 w-full inline-flex justify-center rounded-md border border-2 shadow-sm px-4 py-2 text-base font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black sm:mt-0 sm:col-start-1 sm:text-sm")}
                     onClick={() => {
                         setOpen(false);

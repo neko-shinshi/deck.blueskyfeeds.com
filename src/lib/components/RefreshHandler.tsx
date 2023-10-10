@@ -3,7 +3,7 @@ import {MemoryState, showAlert, updateMemory} from "@/lib/utils/redux/slices/mem
 import {useDispatch, useSelector} from "react-redux";
 import {store} from "@/lib/utils/redux/store";
 import {
-    ColumnConfig,
+    ColumnConfig, ColumnFeed,
     ColumnHome,
     ColumnNotifications,
     ColumnType,
@@ -11,6 +11,8 @@ import {
 } from "@/lib/utils/types-constants/column";
 import {getAgent} from "@/lib/utils/bsky";
 import {logOut} from "@/lib/utils/redux/slices/accounts";
+import {getTbdAuthors, processFeed} from "@/lib/utils/bsky-feed";
+import {UserData} from "@/lib/utils/types-constants/user-data";
 
 export default function RefreshHandler({}) {
     useEffect(() => {
@@ -39,7 +41,7 @@ export default function RefreshHandler({}) {
                 case "ack": {
                     if (id === myId && inMemory) {
                         console.log("receive ack", inMemory);
-                        const {columns, posts, firehose:{cursor, lastTs}, accounts} = inMemory as MemoryState;
+                        const {columns, posts, firehose:{cursor, lastTs}, userData} = inMemory as MemoryState;
                         let command:any = {};
                         const memory = await store.getState().memory;
                         // update firehose
@@ -64,10 +66,10 @@ export default function RefreshHandler({}) {
                         }
 
                         // update account fetch
-                        for (const [did, account] of Object.entries(accounts)) {
-                            const existing = memory.accounts[did];
+                        for (const [did, account] of Object.entries(userData)) {
+                            const existing = memory.userData[did];
                             if (!existing || existing.lastTs < account.lastTs) {
-                                command[`accounts.${did}`] = account;
+                                command[`userData.${did}`] = account;
                             }
                         }
 
@@ -121,7 +123,7 @@ export default function RefreshHandler({}) {
         }, 30*1000);
 
         // Fetch messages, or ping for new messages
-        const fetchInterval = setInterval(async () => {
+        const fetchNewMessages = async () => {
             if (mainId === myId) {
                 console.log("try fetch")
                 const state = await store.getState();
@@ -143,15 +145,15 @@ export default function RefreshHandler({}) {
                 }
                 const now = new Date().getTime();
 
-                let commands = new Map<string, ColumnConfig[]>();
+                let toFetch = new Map<string, ColumnConfig[]>();
                 for (const columnId of columnIds) {
                     const col = pages.columnDict[columnId];
                     if (!col || !("refreshMs" in col)) {continue;}
                     const column = col as FetchedColumn & ColumnConfig;
                     const lastObj = memory.columns[columnId];
-
+                    console.log("column", column.type, column.id);
                     if (!lastObj || lastObj.lastTs + column.refreshMs < now) {
-                        console.log("refresh", column.name, );
+                        console.log("refresh", column.name);
                         switch (column.type) {
                             case ColumnType.NOTIFS: {
                                 const {hideUsers} = column as ColumnNotifications;
@@ -159,10 +161,10 @@ export default function RefreshHandler({}) {
                                 Object.values(accounts.dict)
                                     .filter(x => x.active && hideUsers.indexOf(x.did) < 0)
                                     .forEach(x => {
-                                        let list = commands.get(x.did);
+                                        let list = toFetch.get(x.did);
                                         if (!list) {list = [];}
                                         list.push(column);
-                                        commands.set(x.did, list);
+                                        toFetch.set(x.did, list);
                                     });
                                 break;
                             }
@@ -171,70 +173,81 @@ export default function RefreshHandler({}) {
                                 const userObj = accounts.dict[observer];
                                 console.log("home");
                                 if (userObj && userObj.active) {
-                                    let list = commands.get(observer);
+                                    let list = toFetch.get(observer);
                                     if (!list) {list = [column];}
                                     list.push(column);
-                                    commands.set(observer, list);
+                                    toFetch.set(observer, list);
                                 }
                                 break;
                             }
                         }
                     }
                 }
-                console.log("commands", commands);
-                for (let [did, columns] of commands) {
+                console.log("toFetch", toFetch);
+                let command:any = {};
+
+                for (let [did, columns] of toFetch) {
                     const userObj = accounts.dict[did];
                     if (userObj) {
+
                         console.log("user", userObj);
 
                         let pass = true;
-                        let agent = await getAgent(userObj, config.basicKey);
+                        let agent = await getAgent(userObj, config.basicKey, store.dispatch);
                         if (!agent) {
-                            agent = await getAgent(userObj, config.basicKey);
-                            if (!agent) {
-                                // dispatch logged out of user
-                                pass = false;
-                                store.dispatch(logOut({did}));
-                                store.dispatch(showAlert(`Error: ${userObj.displayName} logged out`));
-                            }
+                            console.log("agent failed to login");
+                            continue; // Skip this username
                         }
 
                         console.log("pass", pass);
                         if (pass) {
-                            const now = new Date().getTime();
                             const cols = columns as ColumnConfig[];
 
-                            let authorsFull = new Map<string, any>();
-                            let authorsPartial = new Map<string, any>();
+
+                            let authors = new Map<string, UserData>();
+                            let authorsTbd = new Set<string>();
 
                             for (const col of cols) {
                                 console.log("col", col);
+                                command[`columns.${col.id}.lastTs`] = now;
                                 switch (col.type) {
                                     case ColumnType.HOME: {
                                         try {
                                             // {cursor, limit}
-                                            const {data} = await agent.getTimeline();
-                                            const {cursor, feed} = data;
+                                            const {data: {cursor, feed}} = await agent.getTimeline();
+                                            const {uris, posts} = await processFeed(agent, authors, authorsTbd, feed);
 
-
-
-                                          //  console.log("home", data);
-                                            let o = {};
-                                          //  o[`columns.${col.id}`] = {lastTs:now, postUris:[], }
-
-                                            //store.dispatch(updateMemory({}))
-
-                                            // {feed:[], cursor:""}
+                                            for (let [key, value] of posts.entries()) {
+                                                command[`posts.${key}`] = value;
+                                            }
+                                            command[`columns.${col.id}.postUris`] = uris;
                                         } catch (e) {
                                             console.error(e);
                                         }
                                         break;
                                     }
+                                    case ColumnType.FEED: {
+                                        try {
+                                            const {uri} = col as ColumnFeed;
+                                            // {cursor, limit}
+                                            const {data:{feed, cursor}} = await agent.api.app.bsky.feed.getFeed({feed:uri});
+                                            const {uris, posts} = await processFeed(agent, authors, authorsTbd, feed);
+
+                                            for (let [key, value] of posts.entries()) {
+                                                command[`posts.${key}`] = value;
+                                            }
+                                            command[`columns.${col.id}.postUris`] = uris;
+                                        } catch (e) {
+                                            console.error(e);
+                                        }
+                                        break;
+                                    }
+
                                     case ColumnType.NOTIFS: {
                                         try {
                                             // cursor, limit, seenAt???: "datetimestring?"
-                                          //  const {data} = agent.listNotifications();
-                                          //  console.log("notifs", data);
+                                            //  const {data} = agent.listNotifications();
+                                            //  console.log("notifs", data);
 
                                         } catch (e) {
                                             console.error(e);
@@ -244,19 +257,20 @@ export default function RefreshHandler({}) {
                                 }
                             }
 
+                            await getTbdAuthors(agent, authorsTbd, authors, now, memory.userData);
+
+                            for (let [key, value] of authors.entries()) {
+                                command[`userData.${key}`] = value;
+                            }
                         }
                     }
                 }
 
-                /*
-                let o = {};
-                const path = `columns.${columnId}`;
-                o[path] = now;
-
-                store.dispatch(updateMemory(o));*/
-
+                store.dispatch(updateMemory(command));
             }
-        }, 8*1000);
+        }
+
+        const fetchInterval = setInterval(fetchNewMessages, 8*1000);
 
         // Send a heartbeat
         const sendInterval = setInterval(async () => {
@@ -273,6 +287,7 @@ export default function RefreshHandler({}) {
             if (oldMainId !== mainId) {
                 if (myId === mainId) {
                     console.log("I am main");
+                    await fetchNewMessages();
                 } else {
                     console.log("New main");
                 }
