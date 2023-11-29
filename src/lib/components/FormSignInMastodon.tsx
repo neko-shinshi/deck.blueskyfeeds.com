@@ -125,7 +125,7 @@ export default function FormSignInMastodon ({initialUser=null, completeCallback}
                 </label>
                 <div className="mt-1 relative">
                     <input
-                        placeholder="xxxx-xxxx-xxxx-xxxx"
+                        placeholder=""
                         className={clsx("pl-8 appearance-none block w-full px-3 py-2",
                             errors.password && "border-red-600",
                             "border border-2 border-gray-300 rounded-md shadow-sm placeholder-gray-400",
@@ -153,12 +153,6 @@ export default function FormSignInMastodon ({initialUser=null, completeCallback}
                 </label>
                 <div className="mt-1 flex place-items-center">
                     <input
-                        onClick={() => {
-                            if (!warning) {
-                                alert("Only change this if you are on a FEDERATED server");
-                                setWarning(true);
-                            }
-                        }}
                         type="text"
                         className={clsx("appearance-none block w-full px-3 py-2",
                             errors.service && "border-red-600",
