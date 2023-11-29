@@ -6,6 +6,7 @@ import FormSignInMastodon from "@/lib/components/FormSignInMastodon";
 
 export default function LoginSwitcher ({initialMode}:{initialMode:"root"|"mastodon"|"bluesky"}) {
     const [mode, setMode] = useState<"root"|"mastodon"|"bluesky">(initialMode);
+    const [busy, setBusy] = useState(false);
 
     return <div className="border-2 border-theme_dark-I0 rounded-xl bg-theme_dark-L1 text-2xl overflow-hidden">
         {
@@ -33,7 +34,27 @@ export default function LoginSwitcher ({initialMode}:{initialMode:"root"|"mastod
 
                     <div>Use Mastodon Account</div>
                 </div>
-                <div className="flex place-items-center p-3 hover:bg-theme_dark-I1 select-none">
+                <div className="flex place-items-center p-3 hover:bg-theme_dark-I1 select-none"
+                     onClick={async ()=> {
+                         if (!busy) {
+                             setBusy(true);
+                             const response = await fetch("/api/mastodon-login", {
+                                 method: "POST",
+                                 headers: {"Content-Type": "application/json",},
+                                 body: JSON.stringify({test:"meow"})
+                             });
+                             if (response.ok) {
+                                 const result = await response.json();
+                                 console.log(result);
+                             } else {
+                                 console.log(response);
+                             }
+
+                             setBusy(false);
+                         }
+
+                     }}
+                >
                     <BsFiletypeJson  className="h-10 w-10 p-1"/>
                     <div>Recover from JSON</div>
                 </div>

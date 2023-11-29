@@ -20,7 +20,8 @@ const createApp = async (serverUrl:string) => {
 export default async function handler(req: NextRequest) {
     const {method, nextUrl:{search}} = req;
     if (method === "POST") {
-        return new NextResponse(JSON.stringify({ok:1}), {
+        const json = await req.json();
+        return new NextResponse(JSON.stringify({ok:1, ...json}), {
             status: 200,
             headers: {
                 'Content-Type': "application/json",
