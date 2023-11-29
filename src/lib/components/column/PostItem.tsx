@@ -1,9 +1,15 @@
 import {
-    Post, PostEmbedExternal,
-    PostEmbedImages, PostEmbedRecord, PostEmbedRecordWithMedia,
+    Post,
+    PostEmbedExternal,
+    PostEmbedImages,
+    PostEmbedRecord,
+    PostEmbedRecordWithMedia,
     PostFacetLink,
     PostFacetMention,
     PostFacetTag,
+    RecordFeed,
+    RecordList,
+    RecordPost,
     TextPart
 } from "@/lib/utils/types-constants/post";
 import {ColumnConfig, ObservedColumn} from "@/lib/utils/types-constants/column";
@@ -13,10 +19,13 @@ import clsx from "clsx";
 import ReactTimeAgo from 'react-time-ago'
 import {BiRepost} from "react-icons/bi";
 import {FaReply} from "react-icons/fa";
-import {getPostThread} from "@/lib/utils/bsky-feed";
+import {getPostThread} from "@/lib/utils/bsky/bsky-feed";
 import {HiOutlineChatBubbleOvalLeft} from "react-icons/hi2";
 import {AiOutlineHeart} from "react-icons/ai";
 import {FaEllipsis} from "react-icons/fa6";
+import AvatarFeed from "@/lib/components/AvatarFeed";
+import Image from "next/image";
+import {ThumbnailSize} from "@/lib/utils/types-constants/thumbnail-size";
 
 export default function PostItem({post, column, highlight=false}: {post:Post, column:ColumnConfig, highlight:boolean}) {
     //@ts-ignore
@@ -38,18 +47,24 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
         }
     }
 
+    const thumbSizeToNumber = () => {
+        switch (column.thumbnailSize) {
+            case ThumbnailSize.SMALL: return 50;
+            case ThumbnailSize.MEDIUM: return 100;
+            case ThumbnailSize.LARGE: return 200;
+        }
+    }
 
     const PostHeader = ({did, indexedAt}) => {
         const user = memory.userData[did];
-        console.log(user);
         return <div className="flex justify-between">
-            <div className="flex gap-1">
+            <div className="flex gap-1 grow-0 overflow-hidden ">
                 <div className="w-10 h-10 relative aspect-square">
-                    <AvatarUser uri={did} avatar={user.avatar}/>
+                    <AvatarUser avatar={user.avatar}/>
                 </div>
 
-                <div>
-                    <div className="text-theme_dark-T0 text-sm">{user.displayName || user.handle}</div>
+                <div className="overflow-hidden ">
+                    <div className="text-theme_dark-T0 text-sm truncate">{user.displayName || user.handle}</div>
                     <div className="hover:underline text-theme_dark-T1 text-xs">@{user.handle}</div>
                 </div>
             </div>
@@ -106,63 +121,119 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
     const PostImages = ({embedImage}: {embedImage:PostEmbedImages}) => {
         return <>
             {
-                embedImage.images.length === 1 &&
-                <img src={embedImage.images[0].thumb} alt={embedImage.images[0].alt}/>
+                column.thumbnailSize === ThumbnailSize.HIDDEN && <div>Image</div>
             }
             {
-                embedImage.images.length === 2 || embedImage.images.length === 4 &&
-                <div className="grid grid-cols-2">
+                column.thumbnailSize !== ThumbnailSize.HIDDEN && <div className="p-4">
                     {
-                        embedImage.images.map((img,i) => {
-                            return <img key={i}
-                                        className="aspect-square object-cover"
-                                        src={img.thumb}
-                                        alt={img.alt}
-                                        onClick={(evt) => {
-                                            evt.stopPropagation();
-                                            console.log("image!")
-                                        }}
-                            />
-                        })
+                        embedImage.images.length === 1 &&
+                        <Image height={thumbSizeToNumber()} width={thumbSizeToNumber()} src={embedImage.images[0].thumb} alt={embedImage.images[0].alt}/>
+
+                    }
+                    {
+                        embedImage.images.length === 2 || embedImage.images.length === 4 &&
+                        <div className={clsx("grid grid-cols-2", column.thumbnailSize===ThumbnailSize.SMALL && "w-44", column.thumbnailSize===ThumbnailSize.MEDIUM && "w-64")}>
+                            {
+                                embedImage.images.map((img,i) => {
+                                    return <Image key={i}
+                                                  height={thumbSizeToNumber()}
+                                                  width={thumbSizeToNumber()}
+                                                  className="aspect-square object-cover"
+                                                  src={img.thumb}
+                                                  alt={img.alt}
+                                                  onClick={(evt) => {
+                                                      evt.stopPropagation();
+                                                      console.log("image!")
+                                                  }}
+                                    />
+                                })
+                            }
+                        </div>
+                    }
+
+                    {
+                        embedImage.images.length === 3 &&
+                        <div className={clsx("grid grid-cols-3 grid-flow-col", column.thumbnailSize===ThumbnailSize.SMALL && "w-44", column.thumbnailSize===ThumbnailSize.MEDIUM && "w-64")}>
+                            {
+                                embedImage.images.map((img,i) => {
+                                    return <Image key={i}
+                                                  height={thumbSizeToNumber()}
+                                                  width={thumbSizeToNumber()}
+                                                className={clsx(i === 0 && embedImage.images.length === 3 && "row-span-2 col-span-2", "aspect-square object-cover w-full h-full")}
+                                                src={img.thumb}
+                                                alt={img.alt}
+                                                onClick={(evt) => {
+                                                    evt.stopPropagation();
+                                                    console.log("image!")
+                                                }}
+                                    />
+                                })
+                            }
+                        </div>
                     }
                 </div>
             }
 
-            {
-                embedImage.images.length === 3 &&
-                <div className="grid grid-cols-3 grid-flow-col">
-                    {
-                        embedImage.images.map((img,i) => {
-                            return <img key={i}
-                                        className={clsx(i === 0 && embedImage.images.length === 3 && "row-span-2 col-span-2", "aspect-square object-cover w-full h-full")}
-                                        src={img.thumb}
-                                        alt={img.alt}
-                                        onClick={(evt) => {
-                                            evt.stopPropagation();
-                                            console.log("image!")
-                                        }}
-                            />
-                        })
-                    }
-                </div>
-            }
+
+
         </>
     }
-    const PostQuote = ({embedRecord}: {embedRecord: PostEmbedRecord | PostEmbedRecordWithMedia}) => {
-        return <div className="bg-theme_dark-L2 p-2">
-            <PostHeader did={embedRecord.record.authorDid} indexedAt={embedRecord.record.indexedAt}/>
-            <div className="text-theme_dark-T0">{embedRecord.record.text}</div>
+    const PostQuote = ({record}:{record:RecordPost}) => {
+        return  <div className="bg-theme_dark-L2 p-2">
+            <PostHeader did={record.authorDid} indexedAt={record.indexedAt}/>
+            <div className="text-theme_dark-T0">{record.text}</div>
             {
-                embedRecord.record.embed && embedRecord.record.embed.type === "RecordWithMedia" && (embedRecord.record.embed as PostEmbedRecordWithMedia).media.type === "Images" &&
-                <PostImages embedImage={(embedRecord.record.embed as PostEmbedRecordWithMedia).media as PostEmbedImages}/>
+                record.embed && record.embed.type === "RecordWithMedia" && (record.embed as PostEmbedRecordWithMedia).media.type === "Images" &&
+                <PostImages embedImage={(record.embed as PostEmbedRecordWithMedia).media as PostEmbedImages}/>
             }
 
-            <PostEmbeds postItem={embedRecord.record}/>
+            <PostEmbeds postItem={record}/>
+        </div>
+    }
+    const PostFeed = ({record}:{record:RecordFeed}) => {
+        return  <div className="bg-theme_dark-L2 p-2">
+            <div className="w-8 h-8 relative">
+                <AvatarFeed avatar={record.avatar}/>
+            </div>
+            <div>{record.displayName}</div>
+            <div>{record.description}</div>
         </div>
     }
 
-    const PostExternal = ({embedExternal}: {embedExternal: PostEmbedExternal}) => {
+    const PostList = ({record}:{record:RecordList}) => {
+        return  <div className="bg-theme_dark-L2 p-2">
+            <div className="w-8 h-8 relative">
+                <AvatarUser avatar={record.avatar}/>
+            </div>
+            <div>{record.name}</div>
+            <div>{record.purpose}</div>
+        </div>
+    }
 
+
+    const PostRecord = ({embedRecord}: {embedRecord: PostEmbedRecord | PostEmbedRecordWithMedia}) => {
+        console.log("Post Record", embedRecord, embedRecord.record);
+        return <>
+            {
+                embedRecord.record.type === "Post" && <PostQuote record={embedRecord.record as RecordPost}/>
+            }
+            {
+                embedRecord.record.type === "Feed" && <PostFeed record={embedRecord.record as RecordFeed}/>
+            }
+            {
+                embedRecord.record.type === "List" && <PostList record={embedRecord.record as RecordList}/>
+            }
+            {
+                embedRecord.record.type === "Blocked" && <div>Post Blocked</div>
+            }
+            {
+                embedRecord.record.type === "Deleted" && <div>Post Deleted</div>
+            }
+        </>
+    }
+
+    const PostExternal = ({embedExternal}: {embedExternal: PostEmbedExternal}) => {
+        return <div/>
     }
 
     const PostEmbeds = ({postItem}) => {
@@ -192,11 +263,11 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
 
                     {
                         postItem.embed && postItem.embed.type === "Record" &&
-                        <PostQuote embedRecord={postItem.embed as PostEmbedRecord}/>
+                        <PostRecord embedRecord={postItem.embed as PostEmbedRecord}/>
                     }
                     {
                         postItem.embed && postItem.embed.type === "RecordWithMedia" &&
-                        <PostQuote embedRecord={postItem.embed as PostEmbedRecordWithMedia}/>
+                        <PostRecord embedRecord={postItem.embed as PostEmbedRecordWithMedia}/>
                     }
                 </>
             }

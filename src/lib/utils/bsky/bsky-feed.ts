@@ -11,8 +11,9 @@ import {
 } from "@/lib/utils/types-constants/post";
 import {logOut} from "@/lib/utils/redux/slices/accounts";
 import {showAlert, updateMemory} from "@/lib/utils/redux/slices/memory";
-import {getAgent} from "@/lib/utils/bsky";
+import {getAgent} from "@/lib/utils/bsky/bsky";
 import {store} from "@/lib/utils/redux/store";
+import {BskyAgent} from "@atproto/api";
 
 // Use the public search API to 'create' a feed
 export const searchPosts = async (agent, searchTerm, cursor="") => {
@@ -30,64 +31,11 @@ export const searchPosts = async (agent, searchTerm, cursor="") => {
             urlParams.offset = offset;
         }
     }
-    let url = `https://search.bsky.social/search/posts?${new URLSearchParams(urlParams)}`;
-    const res = await fetch(url);
-    if (res.status === 200) {
-        const json = await res.json();
-        const uris = json.map(x => `at://${x.user.did}/${x.tid}`);
-        const MAX_QUERY = 25;
-        let didsToSearch:any = new Set();
-        let postObjects = [];
-        for (let i = 0; i < uris.length; i += MAX_QUERY) {
-            const chunk = uris.slice(i, i + MAX_QUERY);
-            try {
-                const {data: {posts}} = await agent.getPosts({uris:chunk});
-                posts.forEach(x => {
-                    const parentUser = x.record.reply?.parent?.uri;
-                    if (parentUser) {
-                        didsToSearch.add(parentUser.split("/")[2]);
-                    }
-                    postObjects.push(x);
-                });
-            } catch (e) {
-                if (e.status === 429) {
-                    throw makeCustomException("Rate Limited", 429);
-                }
-                console.log(e);
-            }
-        }
 
-        didsToSearch = [...didsToSearch];
-        let authorMap = new Map();
-        for (let i = 0; i < didsToSearch.length; i += MAX_QUERY) {
-            const chunk = didsToSearch.slice(i, i + MAX_QUERY);
-            try {
-                const {data:{profiles}} = await agent.getProfiles({actors:chunk});
-                profiles.forEach(x => {
-                    const {did, handle, avatar, displayName} = x;
-                    authorMap.set(did, {did, handle, avatar, displayName});
-                });
-            } catch (e) {
-                if (e.status === 429) {
-                    throw makeCustomException("Rate Limited", 429);
-                }
-                console.log(e);
-            }
-        }
+    const {cursor:newCursor, hits_total, posts} = await agent.api.app.bsky.feed.searchPosts(urlParams);
 
-        const feed = postObjects.reduce((acc, x) => {
-            const authorId = x.author.did;
-            if (authorId && authorMap.get(authorId)) {
-                const author = authorMap.get(authorId);
-                acc.push({post: x, reply:{parent: {author}}});
-            } else {
-                acc.push({post: x});
-            }
-            return acc;
-        }, []);
-        return {data:{feed, cursor:`${feed.length + urlParams.offset??0}`}};
-    }
-    return {data:{feed:[], cursor:""}};
+
+    return {data:{feed:posts, cursor}};
 }
 
 const USER_REFRESH_BUFFER = 20 * 1000;
@@ -179,17 +127,44 @@ const processTextToParts = (fullText, facets) => {
 
 
 const processPost = async (post, now, authors, authorsTbd) => {
-    //"app.bsky.embed.record#viewRecord"
-    const processViewRecord = async (record) => {
-        // if external just get text, url, thumb, user and handle (avatar need to fetch!!)
-        const {uri:_uri, author:{did:authorDid}, value:{text}, labels, indexedAt:_indexedAt, embeds} = record;
-        const indexedAt = new Date(_indexedAt).getTime();
-        authorsTbd.add(authorDid);
-        const uri = _uri.slice(5).replaceAll("/app.bsky.feed.post/", "/post/");
-        if (Array.isArray(embeds) && embeds.length > 0 && embeds[0]["$type"] !== "app.bsky.embed.record#view") {
-            return {record:{uri, authorDid, text, labels, indexedAt, embed: await processEmbed(embeds[0])}};
-        } else {
-            return {record:{uri, authorDid, text, labels, indexedAt}};
+    const processRecord = async (record) => {
+        const {$type} = record;
+        switch ($type) {
+            case "app.bsky.embed.record#viewRecord": {
+                // if external just get text, url, thumb, user and handle (avatar need to fetch!!)
+                console.log("viewRecord", record);
+                const {uri:_uri, author:{did:authorDid}, value:{text}, labels, indexedAt:_indexedAt, embeds} = record;
+                const indexedAt = new Date(_indexedAt).getTime();
+                authorsTbd.add(authorDid);
+                const uri = _uri.slice(5).replaceAll("/app.bsky.feed.post/", "/post/");
+                if (Array.isArray(embeds) && embeds.length > 0 && embeds[0]["$type"] !== "app.bsky.embed.record#view") {
+                    return {record:{type:"Post", uri, authorDid, text, labels, indexedAt, embed: await processEmbed(embeds[0])}};
+                } else {
+                    return {record:{type:"Post", uri, authorDid, text, labels, indexedAt}};
+                }
+            }
+            case "app.bsky.embed.record#viewNotFound": {
+                return {record:{type:"Deleted"}};
+            }
+            case "app.bsky.embed.record#viewBlocked": {
+                return {record:{type:"Blocked"}};
+            }
+            case "app.bsky.feed.defs#generatorView": {
+                const {uri, avatar, description, displayName, likeCount} = record;
+                return {record:{type:"Feed", uri, avatar:avatar??"", description:description??"", displayName:displayName??"", likeCount}};
+            }
+            case "app.bsky.graph.defs#listViewBasic": {
+                const {uri,creator:{did:authorDid},name,purpose,description, descriptionFacets,avatar} = record;
+                console.log("creator", record.creator);
+                authorsTbd.add(authorDid);
+
+                const textParts = processTextToParts(description, descriptionFacets);
+
+                return {record:{type:"List", uri, authorDid, name:name??"", avatar:avatar??"",purpose:purpose??"", textParts}};
+            }
+            default: {
+                throw new Error(`Unknown Post Type - ${$type}`);
+            }
         }
     }
 
@@ -212,7 +187,7 @@ const processPost = async (post, now, authors, authorsTbd) => {
     }
 
     const processEmbed = async (embed) => {
-        const {$type, images, external, record, media}  = embed;
+        const {$type, images, external, record, media} = embed;
         switch ($type) {
             case "app.bsky.embed.images#view": {
                 return {type:"Images", images:images.map(image => {
@@ -229,12 +204,12 @@ const processPost = async (post, now, authors, authorsTbd) => {
 
             case "app.bsky.embed.record#view": {
                 return {type:"Record",
-                    ...await processViewRecord(record)} as PostEmbedRecord;
+                        ...await processRecord(record)} as PostEmbedRecord;
             }
 
             case "app.bsky.embed.recordWithMedia#view": {
                 return {type:"RecordWithMedia",
-                    ...await processViewRecord(record.record), media:await processMedia(media)};
+                    ...await processRecord(record.record), media:await processMedia(media)};
             }
 
             default: {
@@ -273,6 +248,10 @@ export const processFeed = async (agent, authors, authorsTbd, feed) => {
     for (const x of feed) {
         let postObj = await processPost(x.post, now, authors, authorsTbd);
         const uri = postObj.uri;
+        if (uris.indexOf(uri) >= 0) {
+            console.log("DUPLICATE!", uri);
+            continue;
+        }
         uris.push(uri);
         const {reply, reason} = x;
         if (reply) {
@@ -333,6 +312,7 @@ export const getPostThread = async (did, columnId, uri) => {
     const parent = state.memory.columns[columnId].mode;
     const userObj = state.accounts.dict[did];
     if (!userObj) {return false;}
+    const userData = state.memory.userData;
     let agent = await getAgent(userObj, state.config.basicKey, store.dispatch);
     if (!agent) {return false;}
 
@@ -344,7 +324,7 @@ export const getPostThread = async (did, columnId, uri) => {
 
     const {posts, mainUri} = await processThread(agent, authorsTbd, authors, thread);
     const lastTs = new Date().getTime();
-    await getTbdAuthors(agent, authorsTbd, authors, lastTs, state.accounts.userData);
+    await getTbdAuthors(agent, authorsTbd, authors, lastTs, userData);
 
     let memoryCommand:any = {};
     for (let [key, value] of authors.entries()) {

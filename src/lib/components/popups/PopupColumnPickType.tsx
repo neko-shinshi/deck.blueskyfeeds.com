@@ -6,12 +6,12 @@ import {PiUserListBold} from "react-icons/pi";
 import {BsFillBellFill, BsFillLightningChargeFill} from "react-icons/bs";
 import {FaPlus} from "react-icons/fa";
 import clsx from "clsx";
-import PopupUserList from "@/lib/components/popups/PopupUserList";
 import {useState} from "react";
 import {PopupConfig, PopupState, PopupUsers} from "@/lib/components/MainControls";
 import {addColumn} from "@/lib/utils/redux/slices/pages";
 import {useDispatch, useSelector} from "react-redux";
 import {randomUuid} from "@/lib/utils/random";
+import AvatarUser from "@/lib/components/AvatarUser";
 
 const columnData = [
     {type: ColumnType.HOME, icon: <BiSolidHome className="h-6 w-6"/>, description: "The Default Following Feed of an account"},
@@ -23,58 +23,80 @@ const columnData = [
 ];
 
 export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,setOpen:any}) {
-    const [openPopupState, setOpenPopupState] = useState<PopupConfig|false>(false);
     //@ts-ignore
     const memory = useSelector((state) => state.memory);
     //@ts-ignore
     const config = useSelector((state) => state.config);
+
+    //@ts-ignore
+    const accounts = useSelector((state) => state.accounts);
+
     const dispatch = useDispatch();
+
+    const TypeButton = ({x}) => {
+        const [expanded, setExpanded] = useState<false | ColumnType>(false);
+        return <div key={x.type}
+                    className={clsx(" p-1.5",)}
+        >
+            <div className="flex place-items-center gap-2 hover:bg-gray-700" onClick={() => {
+                if (expanded === x.type) {
+                    setExpanded(false);
+                } else {
+                    setExpanded(x.type);
+                }
+            }}>
+                <FaPlus className="h-4 w-4"/> {x.icon}
+                <div className="grow">
+                    <div className="text-sm font-semibold">{x.type.toString()}</div>
+                    <div className="text-xs">{x.description}</div>
+                </div>
+            </div>
+
+            {
+                expanded === x.type && x.type === ColumnType.HOME && <>
+                    {
+                        accounts.order.reduce((acc, did) => {
+                            const account = accounts.dict[did];
+                            if (account) {
+                                acc.push(<div
+                                    key={did}
+                                    className="bg-theme_dark-L0 hover:bg-gray-700 flex place-items-center gap-2 ml-4 p-0.5"
+                                    onClick={() => {
+                                        const homeId = randomUuid();
+                                        const b = {pageId:config.currentPage, name:`Home - ${account.displayName}`, config:{id:homeId, type:ColumnType.HOME, observer: did}, defaults: config};
+                                        dispatch(addColumn(b));
+                                        setOpen(false);
+                                    }}
+                                >
+                                    <div className="w-6 h-6 relative aspect-square">
+                                        <AvatarUser avatar={account.avatar}/>
+                                    </div>
+                                    <div>
+                                        <div className="text-sm text-theme_dark-T0">{account.displayName}</div>
+                                        <div className="text-xs text-theme_dark-T1">@{account.handle}</div>
+                                    </div>
+                                </div>)
+                            }
+
+                            return acc;
+                        }, [])
+                    }
+                </>
+            }
+        </div>
+    }
+
 
     return <Popup
         isOpen={isOpen}
         setOpen={setOpen}
         className="bg-theme_dark-L1 rounded-2xl text-black text-theme_dark-T1">
-        <PopupUserList
-            isOpen={openPopupState && openPopupState.state === PopupState.USERS}
-            setOpen={setOpenPopupState}
-            popupConfig={openPopupState && openPopupState.state === PopupState.USERS && openPopupState as PopupUsers}/>
         <h1 className="text-center text-base font-semibold text-theme_dark-T0 p-2">
             <span>Choose a Column Type to Add</span>
         </h1>
         <div>
             {
-                columnData.map((x,i) =>
-                    <div key={x.type}
-                         className={clsx(
-                             "flex place-items-center gap-2 hover:bg-gray-700 p-1.5",
-                         )}
-                         onClick={() => {
-                             switch (x.type) {
-                                 case ColumnType.HOME: {
-                                     setOpenPopupState({
-                                         state: PopupState.USERS,
-                                         title:"Select an Account to use with this Feed",
-                                         selectCallback:(did) => {
-                                             const homeId = randomUuid();
-                                             const b = {pageId:config.currentPage, config:{id:homeId, type:ColumnType.HOME, observer: did}, defaults: config};
-                                             console.log("b", b)
-                                             dispatch(addColumn(b));
-                                             setOpenPopupState(false);
-                                         }} as PopupUsers)
-                                     break;
-                                 }
-                                 case ColumnType.FEED: {
-
-                                 }
-                             }
-                         }}
-                    >
-                        <FaPlus className="h-4 w-4"/> {x.icon}
-                        <div className="grow">
-                            <div className="text-sm font-semibold">{x.type.toString()}</div>
-                            <div className="text-xs">{x.description}</div>
-                        </div>
-                    </div>)
+                columnData.map((x,i) => <TypeButton key={x.type} x={x}/>)
             }
         </div>
 

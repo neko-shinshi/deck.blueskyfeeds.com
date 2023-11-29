@@ -21,11 +21,11 @@ import {CSS} from '@dnd-kit/utilities';
 import {RxDragHandleDots2} from "react-icons/rx";
 import PopupConfirmation from "@/lib/components/popups/PopupConfirmation";
 import {BiLogInCircle} from "react-icons/bi";
-import PopupFormSignIn from "@/lib/components/popups/PopupFormSignIn";
+import PopupFormSignInBluesky from "@/lib/components/popups/PopupFormSignInBluesky";
 import {makeInitialState as makePageInitialState, resetPages} from "@/lib/utils/redux/slices/pages";
 import {resetMemory} from "@/lib/utils/redux/slices/memory";
 import {PopupUsers} from "@/lib/components/MainControls";
-import {Account} from "@/lib/utils/types-constants/user-data";
+import {BlueskyAccount} from "@/lib/utils/types-constants/user-data";
 
 enum PopupState {
     Logout,
@@ -48,8 +48,8 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
     const [userIds, setUserIds] = useState<string[]>([]);
     const [mode, setMode] = useState<"menu"|"select"|"view">("select");
     const [title, setTitle] = useState("");
-    const [loginOpen, setLoginOpen] = useState(false);
-    const [initialUser, setInitialUser] = useState<Account>(null);
+    const [loginOpen, setLoginOpen] = useState<false|"bluesky"|"mastodon">(false);
+    const [initialUser, setInitialUser] = useState<BlueskyAccount>(null);
     const [userPopup, setUserPopup] = useState<false|PopupConfig>(false);
 
     useEffect(() => {
@@ -187,7 +187,7 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
                                     <div className="bg-white hover:bg-gray-100 border border-black rounded-full h-8 w-8 grid place-items-center"
                                          onClick={() => {
                                              setInitialUser(user);
-                                             setLoginOpen(true);
+                                             setLoginOpen("bluesky");
                                          }}
                                     >
                                         <BiLogInCircle className="w-5 h-5 text-green-500"/>
@@ -225,7 +225,7 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
                 const did = userPopup.did
                 if (userPopup.state !== PopupState.RemoveAll && config.primaryDid === did) {
                     // Choose a new primary randomly
-                    const remainingUsers = Object.values(accounts.dict).filter(x => (x as Account).active && (x as Account).did !== did) as Account[];
+                    const remainingUsers = Object.values(accounts.dict).filter(x => (x as BlueskyAccount).active && (x as BlueskyAccount).did !== did) as BlueskyAccount[];
                     if (remainingUsers.length === 0) {
                         console.log("no users");
                         dispatch(setConfigValue({primaryDid: ""}));
@@ -254,8 +254,8 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
                 }
             }}/>
 
-        <PopupFormSignIn
-            isOpen={loginOpen}
+        <PopupFormSignInBluesky
+            isOpen={loginOpen==="bluesky"}
             setOpen={setLoginOpen}
             initialUser={initialUser}
             completeCallback={() => {
@@ -293,7 +293,7 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
                         <div className="flex place-items-center justify-stretch gap-2 p-2 hover:bg-gray-700"
                              onClick={() => {
                                  setInitialUser(null);
-                                 setLoginOpen(true);
+                                 setLoginOpen("bluesky");
                              }}>
                             <div className="w-8 h-8 aspect-square grid place-items-center border border-text-theme_dark-I0 rounded-full">
                                 <FaPlus className="w-5 h-5 text-theme_dark-I0" aria-label="Add Account"/>

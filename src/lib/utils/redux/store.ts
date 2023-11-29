@@ -3,7 +3,7 @@ import { persistReducer, persistStore } from 'redux-persist';
 import storage from "redux-persist/lib/storage";
 import config from "@/lib/utils/redux/slices/config";
 import pages from "@/lib/utils/redux/slices/pages";
-import {Account} from "@/lib/utils/types-constants/user-data";
+import {BlueskyAccount} from "@/lib/utils/types-constants/user-data";
 import memory from "@/lib/utils/redux/slices/memory";
 import {combineReducers} from "redux";
 import thunk from 'redux-thunk';
@@ -50,7 +50,7 @@ export const exportJSON = async () => {
     delete state.memory;
     delete state._persist;
 
-    let userDict = state.accounts.dict as {[did:string]: Account};
+    let userDict = state.accounts.dict as {[did:string]: BlueskyAccount};
     Object.values(userDict).forEach(user => {
         userDict[user.did] = {
             ...user,

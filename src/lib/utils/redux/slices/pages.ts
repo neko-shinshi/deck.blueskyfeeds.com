@@ -40,7 +40,7 @@ const slice = createSlice({
     initialState,
     reducers:{
         addColumn: (state, action) => {
-            const {pageId, config, defaults} = action.payload;
+            const {pageId, config, defaults, name} = action.payload;
             const {id, type} = config as InColumn;
 
             let newColumn: ColumnConfig;
@@ -48,11 +48,10 @@ const slice = createSlice({
                 case ColumnType.HOME: {
                     const {observer} = config as InHome;
                     const column:ColumnHome = {
-                        name: "Home",
+                        name,
                         id, type,
                         observer,
                         active: true,
-                        columns: 1,
                         refreshMs: defaults.refreshMs,
                         thumbnailSize: defaults.thumbnailSize,
                         width: defaults.columnWidth,
@@ -63,12 +62,11 @@ const slice = createSlice({
                 }
                 case ColumnType.NOTIFS: {
                     const column:ColumnNotifications = {
-                        name: "Notifications",
+                        name,
                         id, type,
                         allowedTypes: ALL_NOTIFICATION_TYPES,
                         hideUsers: [],
                         active: true,
-                        columns: 1,
                         refreshMs: defaults.refreshMs,
                         thumbnailSize: defaults.thumbnailSize,
                         width: defaults.columnWidth,
@@ -85,14 +83,12 @@ const slice = createSlice({
                 }
                 case ColumnType.FIREHOSE: {
                     const column: ColumnFirehose = {
-                        name: "Firehose",
+                        name,
                         id, type,
                         active: true,
                         icon: "",
                         keywords: [],
-                        showReplies: false,
                         users: [],
-                        columns: 1,
                         thumbnailSize: defaults.thumbnailSize,
                         width: defaults.columnWidth
                     }
@@ -123,12 +119,11 @@ const slice = createSlice({
             state.pages.dict[pageId].columns = order;
         },
         updateColumn: (state, action) => {
-            let {columnId, columnUpdate} = action.payload;
-            //state.columnDict[columnId];
-
+            let {columnId, key, val} = action.payload;
+            state.columnDict[columnId][key] = val;
         },
         removeColumn: (state, action) => {
-            const { columnId} = action.payload;
+            const {columnId} = action.payload;
         },
         resetPages: (state, action) => {
             for (const [key, value] of Object.entries(action.payload)) {
@@ -138,5 +133,5 @@ const slice = createSlice({
     }
 });
 
-export const {addColumn, setColumnOrder, resetPages} = slice.actions
+export const {addColumn, setColumnOrder, updateColumn, removeColumn, resetPages} = slice.actions
 export default slice.reducer

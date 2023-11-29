@@ -1,6 +1,6 @@
 import Image from "next/image";
 
-export default function AvatarUser ({avatar, uri, size=70}:{avatar:string, uri:string, size?:number}) {
+export default function AvatarUser ({avatar}:{avatar:string}) {
     return <>
         {
             avatar? <Image

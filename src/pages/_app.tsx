@@ -7,6 +7,7 @@ import { PersistGate } from "redux-persist/integration/react";
 import {useEffect} from "react";
 import TimeAgo from 'javascript-time-ago'
 import en from 'javascript-time-ago/locale/en.json'
+import Image from "next/image"
 
 export default function App({ Component, pageProps: { session, ...pageProps }}: AppProps) {
     useEffect(() => {
@@ -45,7 +46,6 @@ export default function App({ Component, pageProps: { session, ...pageProps }}: 
                 <meta name="msapplication-TileColor" content="#da532c"/>
                 <meta name="theme-color" content="#1A1C1E"/>
                 <meta name="viewport" content="initial-scale=1.0, width=device-width"/>
-
                 <Component {...pageProps} />
             </PersistGate>
         </Provider>

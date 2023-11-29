@@ -62,27 +62,45 @@ export interface PostEmbedExternal extends PostEmbed {
     thumb: string
 }
 
+export interface Record {
+    type: "Post" | "Feed" | "List" | "Deleted" | "Blocked"
+    uri: string
+}
+
+export interface RecordPost extends Record {
+    type: "Post"
+    authorDid: string
+    text: string
+    labels: string[]
+    indexedAt: number
+    embed?: PostEmbed
+}
+
+export interface RecordFeed extends Record {
+    type: "Feed"
+    avatar: string
+    displayName: string
+    description: string
+    likeCount: number
+}
+
+export interface RecordList extends Record {
+    type: "List"
+    avatar: string
+    authorDid:string
+    name:string
+    purpose:string
+    textParts: TextPart[]
+}
+
+
 export interface PostEmbedRecord extends PostEmbed {
     type: "Record"
-    record: {
-        uri: string,
-        authorDid: string,
-        text: string,
-        labels: string[],
-        indexedAt: number,
-        embed?: PostEmbed
-    }
+    record: Record
 }
 
 export interface PostEmbedRecordWithMedia extends PostEmbed {
     type: "RecordWithMedia"
-    record: {
-        uri: string,
-        authorDid: string,
-        text: string,
-        labels: string[],
-        indexedAt: number,
-        embed?: PostEmbed
-    },
+    record: Record
     media: PostEmbedExternal | PostEmbedImages
 }

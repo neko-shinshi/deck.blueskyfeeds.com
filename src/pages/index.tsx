@@ -1,13 +1,17 @@
 import HeadExtended from "@/lib/components/HeadExtended";
 import {useEffect, useState} from "react";
 import {useDispatch, useSelector} from "react-redux";
-import FormSignIn from "@/lib/components/FormSignIn";
+import FormSignInBluesky from "@/lib/components/FormSignInBluesky";
 import RefreshHandler from "@/lib/components/RefreshHandler";
 import MainControls from "@/lib/components/MainControls";
 import {SortableContext, horizontalListSortingStrategy, arrayMove} from "@dnd-kit/sortable";
 import {setColumnOrder} from "@/lib/utils/redux/slices/pages";
 import MainColumns from "@/lib/components/MainColumns";
 import {initializeColumn} from "@/lib/utils/redux/slices/memory";
+import Image from "next/image";
+import {FaMastodon} from "react-icons/fa";
+import {BsFiletypeJson} from "react-icons/bs";
+import LoginSwitcher from "@/lib/components/LoginSwitcher";
 
 
 
@@ -58,13 +62,11 @@ const App = () => {
 
         <RefreshHandler/>
 
-        <div className="h-screen w-full text-theme_dark-T0 bg-theme_dark-L0">
+        <div className="h-screen w-full bg-cover bg-center bg-[url('https://files.blueskyfeeds.com/sky.webp')]">
             {
 
-                config && !config.currentPage && <div className="w-full h-screen grid place-items-center bg-white">
-                    <div className="border border-2 border-black p-4 rounded-xl">
-                        <FormSignIn openState={!accounts || accounts.order.length === 0} orImport={true} />
-                    </div>
+                config && !config.currentPage && <div className="w-full h-screen grid place-items-center">
+                    <LoginSwitcher initialMode="root"/>
                 </div>
             }
 
@@ -78,6 +80,7 @@ const App = () => {
 
                 </div>
             }
+
         </div>
     </>
 

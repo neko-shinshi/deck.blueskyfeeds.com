@@ -2,7 +2,7 @@ import {createSlice} from '@reduxjs/toolkit'
 import {FontSize} from "@/lib/utils/types-constants/font-size";
 import {ColorMode} from "@/lib/utils/types-constants/color-mode";
 import {RefreshTimingType} from "@/lib/utils/types-constants/refresh-timings";
-import {ThumnailSize} from "@/lib/utils/types-constants/thumnail-size";
+import {ThumbnailSize} from "@/lib/utils/types-constants/thumbnail-size";
 
 interface Config {
     colorMode: ColorMode
@@ -14,8 +14,8 @@ interface Config {
     basicKey: string
     columnWidth: number
     refreshMs: RefreshTimingType
-    thumbnailSize: ThumnailSize
-    currentPage:string
+    thumbnailSize: ThumbnailSize
+    currentPage:string // When updating this to switch pages, __terminate it so other pages not affected
     showTags: boolean
     version: number
 }
@@ -34,7 +34,7 @@ export const initialState:Config = {
     // Globals Defaults
     columnWidth: 21,
     refreshMs: RefreshTimingType["1m"],
-    thumbnailSize: ThumnailSize.LARGE,
+    thumbnailSize: ThumbnailSize.LARGE,
     showTags: true,
     version: 1,
 };

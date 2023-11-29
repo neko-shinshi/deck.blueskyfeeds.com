@@ -5,7 +5,7 @@ import {LuMessageSquarePlus} from "react-icons/lu";
 import {BiSearch} from "react-icons/bi";
 import {FaPlus} from "react-icons/fa";
 import {useSelector} from "react-redux";
-import PopupFormSignIn from "@/lib/components/popups/PopupFormSignIn";
+import PopupFormSignInBluesky from "@/lib/components/popups/PopupFormSignInBluesky";
 import PopupUserList from "@/lib/components/popups/PopupUserList";
 import {useEffect, useState} from "react";
 import PopupGlobalSettings from "@/lib/components/popups/PopupGlobalSettings";
@@ -14,6 +14,7 @@ import ColumnIcon from "@/lib/components/ColumnIcon";
 import {DndContext} from "@dnd-kit/core";
 import {SortableContext, useSortable, verticalListSortingStrategy} from "@dnd-kit/sortable";
 import {CSS} from '@dnd-kit/utilities';
+import AvatarUser from "@/lib/components/AvatarUser";
 
 export enum PopupState {
     LOGIN,
@@ -72,13 +73,21 @@ export default function MainControls ({columnIds, handleColumnDragEnd}) {
 
 
         return <div ref={setNodeRef} style={style} {...attributes} {...listeners}
-                    className="border border-theme_dark-I0 rounded-full overflow-hidden w-8 h-8 shrink-0 bg-theme_dark-I1 hover:bg-theme_dark-I2">
-            <ColumnIcon config={column}/>
+                    className="w-8 h-8 shrink-0 relative">
+            <div className="h-8 w-8 absolute inset-0 bg-theme_dark-I1 hover:bg-theme_dark-I2 rounded-full border border-theme_dark-I0">
+                <ColumnIcon config={column}/>
+            </div>
+            {
+                'observer' in column &&
+                <div className="h-4 w-4 absolute -right-1 -bottom-1 border border-theme_dark-I0 rounded-full">
+                    <AvatarUser avatar={accounts.dict[column.observer].avatar}/>
+                </div>
+            }
         </div>
     }
 
     return <>
-        <PopupFormSignIn
+        <PopupFormSignInBluesky
             isOpen={popupState && popupState.state === PopupState.LOGIN}
             setOpen={setPopupState}/>
 

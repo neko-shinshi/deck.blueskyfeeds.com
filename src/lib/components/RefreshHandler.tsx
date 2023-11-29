@@ -1,17 +1,17 @@
 import {useEffect} from "react";
-import {MemoryState, showAlert, updateMemory} from "@/lib/utils/redux/slices/memory";
+import {MemoryState, updateMemory} from "@/lib/utils/redux/slices/memory";
 import {useDispatch, useSelector} from "react-redux";
 import {store} from "@/lib/utils/redux/store";
 import {
-    ColumnConfig, ColumnFeed,
+    ColumnConfig,
+    ColumnFeed,
     ColumnHome,
     ColumnNotifications,
-    ColumnType,
+    ColumnType, ColumnUsers,
     FetchedColumn
 } from "@/lib/utils/types-constants/column";
-import {getAgent} from "@/lib/utils/bsky";
-import {logOut} from "@/lib/utils/redux/slices/accounts";
-import {getTbdAuthors, processFeed} from "@/lib/utils/bsky-feed";
+import {getAgent} from "@/lib/utils/bsky/bsky";
+import {getTbdAuthors, processFeed} from "@/lib/utils/bsky/bsky-feed";
 import {UserData} from "@/lib/utils/types-constants/user-data";
 
 export default function RefreshHandler({}) {
@@ -214,7 +214,7 @@ export default function RefreshHandler({}) {
                                     case ColumnType.HOME: {
                                         try {
                                             // {cursor, limit}
-                                            const {data: {cursor, feed}} = await agent.getTimeline();
+                                            const {data: {cursor, feed}} = await agent.getTimeline({});
                                             const {uris, posts} = await processFeed(agent, authors, authorsTbd, feed);
 
                                             for (let [key, value] of posts.entries()) {
@@ -249,6 +249,22 @@ export default function RefreshHandler({}) {
                                             //  const {data} = agent.listNotifications();
                                             //  console.log("notifs", data);
 
+                                        } catch (e) {
+                                            console.error(e);
+                                        }
+                                        break;
+                                    }
+
+                                    case ColumnType.USERS: {
+                                        try {
+                                            const {uri:list} = col as ColumnUsers;
+                                            const {data:{feed, cursor}} = await agent.api.app.bsky.feed.getListFeed({list});
+                                            const {uris, posts} = await processFeed(agent, authors, authorsTbd, feed);
+
+                                            for (let [key, value] of posts.entries()) {
+                                                command[`posts.${key}`] = value;
+                                            }
+                                            command[`columns.${col.id}.postUris`] = uris;
                                         } catch (e) {
                                             console.error(e);
                                         }

@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import { getAgentLogin} from "@/lib/utils/bsky";
+import { getAgentLogin} from "@/lib/utils/bsky/bsky";
 import {BsFillInfoCircleFill} from "react-icons/bs";
 import Link from "next/link";
 import {HiAtSymbol} from "react-icons/hi";
@@ -12,12 +12,12 @@ import {encrypt, makeKey, parseKey} from "@/lib/utils/crypto";
 import {addColumn} from "@/lib/utils/redux/slices/pages";
 import {initializeColumn} from "@/lib/utils/redux/slices/memory";
 import recoverDataFromJson from "@/lib/utils/client/recoverDataFromJson";
-import {Account} from "@/lib/utils/types-constants/user-data";
+import {BlueskyAccount} from "@/lib/utils/types-constants/user-data";
 import {randomUuid} from "@/lib/utils/random";
 import {ColumnType} from "@/lib/utils/types-constants/column";
 
-export default function FormSignIn ({openState, initialUser=null, completeCallback, orImport=false}:
-{openState:boolean, initialUser?:Account, completeCallback?:any, orImport?:boolean}) {
+export default function FormSignInBluesky ({initialUser=null, completeCallback}:
+{initialUser?:BlueskyAccount, completeCallback?:any}) {
     //@ts-ignore
     const accounts = useSelector((state) => state.accounts);
     //@ts-ignore
@@ -42,18 +42,14 @@ export default function FormSignIn ({openState, initialUser=null, completeCallba
 
 
     useEffect( () => {
-        if (openState) {
-            if (!initialUser) {
-                reset({service:"bsky.social", username:""});
-            } else {
-                const {service, usernameOrEmail: username} = initialUser;
-                reset({service, username});
-            }
-            setSubmitting(false);
-        } else {
+        if (!initialUser) {
             reset({service:"bsky.social", username:""});
+        } else {
+            const {service, usernameOrEmail: username} = initialUser;
+            reset({service, username});
         }
-    }, [openState, initialUser]);
+        setSubmitting(false);
+    }, [initialUser]);
 
 
 
@@ -81,7 +77,7 @@ export default function FormSignIn ({openState, initialUser=null, completeCallba
                 const {did, handle, refreshJwt, accessJwt} = agent.session;
                 const now = new Date().getTime();
                 const {data} = await agent.getProfile({actor:did});
-                if (Object.values(accounts.dict).filter(x => (x as Account).active)) {
+                if (Object.values(accounts.dict).filter(x => (x as BlueskyAccount).active)) {
                     // This user is now the primary!
                     dispatch(setConfigValue({primaryDid: did}))
                 }
@@ -100,10 +96,10 @@ export default function FormSignIn ({openState, initialUser=null, completeCallba
                     const pageId = pages.pages.order[0];
                     const notifId = randomUuid();
                     const homeId = randomUuid();
-                    const a = {pageId, config:{id:notifId, type:ColumnType.NOTIFS}, defaults: config};
-                    console.log("a", a);
-                    const b = {pageId, config:{id:homeId, type:ColumnType.HOME, observer: did}, defaults: config};
-                    console.log("b", b)
+                    const a = {pageId, name:"Notifications",config:{id:notifId, type:ColumnType.NOTIFS}, defaults: config};
+
+                    const b = {pageId, name:`Home - ${displayName}`, config:{id:homeId, type:ColumnType.HOME, observer: did}, defaults: config};
+
                     dispatch(addColumn(a));
                     dispatch(addColumn(b));
                     dispatch(initializeColumn({ids:[notifId, homeId]}));
@@ -144,16 +140,6 @@ export default function FormSignIn ({openState, initialUser=null, completeCallba
             <h1 className="mt-3 text-center text-lg font-bold text-dark_theme-T0 ">
                 <span>Login with a Bluesky App Password</span>
             </h1>
-
-            {
-                orImport &&
-                <div className="text-blue-500 font-semibold text-center hover:underline hover:text-blue-800"
-                     onClick={() => recoverDataFromJson(dispatch)}
-                >
-                    Or Import using a JSON Backup
-                </div>
-            }
-
         </div>
 
         <form className="space-y-4" onSubmit={formHandleSubmit}>

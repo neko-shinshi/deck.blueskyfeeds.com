@@ -1,8 +1,8 @@
 import { createSlice } from '@reduxjs/toolkit'
-import {Account} from "@/lib/utils/types-constants/user-data";
+import {BlueskyAccount} from "@/lib/utils/types-constants/user-data";
 
 
-export const initialState:{order:string[], dict:{[did:string]: Account}} = {dict: {}, order:[]};
+export const initialState:{order:string[], dict:{[did:string]: BlueskyAccount}} = {dict: {}, order:[]};
 
 const slice = createSlice({
     name:"accounts",

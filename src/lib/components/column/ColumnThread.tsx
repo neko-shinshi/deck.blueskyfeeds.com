@@ -4,7 +4,7 @@ import {ColumnConfig, ColumnModeThread} from "@/lib/utils/types-constants/column
 import {BiArrowBack} from "react-icons/bi";
 import {updateMemory} from "@/lib/utils/redux/slices/memory";
 import clsx from "clsx";
-import {FaArrowTurnUp} from "react-icons/fa6";
+import {useEffect} from "react";
 
 export default function ColumnThread({thread, column}: {thread:ColumnModeThread, column:ColumnConfig}) {
     //@ts-ignore
@@ -12,6 +12,14 @@ export default function ColumnThread({thread, column}: {thread:ColumnModeThread,
     //@ts-ignore
     const config = useSelector((state) => state.config);
     const dispatch = useDispatch();
+
+    useEffect(() => {
+        if (thread && thread.mainUri) {
+            var element = document.getElementById(thread.mainUri);
+            element.scrollIntoView({behavior:"smooth", block: "center", inline:"nearest"});
+        }
+    }, [thread]);
+
     return <>
         <div className="h-[3rem] flex place-items-center gap-2 justify-start">
             <div className="w-8 h-8 p-1 border border-theme_dark-I0 rounded-full mr-2 bg-theme_dark-I1 hover:bg-theme_dark-I2 shrink-0 grid place-items-center"
@@ -43,7 +51,7 @@ export default function ColumnThread({thread, column}: {thread:ColumnModeThread,
                         offset = 1;
                     }
 
-                    acc.items.push(<div key={post.uri} className={clsx(offset === -1 && "pr-4", offset === 1 && "pl-4")}>
+                    acc.items.push(<div key={post.uri} id={post.uri} className={clsx(offset === -1 && "pr-4", offset === 1 && "pl-4")}>
                         <PostItem post={post} column={column} highlight={offset === 0}/>
                     </div>)
 

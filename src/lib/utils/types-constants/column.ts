@@ -1,7 +1,7 @@
 import {NotificationType} from "@/lib/utils/types-constants/notification";
 import {CwType} from "@/lib/utils/types-constants/content-warning";
 import {RefreshTimingType} from "@/lib/utils/types-constants/refresh-timings";
-import {ThumnailSize} from "@/lib/utils/types-constants/thumnail-size";
+import {ThumbnailSize} from "@/lib/utils/types-constants/thumbnail-size";
 import {Post} from "@/lib/utils/types-constants/post";
 
 export interface PageOfColumns {
@@ -26,11 +26,10 @@ export interface ColumnConfig {
     type: ColumnType
     name: string
     active: boolean
-    columns: number
 
     // Use global defaults first
     width: number
-    thumbnailSize: ThumnailSize
+    thumbnailSize: ThumbnailSize
     icon: string // base64 icon
 }
 
@@ -44,7 +43,6 @@ export interface ObservedColumn {
 
 export interface ColumnFirehose extends ColumnConfig {
     type: ColumnType.FIREHOSE,
-    showReplies: boolean,
     keywords: string[]
     users: string[] // filter these users
 }
@@ -71,14 +69,15 @@ export interface ColumnFeed extends ColumnConfig, ObservedColumn, FetchedColumn 
 
 export interface ColumnUsers extends ColumnConfig, ObservedColumn, FetchedColumn {
     type: ColumnType.USERS
-    uris: string[] // query these users
+    uri: string
     showReplies: boolean
     keywords: string[]
 }
 
 export interface InColumn {
     id: string
-    type: ColumnType
+    type: ColumnType,
+    name: string
 }
 
 export interface InHome extends InColumn {
@@ -100,7 +99,7 @@ export interface InColumnUsers extends InColumn {
 
 // Column Modes
 export interface ColumnMode {
-    mode:"config"|"thread"|"profile"
+    mode:"settings"|"thread"|"profile"
     parent?: ColumnMode // All modes should parent all the way to root
 }
 
