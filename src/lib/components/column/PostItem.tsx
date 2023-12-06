@@ -300,7 +300,42 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
             </div>}
             <div>
                 {
-                    post.textParts && post.textParts.map((x, i) => <PostFacet key={i} textPart={x}/>)
+                    post.textParts && post.textParts.map((textPart, i) => <>
+                        {
+                            textPart.facet?.type === "Link" &&
+                            <a key={i} href={(textPart.facet as PostFacetLink).uri} className="group"
+                               target="_blank" rel="noreferrer">
+                                <span className="text-blue-500 group-hover:underline">{textPart.text}</span>
+                                <span className="text-gray-500">({(textPart.facet as PostFacetLink).uri.split("/")[2]})</span>
+                            </a>
+                        }
+                        {
+                            textPart.facet?.type === "Mention" &&
+                            <span key={i}
+                                  className="text-blue-500 hover:underline"
+                                  onClick={(evt) => {
+                                      evt.stopPropagation();
+                                      console.log((textPart.facet as PostFacetMention).did);
+                                  }}>
+                                {textPart.text}
+                            </span>
+                        }
+                        {
+                            textPart.facet?.type === "Tag" &&
+                            <span key={i}
+                                  className="text-blue-500 hover:underline"
+                                  onClick={(evt) => {
+                                      evt.stopPropagation();
+                                      console.log((textPart.facet as PostFacetTag).tag);
+                                  }}>
+                                {textPart.text}
+                            </span>
+                        }
+                        {
+                            !textPart.facet &&
+                            <span key={i}>{textPart.text}</span>
+                        }
+                    </>)
                 }
                 {
                     !post.textParts && post.text
