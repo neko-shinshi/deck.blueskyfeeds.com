@@ -304,6 +304,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                         {
                             textPart.facet?.type === "Link" &&
                             <a key={i} href={(textPart.facet as PostFacetLink).uri} className="group"
+                               onClick={(evt) => evt.stopPropagation()}
                                target="_blank" rel="noreferrer">
                                 <span className="text-blue-500 group-hover:underline">{textPart.text}</span>
                                 <span className="text-gray-500">({(textPart.facet as PostFacetLink).uri.split("/")[2]})</span>
