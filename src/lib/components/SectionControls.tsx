@@ -42,7 +42,7 @@ export interface PopupUsers extends PopupConfig {
     loggedInCallback?: any
 }
 
-export default function MainControls ({columnIds, handleColumnDragEnd}) {
+export default function SectionControls ({columnIds, handleColumnDragEnd}) {
     //@ts-ignore
     const accounts = useSelector((state) => state.accounts);
     //@ts-ignore
@@ -174,7 +174,7 @@ export default function MainControls ({columnIds, handleColumnDragEnd}) {
 
                 <AvatarSelfMain
                     className="w-10 h-10 border border-theme_dark_I0 rounded-full"
-                    avatar={config.primaryDid && accounts.dict[config.primaryDid]?.avatar}
+                    avatar={config.primaryBlueskyDid && accounts.dict[config.primaryBlueskyDid]?.avatar}
                     onClick={() => {
                         console.log("click avatar");
                         if (accounts.order.length === 0) {

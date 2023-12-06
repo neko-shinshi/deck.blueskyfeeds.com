@@ -1,4 +1,4 @@
-import {UserData} from "@/lib/utils/types-constants/user-data";
+import {BlueskyUserData, UserData} from "@/lib/utils/types-constants/user-data";
 import {makeCustomException} from "@/lib/utils/custom-exception";
 import {
     Post,
@@ -14,6 +14,7 @@ import {showAlert, updateMemory} from "@/lib/utils/redux/slices/memory";
 import {getAgent} from "@/lib/utils/bsky/bsky";
 import {store} from "@/lib/utils/redux/store";
 import {BskyAgent} from "@atproto/api";
+import {randomUuid} from "@/lib/utils/random";
 
 // Use the public search API to 'create' a feed
 export const searchPosts = async (agent, searchTerm, cursor="") => {
@@ -132,7 +133,6 @@ const processPost = async (post, now, authors, authorsTbd) => {
         switch ($type) {
             case "app.bsky.embed.record#viewRecord": {
                 // if external just get text, url, thumb, user and handle (avatar need to fetch!!)
-                console.log("viewRecord", record);
                 const {uri:_uri, author:{did:authorDid}, value:{text}, labels, indexedAt:_indexedAt, embeds} = record;
                 const indexedAt = new Date(_indexedAt).getTime();
                 authorsTbd.add(authorDid);
@@ -155,7 +155,6 @@ const processPost = async (post, now, authors, authorsTbd) => {
             }
             case "app.bsky.graph.defs#listViewBasic": {
                 const {uri,creator:{did:authorDid},name,purpose,description, descriptionFacets,avatar} = record;
-                console.log("creator", record.creator);
                 authorsTbd.add(authorDid);
 
                 const textParts = processTextToParts(description, descriptionFacets);
@@ -277,8 +276,6 @@ export const processFeed = async (agent, authors, authorsTbd, feed) => {
 // User clicks on a thread, display it
 export const processThread = async (agent, authorsTbd, authors, thread) => {
     const now = new Date().getTime();
-
-
     const inner = async (thread) => {
         const {post, parent, replies} = thread;
         let result = [];
@@ -308,36 +305,88 @@ export const processThread = async (agent, authorsTbd, authors, thread) => {
 
 
 export const getPostThread = async (did, columnId, uri) => {
-    const state = await store.getState();
+    let state = await store.getState();
     const parent = state.memory.columns[columnId].mode;
     const userObj = state.accounts.dict[did];
     if (!userObj) {return false;}
     const userData = state.memory.userData;
-    let agent = await getAgent(userObj, state.config.basicKey, store.dispatch);
-    if (!agent) {return false;}
 
-    const {data:{thread}} = await agent.getPostThread({uri:`at://${uri.replace("/post/", "/app.bsky.feed.post/")}`});
-
-    let authors = new Map<string, UserData>();
-    let authorsTbd = new Set<string>();
-
-
-    const {posts, mainUri} = await processThread(agent, authorsTbd, authors, thread);
-    const lastTs = new Date().getTime();
-    await getTbdAuthors(agent, authorsTbd, authors, lastTs, userData);
-
+    const loadingId = randomUuid();
     let memoryCommand:any = {};
+    memoryCommand[`columns.${columnId}.mode`] = {
+        id: loadingId,
+        mode: "loading",
+        header: "Thread",
+        parent,
+    };
+    store.dispatch(updateMemory(memoryCommand));
+
+    let agent = await getAgent(userObj, state.config.basicKey);
+    if (!agent) {
+        memoryCommand[`columns.${columnId}.mode`] = parent;
+        store.dispatch(updateMemory(memoryCommand));
+        return;
+    }
+
+    let authors = new Map<string, BlueskyUserData>();
+    let authorsTbd = new Set<string>();
+    let posts, mainUri;
+    try {
+        const {data: {thread}} = await agent.getPostThread({uri: `at://${uri.replace("/post/", "/app.bsky.feed.post/")}`});
+        const {posts:_posts, mainUri:_mainUri} = await processThread(agent, authorsTbd, authors, thread);
+        posts = _posts;
+        mainUri = _mainUri;
+    } catch (e) {
+        if (e.status === 400 && e.error === "NotFound") {
+            memoryCommand[`columns.${columnId}.mode`] = parent;
+            store.dispatch(updateMemory(memoryCommand));
+            return;
+        }
+
+        console.log("status", e.status);
+        console.log("error", e.error);
+        console.log(e);
+
+        return;
+    }
+
+    // Check if parent is still the same
+    state = await store.getState(); // Get latest state
+    if (!state.memory.columns[columnId]) {
+        memoryCommand[`columns.${columnId}.mode`] = parent;
+        store.dispatch(updateMemory(memoryCommand));
+        console.log("column deleted");
+        return;
+    }
+    const newMode = state.memory.columns[columnId].mode;
+    if (!newMode || newMode.id !== loadingId) {
+        console.log("load messages cancelled");
+        memoryCommand[`columns.${columnId}.mode`] = parent;
+        store.dispatch(updateMemory(memoryCommand));
+        return; // Action was cancelled
+    }
+
+    memoryCommand = {};
     for (let [key, value] of authors.entries()) {
         memoryCommand[`userData.${key}`] = value;
     }
 
-
     memoryCommand[`columns.${columnId}.mode`] = {
+        id: randomUuid(),
         mode:"thread",
         parent,
         posts,
         mainUri
     };
 
+    store.dispatch(updateMemory(memoryCommand));
+
+    // Refresh author info
+    const lastTs = new Date().getTime();
+    await getTbdAuthors(agent, authorsTbd, authors, lastTs, userData);
+    memoryCommand = {};
+    for (let [key, value] of authors.entries()) {
+        memoryCommand[`userData.${key}`] = value;
+    }
     store.dispatch(updateMemory(memoryCommand));
 }

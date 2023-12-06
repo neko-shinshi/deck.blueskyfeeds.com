@@ -7,7 +7,7 @@ import {BsFillBellFill, BsFillLightningChargeFill} from "react-icons/bs";
 import {FaPlus} from "react-icons/fa";
 import clsx from "clsx";
 import {useState} from "react";
-import {PopupConfig, PopupState, PopupUsers} from "@/lib/components/MainControls";
+import {PopupConfig, PopupState, PopupUsers} from "@/lib/components/SectionControls";
 import {addColumn} from "@/lib/utils/redux/slices/pages";
 import {useDispatch, useSelector} from "react-redux";
 import {randomUuid} from "@/lib/utils/random";
@@ -17,9 +17,8 @@ const columnData = [
     {type: ColumnType.HOME, icon: <BiSolidHome className="h-6 w-6"/>, description: "The Default Following Feed of an account"},
     {type: ColumnType.FEED, icon: <ImFeed className="h-6 w-6"/>, description: "A saved feed, or enter the feed url / uri"},
     {type: ColumnType.NOTIFS, icon: <div className="grid place-items-center h-6 w-6"><BsFillBellFill className="h-6 w-6"/></div>, description: "Filterable notifications from your accounts"},
-    {type: ColumnType.USERS, icon: <PiUserListBold className="h-6 w-6"/>, description: "A list of users saved locally, nobody else can see this list"},
-    {type: ColumnType.SEARCH, icon: <BiSearchAlt className="h-6 w-6"/>, description: "Use the built-in search feature to find posts"},
-    {type: ColumnType.FIREHOSE, icon: <BsFillLightningChargeFill className="h-6 w-6"/>, description: "The Firehose of incoming posts, with a custom filter"},
+    {type: ColumnType.USERS, icon: <PiUserListBold className="h-6 w-6"/>, description: "A list of users from a Public Bluesky List or a Private list"},
+    {type: ColumnType.SEARCH, icon: <BiSearchAlt className="h-6 w-6"/>, description: "Use the built-in search feature to follow posts with keywords"},
 ];
 
 export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,setOpen:any}) {
@@ -55,15 +54,15 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
             {
                 expanded === x.type && x.type === ColumnType.HOME && <>
                     {
-                        accounts.order.reduce((acc, did) => {
-                            const account = accounts.dict[did];
+                        accounts.order.reduce((acc, id) => {
+                            const account = accounts.dict[id];
                             if (account) {
                                 acc.push(<div
-                                    key={did}
+                                    key={id}
                                     className="bg-theme_dark-L0 hover:bg-gray-700 flex place-items-center gap-2 ml-4 p-0.5"
                                     onClick={() => {
                                         const homeId = randomUuid();
-                                        const b = {pageId:config.currentPage, name:`Home - ${account.displayName}`, config:{id:homeId, type:ColumnType.HOME, observer: did}, defaults: config};
+                                        const b = {pageId:config.currentPage, name:`Home`, config:{id:homeId, type:ColumnType.HOME, observer: id}, defaults: config};
                                         dispatch(addColumn(b));
                                         setOpen(false);
                                     }}

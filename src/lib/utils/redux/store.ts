@@ -3,7 +3,7 @@ import { persistReducer, persistStore } from 'redux-persist';
 import storage from "redux-persist/lib/storage";
 import config from "@/lib/utils/redux/slices/config";
 import pages from "@/lib/utils/redux/slices/pages";
-import {BlueskyAccount} from "@/lib/utils/types-constants/user-data";
+import {BlueskyAccount, MastodonAccount} from "@/lib/utils/types-constants/user-data";
 import memory from "@/lib/utils/redux/slices/memory";
 import {combineReducers} from "redux";
 import thunk from 'redux-thunk';
@@ -14,19 +14,28 @@ const persistedReducer = persistReducer(
     combineReducers({config, pages, accounts, memory})
 );
 
-const SyncChannel = new BroadcastChannel("DECK_SYNC");
-SyncChannel.onmessage = async (message) => {
-    const {data} = message;
-    const action = JSON.parse(data);
-    const {type, payload} = action;
-    store.dispatch({type, payload:{...payload, __terminate: true}});
-};
+let sc:any;
+const getSyncChannel = () => {
+    if (!sc && typeof window !== 'undefined') {
+        sc = new BroadcastChannel("DECK_SYNC");
+        sc.onmessage = async (message) => {
+            const {data} = message;
+            const action = JSON.parse(data);
+            const {type, payload} = action;
+            store.dispatch({type, payload:{...payload, __terminate: true}});
+        };
+    }
+    return sc;
+}
 
 const storageSyncMiddleware = (store) => (next) => (action) => {
     try {
         if (!action.type.startsWith("persist/") && action.payload?.__terminate !== true) {
             const {type, payload} = action;
-            SyncChannel.postMessage(JSON.stringify({type, payload}));
+            const syncChannel = getSyncChannel();
+            if (syncChannel) {
+                syncChannel.postMessage(JSON.stringify({type, payload}));
+            }
         }
     } catch (e) {
        // console.error("sync", e);
@@ -50,17 +59,31 @@ export const exportJSON = async () => {
     delete state.memory;
     delete state._persist;
 
-    let userDict = state.accounts.dict as {[did:string]: BlueskyAccount};
+    let userDict = state.accounts.dict as {[id:string]: BlueskyAccount | MastodonAccount};
     Object.values(userDict).forEach(user => {
-        userDict[user.did] = {
-            ...user,
-            active:false,
-            encryptedPassword: "",
-            refreshJwt:"", accessJwt:""
-        };
+        switch (user.type) {
+            case "b": {
+                userDict[user.id] = {
+                    ...user,
+                    active:false,
+                    encryptedPassword: "",
+                    refreshJwt:"", accessJwt:""
+                };
+                break;
+            }
+            case "m": {
+                userDict[user.id] = {
+                    ...user,
+                    active:false,
+                    token:""
+                };
+                break;
+            }
+        }
+
     });
     state.config.basicKey = "";
-    state.config.primaryDid = "";
+    state.config.primaryBlueskyDid = "";
 
     return state;
 }

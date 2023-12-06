@@ -1,21 +1,15 @@
 import HeadExtended from "@/lib/components/HeadExtended";
 import {useEffect, useState} from "react";
 import {useDispatch, useSelector} from "react-redux";
-import FormSignInBluesky from "@/lib/components/FormSignInBluesky";
 import RefreshHandler from "@/lib/components/RefreshHandler";
-import MainControls from "@/lib/components/MainControls";
-import {SortableContext, horizontalListSortingStrategy, arrayMove} from "@dnd-kit/sortable";
+import SectionControls from "@/lib/components/SectionControls";
+import {arrayMove} from "@dnd-kit/sortable";
 import {setColumnOrder} from "@/lib/utils/redux/slices/pages";
-import MainColumns from "@/lib/components/MainColumns";
+import SectionColumns from "@/lib/components/SectionColumns";
 import {initializeColumn} from "@/lib/utils/redux/slices/memory";
-import Image from "next/image";
-import {FaMastodon} from "react-icons/fa";
-import {BsFiletypeJson} from "react-icons/bs";
 import LoginSwitcher from "@/lib/components/LoginSwitcher";
 
-
-
-const App = () => {
+export default function Main ({}) {
     //@ts-ignore
     const accounts = useSelector((state) => state.accounts);
     //@ts-ignore
@@ -57,15 +51,14 @@ const App = () => {
 
     return <>
         <HeadExtended
-            title="Deck by Blueskyfeeds.com"
+            title="Deck by Skyship.app"
             description="A TweetDeck alternative for BlueSky"/>
 
         <RefreshHandler/>
 
-        <div className="h-screen w-full bg-cover bg-center bg-[url('https://files.blueskyfeeds.com/sky.webp')]">
+        <div className="h-screen w-full bg-theme_dark-L0">
             {
-
-                config && !config.currentPage && <div className="w-full h-screen grid place-items-center">
+                config && !config.currentPage && <div className="w-full h-screen grid place-items-center  bg-cover bg-center bg-[url('https://files.blueskyfeeds.com/sky.webp')]">
                     <LoginSwitcher initialMode="root"/>
                 </div>
             }
@@ -74,10 +67,8 @@ const App = () => {
             {
                 config && config.currentPage &&
                 <div className="w-full h-full flex pr-2 py-2">
-                    <MainControls columnIds={columnIds} handleColumnDragEnd={handleColumnDragEnd}/>
-
-                    <MainColumns columnIds={columnIds} handleColumnDragEnd={handleColumnDragEnd}/>
-
+                    <SectionControls columnIds={columnIds} handleColumnDragEnd={handleColumnDragEnd}/>
+                    <SectionColumns columnIds={columnIds} handleColumnDragEnd={handleColumnDragEnd}/>
                 </div>
             }
 
@@ -85,5 +76,3 @@ const App = () => {
     </>
 
 }
-
-export default App;

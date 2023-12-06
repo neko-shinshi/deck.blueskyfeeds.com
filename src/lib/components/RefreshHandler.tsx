@@ -12,10 +12,13 @@ import {
 } from "@/lib/utils/types-constants/column";
 import {getAgent} from "@/lib/utils/bsky/bsky";
 import {getTbdAuthors, processFeed} from "@/lib/utils/bsky/bsky-feed";
-import {UserData} from "@/lib/utils/types-constants/user-data";
+import {BlueskyUserData, UserData} from "@/lib/utils/types-constants/user-data";
 
 export default function RefreshHandler({}) {
     useEffect(() => {
+        if (typeof window === 'undefined') {
+            return;
+        }
         let hbMap = new Map();
         const bc = new BroadcastChannel("HEARTBEAT");
         bc.onmessage = async (message) => {
@@ -41,13 +44,10 @@ export default function RefreshHandler({}) {
                 case "ack": {
                     if (id === myId && inMemory) {
                         console.log("receive ack", inMemory);
-                        const {columns, posts, firehose:{cursor, lastTs}, userData} = inMemory as MemoryState;
+                        const {columns, posts, userData} = inMemory as MemoryState;
                         let command:any = {};
                         const memory = await store.getState().memory;
-                        // update firehose
-                        if (memory.firehose.lastTs < lastTs) {
-                            command.firehose = {cursor, lastTs};
-                        }
+
 
                         // update posts
                         for (const [uri, post] of Object.entries(posts)) {
@@ -66,10 +66,10 @@ export default function RefreshHandler({}) {
                         }
 
                         // update account fetch
-                        for (const [did, account] of Object.entries(userData)) {
-                            const existing = memory.userData[did];
+                        for (const [id, account] of Object.entries(userData)) {
+                            const existing = memory.userData[id];
                             if (!existing || existing.lastTs < account.lastTs) {
-                                command[`userData.${did}`] = account;
+                                command[`userData.${id}`] = account;
                             }
                         }
 
@@ -91,48 +91,18 @@ export default function RefreshHandler({}) {
         console.log("send syn");
         bc.postMessage({type:"syn", id: myId});
 
-        // Reconnect to firehose
-        let firehose;
-        const firehoseInterval = setInterval(async () => {
-            if (mainId === myId) {
-                // Connect to firehose if enabled and not done so
-                const state = await store.getState();
-                const pages = state.pages;
-                const config = state.config;
-                const hasFirehose = [...new Set([...openPages, config.currentPage])].find(pageId => {
-                    const page = pages.pages.dict[pageId];
-                    return page && page.columns.find(y => {
-                        const col = pages.columnDict[y];
-                        return col.active && col.type === ColumnType.FIREHOSE;
-                    });
-                });
-
-                if (hasFirehose) {
-                    if (!firehose) {
-                        //firehose = new FirehoseSubscription('wss://bsky.social', signal);
-                        //firehose.run(3000);
-                    }
-                } else {
-                    if (firehose) {
-                        // stop the firehose
-                     //   controller.abort();
-                       // firehose = null;
-                    }
-                }
-            }
-        }, 30*1000);
-
         // Fetch messages, or ping for new messages
         const fetchNewMessages = async () => {
             if (mainId === myId) {
-                console.log("try fetch")
                 const state = await store.getState();
                 const pages = state.pages;
                 const accounts = state.accounts;
                 const memory = state.memory;
                 const config = state.config;
+                if (!config.currentPage) {
+                    return;
+                }
                 const pagesToUpdate = [...new Set([...openPages, config.currentPage])];
-                console.log("pages", pagesToUpdate);
 
                 // only fetch columns in pages that are open, and accounts that are logged in
 
@@ -151,7 +121,6 @@ export default function RefreshHandler({}) {
                     if (!col || !("refreshMs" in col)) {continue;}
                     const column = col as FetchedColumn & ColumnConfig;
                     const lastObj = memory.columns[columnId];
-                    console.log("column", column.type, column.id);
                     if (!lastObj || lastObj.lastTs + column.refreshMs < now) {
                         console.log("refresh", column.name);
                         switch (column.type) {
@@ -159,12 +128,12 @@ export default function RefreshHandler({}) {
                                 const {hideUsers} = column as ColumnNotifications;
                                 console.log("notifs")
                                 Object.values(accounts.dict)
-                                    .filter(x => x.active && hideUsers.indexOf(x.did) < 0)
+                                    .filter(x => x.active && hideUsers.indexOf(x.id) < 0)
                                     .forEach(x => {
-                                        let list = toFetch.get(x.did);
+                                        let list = toFetch.get(x.id);
                                         if (!list) {list = [];}
                                         list.push(column);
-                                        toFetch.set(x.did, list);
+                                        toFetch.set(x.id, list);
                                     });
                                 break;
                             }
@@ -183,17 +152,20 @@ export default function RefreshHandler({}) {
                         }
                     }
                 }
-                console.log("toFetch", toFetch);
-                let command:any = {};
 
-                for (let [did, columns] of toFetch) {
-                    const userObj = accounts.dict[did];
+                let command:any = {};
+                if (toFetch.size > 0) {
+                    console.log("toFetch", toFetch);
+                }
+
+                for (let [id, columns] of toFetch) {
+                    const userObj = accounts.dict[id];
                     if (userObj) {
 
                         console.log("user", userObj);
 
                         let pass = true;
-                        let agent = await getAgent(userObj, config.basicKey, store.dispatch);
+                        let agent = await getAgent(userObj, config.basicKey);
                         if (!agent) {
                             console.log("agent failed to login");
                             continue; // Skip this username
@@ -202,9 +174,7 @@ export default function RefreshHandler({}) {
                         console.log("pass", pass);
                         if (pass) {
                             const cols = columns as ColumnConfig[];
-
-
-                            let authors = new Map<string, UserData>();
+                            let authors = new Map<string, BlueskyUserData>();
                             let authorsTbd = new Set<string>();
 
                             for (const col of cols) {
@@ -216,11 +186,14 @@ export default function RefreshHandler({}) {
                                             // {cursor, limit}
                                             const {data: {cursor, feed}} = await agent.getTimeline({});
                                             const {uris, posts} = await processFeed(agent, authors, authorsTbd, feed);
-
                                             for (let [key, value] of posts.entries()) {
                                                 command[`posts.${key}`] = value;
                                             }
-                                            command[`columns.${col.id}.postUris`] = uris;
+                                            if (memory.columns[col.id].postUris.current.length === 0) {
+                                                command[`columns.${col.id}.postUris.current`] = uris;
+                                            } else {
+                                                command[`columns.${col.id}.postUris.pending`] = uris;
+                                            }
                                         } catch (e) {
                                             console.error(e);
                                         }
@@ -236,7 +209,11 @@ export default function RefreshHandler({}) {
                                             for (let [key, value] of posts.entries()) {
                                                 command[`posts.${key}`] = value;
                                             }
-                                            command[`columns.${col.id}.postUris`] = uris;
+                                            if (memory.columns[col.id].postUris.current.length === 0) {
+                                                command[`columns.${col.id}.postUris.current`] = uris;
+                                            } else {
+                                                command[`columns.${col.id}.postUris.pending`] = uris;
+                                            }
                                         } catch (e) {
                                             console.error(e);
                                         }
@@ -264,7 +241,11 @@ export default function RefreshHandler({}) {
                                             for (let [key, value] of posts.entries()) {
                                                 command[`posts.${key}`] = value;
                                             }
-                                            command[`columns.${col.id}.postUris`] = uris;
+                                            if (memory.columns[col.id].postUris.current.length === 0) {
+                                                command[`columns.${col.id}.postUris.current`] = uris;
+                                            } else {
+                                                command[`columns.${col.id}.postUris.pending`] = uris;
+                                            }
                                         } catch (e) {
                                             console.error(e);
                                         }
@@ -317,7 +298,6 @@ export default function RefreshHandler({}) {
 
         return () => {
             clearInterval(fetchInterval);
-            clearInterval(firehoseInterval);
             clearInterval(sendInterval);
             clearInterval(mainSelectInterval);
             bc.close();
@@ -330,14 +310,5 @@ export default function RefreshHandler({}) {
     const memory = useSelector((state) => state.memory);
     const dispatch = useDispatch();
     return <>
-        {/*
-            memory && <>
-                <button onClick={() => {
-                    dispatch(updateMemory({firehose: {cursor:"meow", lastTs: new Date().getTime()}}));
-                }}>Click Me</button>
-
-                <div>{JSON.stringify(memory)}</div>
-            </>*/
-        }
     </>
 }

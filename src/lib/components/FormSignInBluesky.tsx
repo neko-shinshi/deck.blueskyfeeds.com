@@ -79,7 +79,7 @@ export default function FormSignInBluesky ({initialUser=null, completeCallback}:
                 const {data} = await agent.getProfile({actor:did});
                 if (Object.values(accounts.dict).filter(x => (x as BlueskyAccount).active)) {
                     // This user is now the primary!
-                    dispatch(setConfigValue({primaryDid: did}))
+                    dispatch(setConfigValue({primaryBlueskyDid: did}))
                 }
                 const {displayName, avatar} = data;
                 let keyString = config.basicKey;
@@ -98,7 +98,7 @@ export default function FormSignInBluesky ({initialUser=null, completeCallback}:
                     const homeId = randomUuid();
                     const a = {pageId, name:"Notifications",config:{id:notifId, type:ColumnType.NOTIFS}, defaults: config};
 
-                    const b = {pageId, name:`Home - ${displayName}`, config:{id:homeId, type:ColumnType.HOME, observer: did}, defaults: config};
+                    const b = {pageId, name:`Home`, config:{id:homeId, type:ColumnType.HOME, observer: did}, defaults: config};
 
                     dispatch(addColumn(a));
                     dispatch(addColumn(b));
@@ -106,7 +106,9 @@ export default function FormSignInBluesky ({initialUser=null, completeCallback}:
                     dispatch(startApp({pageId}));
                 }
 
-                dispatch(addOrUpdateAccount({service, usernameOrEmail, encryptedPassword, did, displayName, avatar, handle, refreshJwt, accessJwt, lastTs:now}));
+                console.log("addOrUpdateAccount INITIAL")
+
+                dispatch(addOrUpdateAccount({service, usernameOrEmail, encryptedPassword, id:did, displayName, avatar, handle, refreshJwt, accessJwt, lastTs:now}));
 
 
                 if (completeCallback) {
@@ -154,7 +156,7 @@ export default function FormSignInBluesky ({initialUser=null, completeCallback}:
                         className={clsx("pl-8 appearance-none block w-full px-3 py-2",
                             errors.username && "border-red-600",
                             !!initialUser && "bg-gray-400",
-                            "border border-2 border-gray-300 rounded-md shadow-sm placeholder-gray-400",
+                            "border-2 border-gray-300 rounded-md shadow-sm placeholder-gray-400",
                             "focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm")}
                         {...register("username", {required: `Username or email is required`})}
                     />
@@ -180,7 +182,7 @@ export default function FormSignInBluesky ({initialUser=null, completeCallback}:
                         placeholder="xxxx-xxxx-xxxx-xxxx"
                         className={clsx("pl-8 appearance-none block w-full px-3 py-2",
                             errors.password && "border-red-600",
-                            "border border-2 border-gray-300 rounded-md shadow-sm placeholder-gray-400",
+                            "border-2 border-gray-300 rounded-md shadow-sm placeholder-gray-400",
                             "focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm")}
                         {...register("password", {
                             required: `Password is required`,
@@ -218,7 +220,7 @@ export default function FormSignInBluesky ({initialUser=null, completeCallback}:
                         type="text"
                         className={clsx("appearance-none block w-full px-3 py-2",
                             errors.service && "border-red-600",
-                            "border border-2 border-gray-300 rounded-md shadow-sm placeholder-gray-400",
+                            "border-2 border-gray-300 rounded-md shadow-sm placeholder-gray-400",
                             "focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm")}
                         {...register("service", {
                             required: `Domain is required`,
@@ -249,26 +251,7 @@ export default function FormSignInBluesky ({initialUser=null, completeCallback}:
                     }>
                     Login
                 </button>
-
-
             </div>
-
-            {
-                false &&
-                <div className="text-blue-500 font-semibold text-center hover:underline hover:text-blue-800"
-                     onClick={() => {
-                         if (pages.pages.order.length >= 1) {
-                             const pageId = pages.pages.order[0];
-                             dispatch(addColumn({pageId, config:{id:randomUuid(), type:ColumnType.FIREHOSE}, defaults: config}));
-                             //dispatch(startApp());
-                         }
-                     }}
-                >
-                    <div className="text-sm">Or see Firehose posts directly</div>
-                    <div className="text-xs">(Some features only work when signed in)</div>
-                </div>
-            }
-
         </form>
     </>
 }

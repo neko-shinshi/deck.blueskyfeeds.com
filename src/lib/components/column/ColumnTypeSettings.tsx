@@ -11,8 +11,9 @@ import {FaMinus, FaPlus} from "react-icons/fa";
 import {ThumbnailSize} from "@/lib/utils/types-constants/thumbnail-size";
 import {RiCheckboxBlankCircleLine, RiCheckboxCircleFill, RiCheckboxCircleLine} from "react-icons/ri";
 import {RefreshTimingType} from "@/lib/utils/types-constants/refresh-timings";
+import clsx from "clsx";
 
-export default function ColumnSettings ({column}:{column:ColumnConfig}) {
+export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
     //@ts-ignore
     const memory = useSelector((state) => state.memory);
     //@ts-ignore
@@ -22,6 +23,8 @@ export default function ColumnSettings ({column}:{column:ColumnConfig}) {
 
     const dispatch = useDispatch();
     const [sliderVal, setSliderVal] = useState(column.width);
+
+    const nameRef = useRef(null);
 
     const changeOrder = (diff) => {
         let columnIds = pages.pages.dict[config.currentPage].columns.filter(colId => pages.columnDict[colId]);
@@ -54,11 +57,24 @@ export default function ColumnSettings ({column}:{column:ColumnConfig}) {
             </div>
             Settings - {column.name}
         </div>
-        <div className="space-y-4 p-2">
+
+        <div className="space-y-4 p-2 bg-theme_dark-L1 rounded-md">
             <div>
                 <div>Column Name</div>
-                <div className="flex">
-                    <input type="text" className="w-full rounded-md h-6"/><button>Update</button>
+                <div className="flex place-items-cente gap-2">
+                    <input type="text"
+                           ref={nameRef}
+                           className="w-full rounded-md p-1"
+                           placeholder="New name here"/>
+                    <button type="button"
+                            className="hover:bg-theme_dark-I2 rounded-md p-0.5"
+                            onClick={() => {
+                                const name = nameRef.current.value;
+                                if (name.trim()) {
+                                    console.log(name);
+                                    dispatch(updateColumn({columnId: column.id, key:"name", val:name}));
+                                }
+                            }}>Update</button>
                 </div>
             </div>
 
@@ -150,20 +166,41 @@ export default function ColumnSettings ({column}:{column:ColumnConfig}) {
             }
 
 
-            <div className="flex justify-between p-2">
-                <div className="flex gap-2">
-                    <div className="border border-theme_dark-I0 rounded-full hover:bg-theme_dark-I2 bg-theme_dark-I1 text-theme_dark-I0"
-                         onClick={() => changeOrder(-1)}
-                    >
-                        <HiChevronLeft className="w-8 h-8"/>
-                    </div>
-                    <div className="border border-theme_dark-I0 rounded-full hover:bg-theme_dark-I2 bg-theme_dark-I1 text-theme_dark-I0"
-                         onClick={() => changeOrder(1)}
-                    >
-                        <HiChevronRight className="w-8 h-8"/>
-                    </div>
+            <div className="flex justify-between p-2 place-items-center">
+                <div className="flex gap-2 place-items-center">
+                    {
+                        (() => {
+                            let columnIds = pages.pages.dict[config.currentPage].columns.filter(colId => pages.columnDict[colId]);
+                            const oldIndex = columnIds.indexOf(column.id);
+                            if (oldIndex < 0) {
+                                return <div/>
+                            }
+
+                            return <>
+                            {
+                                oldIndex > 0 &&
+                                <div className={clsx("border border-theme_dark-I0 rounded-full text-theme_dark-I0",
+                                    "hover:bg-theme_dark-I2 bg-theme_dark-I1")}
+                                     onClick={() => changeOrder(-1)}
+                                >
+                                    <HiChevronLeft className="w-8 h-8"/>
+                                </div>
+
+                            }
+                            {
+                                oldIndex < columnIds.length - 1 &&
+                                <div className={clsx("border border-theme_dark-I0 rounded-full text-theme_dark-I0",
+                                    "hover:bg-theme_dark-I2 bg-theme_dark-I1")}
+                                     onClick={() => changeOrder(1)}
+                                >
+                                    <HiChevronRight className="w-8 h-8"/>
+                                </div>
+                            }
+                            </>
+                        })()
+                    }
                 </div>
-                <div className="flex place-items-center text-red-500 hover:text-red-600"
+                <div className="flex place-items-center text-red-500 hover:text-red-600 hover:bg-theme_dark-I2 rounded-md p-1"
                      onClick={() => {
 
                      }}

@@ -29,16 +29,8 @@ export default function HeadExtended(
             <link rel="canonical" href={path} />
             <link rel="alternate" href={path} hrefLang="en" />
 
-            <link rel="alternate" type="application/rss+xml" title="Anime Animals RSS" href="/rss.xml"/>
-            <link rel="alternate" type="application/rss+xml" title="アニメの動物 RSS" href="/rss-jp.xml"/>
-            <link rel="alternate" type="application/rss+xml" title="Anime Cats RSS" href="/rss-cat.xml"/>
-            <link rel="alternate" type="application/rss+xml" title="アニメの猫 RSS" href="/rss-cat-jp.xml"/>
-            <link rel="alternate" type="application/rss+xml" title="Anime Dogs RSS" href="/rss-dog.xml"/>
-            <link rel="alternate" type="application/rss+xml" title="アニメの犬 RSS" href="/rss-dog-jp.xml"/>
-
             <meta name="description" content={description}/>
 
-            <meta property="fb:app_id" content="566952651522356"/>
             <meta property="og:title" content={title} />
             <meta property="og:url" content={path} />
             <meta property="og:description" content={description} />

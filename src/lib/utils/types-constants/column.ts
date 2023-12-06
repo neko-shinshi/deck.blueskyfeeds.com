@@ -18,7 +18,6 @@ export enum ColumnType {
     NOTIFS = "Notifications",
     USERS = "User List",
     SEARCH = "Search",
-    FIREHOSE = "Firehose"
 }
 
 export interface ColumnConfig {
@@ -41,11 +40,6 @@ export interface ObservedColumn {
     observer: string
 }
 
-export interface ColumnFirehose extends ColumnConfig {
-    type: ColumnType.FIREHOSE,
-    keywords: string[]
-    users: string[] // filter these users
-}
 
 export interface ColumnNotifications extends ColumnConfig, FetchedColumn {
     type: ColumnType.NOTIFS
@@ -99,7 +93,8 @@ export interface InColumnUsers extends InColumn {
 
 // Column Modes
 export interface ColumnMode {
-    mode:"settings"|"thread"|"profile"
+    id: string,
+    mode:"settings"|"thread"|"profile"|"loading"
     parent?: ColumnMode // All modes should parent all the way to root
 }
 
@@ -113,8 +108,13 @@ export interface ColumnModeThread extends ColumnMode {
 // Look at a profile in detail
 export interface ColumnModeProfile extends ColumnMode {
     mode: "profile"
-    did: string // user's did
-    viewer: string // default to the column did or the primary did, or blank
+    id: string // user's did
+    viewer: string // default to the column id or the primary id, or blank
+}
+
+export interface ColumnModeLoading extends ColumnMode {
+    mode: "loading"
+    header: string
 }
 
 export const MIN_WIDTH = 10;

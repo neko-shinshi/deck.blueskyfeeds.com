@@ -39,11 +39,11 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
     const openThread = async () => {
         console.log("opening ", post.uri);
         // column observer OR primaryDid
-        const did = 'observer' in column? (column as ObservedColumn).observer : config.primaryDid;
-        if (!did) {
+        const id = 'observer' in column? (column as ObservedColumn).observer : config.primaryBlueskyDid;
+        if (!id) {
             alert("no account available to open thread");
         } else {
-            await getPostThread(did, column.id, post.uri);
+            await getPostThread(id, column.id, post.uri);
         }
     }
 
@@ -55,8 +55,8 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
         }
     }
 
-    const PostHeader = ({did, indexedAt}) => {
-        const user = memory.userData[did];
+    const PostHeader = ({id, indexedAt}) => {
+        const user = memory.userData[id];
         return <div className="flex justify-between">
             <div className="flex gap-1 grow-0 overflow-hidden ">
                 <div className="w-10 h-10 relative aspect-square">
@@ -81,13 +81,15 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                 textPart.facet && <>
                     {
                         textPart.facet.type === "Link" &&
-                        <span onClick={(evt) => {
-                            evt.stopPropagation();
-                            console.log((textPart.facet as PostFacetLink).uri);
-                        }}>
-                            <span className="text-blue-500 hover:underline">{textPart.text}</span>
+                        <a href={(textPart.facet as PostFacetLink).uri} className="group"
+                           onClick={(evt) => {
+                               const url = (textPart.facet as PostFacetLink).uri;
+                               console.log(url);
+                           }}
+                        >
+                            <span className="text-blue-500 group-hover:underline">{textPart.text}</span>
                             <span className="text-gray-500">({(textPart.facet as PostFacetLink).uri.split("/")[2]})</span>
-                        </span>
+                        </a>
                     }
                     {
                         textPart.facet.type === "Mention" &&
@@ -121,7 +123,9 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
     const PostImages = ({embedImage}: {embedImage:PostEmbedImages}) => {
         return <>
             {
-                column.thumbnailSize === ThumbnailSize.HIDDEN && <div>Image</div>
+                column.thumbnailSize === ThumbnailSize.HIDDEN && <div className="grid place-items-center">
+                    <button type="button" className="p-2 bg-theme_dark-I2 rounded-md">Image</button>
+                </div>
             }
             {
                 column.thumbnailSize !== ThumbnailSize.HIDDEN && <div className="p-4">
@@ -180,7 +184,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
     }
     const PostQuote = ({record}:{record:RecordPost}) => {
         return  <div className="bg-theme_dark-L2 p-2">
-            <PostHeader did={record.authorDid} indexedAt={record.indexedAt}/>
+            <PostHeader id={record.authorDid} indexedAt={record.indexedAt}/>
             <div className="text-theme_dark-T0">{record.text}</div>
             {
                 record.embed && record.embed.type === "RecordWithMedia" && (record.embed as PostEmbedRecordWithMedia).media.type === "Images" &&
@@ -212,7 +216,6 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
 
 
     const PostRecord = ({embedRecord}: {embedRecord: PostEmbedRecord | PostEmbedRecordWithMedia}) => {
-        console.log("Post Record", embedRecord, embedRecord.record);
         return <>
             {
                 embedRecord.record.type === "Post" && <PostQuote record={embedRecord.record as RecordPost}/>
@@ -288,7 +291,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
             </div>
         }
 
-        <PostHeader did={post.authorDid} indexedAt={post.indexedAt}/>
+        <PostHeader id={post.authorDid} indexedAt={post.indexedAt}/>
 
         <div className={clsx(config.offsetLeft && "pl-10", "text-theme_dark-T0 overflow-hidden")}>
             {post.replyTo && <div className="text-theme_dark-T1 flex place-items-center hover:underline">

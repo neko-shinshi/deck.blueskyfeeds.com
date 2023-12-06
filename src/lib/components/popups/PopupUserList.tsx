@@ -24,7 +24,7 @@ import {BiLogInCircle} from "react-icons/bi";
 import PopupFormSignInBluesky from "@/lib/components/popups/PopupFormSignInBluesky";
 import {makeInitialState as makePageInitialState, resetPages} from "@/lib/utils/redux/slices/pages";
 import {resetMemory} from "@/lib/utils/redux/slices/memory";
-import {PopupUsers} from "@/lib/components/MainControls";
+import {PopupUsers} from "@/lib/components/SectionControls";
 import {BlueskyAccount} from "@/lib/utils/types-constants/user-data";
 
 enum PopupState {
@@ -151,7 +151,7 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
                                 user.active &&
                                 <div className="bg-white hover:bg-gray-100 border border-black rounded-full h-8 w-8 grid place-items-center">
                                     {
-                                        did === config.primaryDid?
+                                        did === config.primaryBlueskyDid?
                                             <PiCrownSimpleFill
                                                 className="w-6 h-6 text-amber-500"
                                                 aria-label="Primary"/> :
@@ -159,7 +159,7 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
                                                 className="w-6 h-6 text-black hover:text-amber-500"
                                                 aria-label="Primary"
                                                 onClick={() => {
-                                                    dispatch(setConfigValue({primaryDid: did}));
+                                                    dispatch(setConfigValue({primaryBlueskyDid: did}));
                                                     alert("Primary user updated");
                                                 }}/>
                                     }
@@ -168,7 +168,7 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
 
                             {
                                 // Use the selected user to look at itself, if logged out, try the primary user
-                                config.primaryDid &&
+                                config.primaryBlueskyDid &&
                                 <div className="bg-white hover:bg-gray-100 border border-black rounded-full h-8 w-8 grid place-items-center">
                                     <BsInfo className="w-8 h-8 pb-0.5 pr-0.5 text-black" aria-label="Profile"/>
                                 </div>
@@ -223,25 +223,25 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
                 if (!userPopup) {return}
 
                 const did = userPopup.did
-                if (userPopup.state !== PopupState.RemoveAll && config.primaryDid === did) {
+                if (userPopup.state !== PopupState.RemoveAll && config.primaryBlueskyDid === did) {
                     // Choose a new primary randomly
-                    const remainingUsers = Object.values(accounts.dict).filter(x => (x as BlueskyAccount).active && (x as BlueskyAccount).did !== did) as BlueskyAccount[];
+                    const remainingUsers = Object.values(accounts.dict).filter(x => (x as BlueskyAccount).active && (x as BlueskyAccount).id !== did) as BlueskyAccount[];
                     if (remainingUsers.length === 0) {
                         console.log("no users");
-                        dispatch(setConfigValue({primaryDid: ""}));
+                        dispatch(setConfigValue({primaryBlueskyDid: ""}));
                     } else {
-                        const newPrimary = remainingUsers[Math.floor(Math.random()*remainingUsers.length)].did;
+                        const newPrimary = remainingUsers[Math.floor(Math.random()*remainingUsers.length)].id;
                         console.log("new primary", newPrimary);
-                        dispatch(setConfigValue({primaryDid: newPrimary}));
+                        dispatch(setConfigValue({primaryBlueskyDid: newPrimary}));
                     }
                 }
                 switch (userPopup.state) {
                     case PopupState.Logout: {
-                        dispatch(logOut({did}));
+                        dispatch(logOut({id:did}));
                         break;
                     }
                     case PopupState.Remove: {
-                        dispatch(removeAccount({did}));
+                        dispatch(removeAccount({id:did}));
                         break;
                     }
                     case PopupState.RemoveAll: {

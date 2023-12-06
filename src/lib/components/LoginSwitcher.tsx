@@ -38,21 +38,9 @@ export default function LoginSwitcher ({initialMode}:{initialMode:"root"|"mastod
                      onClick={async ()=> {
                          if (!busy) {
                              setBusy(true);
-                             const response = await fetch("/api/mastodon-login", {
-                                 method: "POST",
-                                 headers: {"Content-Type": "application/json",},
-                                 body: JSON.stringify({test:"meow"})
-                             });
-                             if (response.ok) {
-                                 const result = await response.json();
-                                 console.log(result);
-                             } else {
-                                 console.log(response);
-                             }
 
                              setBusy(false);
                          }
-
                      }}
                 >
                     <BsFiletypeJson  className="h-10 w-10 p-1"/>

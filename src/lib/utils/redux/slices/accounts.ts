@@ -1,55 +1,65 @@
 import { createSlice } from '@reduxjs/toolkit'
-import {BlueskyAccount} from "@/lib/utils/types-constants/user-data";
+import {BlueskyAccount, MastodonAccount} from "@/lib/utils/types-constants/user-data";
 
 
-export const initialState:{order:string[], dict:{[did:string]: BlueskyAccount}} = {dict: {}, order:[]};
+export const initialState:{order:string[], dict:{[id:string]: BlueskyAccount | MastodonAccount}} = {dict: {}, order:[]};
 
 const slice = createSlice({
     name:"accounts",
     initialState,
     reducers:{
         addOrUpdateAccount: (users, action) => {
-            const {service, usernameOrEmail, encryptedPassword, did, displayName, avatar, handle, refreshJwt, accessJwt,
-                followsCount, followersCount, postsCount, lastTs} = action.payload;
+            const {service, usernameOrEmail, encryptedPassword, id, displayName, avatar, handle, refreshJwt, accessJwt,
+                 lastTs} = action.payload;
 
-            const user = {
+            const user:BlueskyAccount = {
+                type:"b",
                 service, usernameOrEmail, encryptedPassword,
                 refreshJwt, accessJwt, avatar,
-                handle, did, displayName, active:true, followsCount, followersCount, postsCount, lastTs
+                handle, id, displayName, active:true, lastTs
             };
 
-            users.dict[did] = user;
+            users.dict[id] = user;
 
-            const index = users.order.findIndex(x => x === did);
+            const index = users.order.findIndex(x => x === id);
             if (index < 0) {
-                users.order.push(did);
+                users.order.push(id);
             }
         },
         removeAccount: (users, action) => {
-            const {did} = action.payload;
-            delete users.dict[did];
-            users.order = users.order.filter(x => x !== did);
+            const {id} = action.payload;
+            delete users.dict[id];
+            users.order = users.order.filter(x => x !== id);
         },
         logOut: (users, action) => {
-            const {did} = action.payload;
-            const user = users.dict[did];
+            const {id} = action.payload;
+            const user = users.dict[id];
             if (user) {
                 user.active = false;
-                user.encryptedPassword = "";
-                user.refreshJwt = "";
-                user.accessJwt = "";
+                switch (user.type) {
+                    case "b": {
+                        user.encryptedPassword = "";
+                        user.refreshJwt = "";
+                        user.accessJwt = "";
+                        break;
+                    }
+                    case "m": {
+                        user.token = "";
+                        break;
+                    }
+                }
             }
         },
         setAccountOrder: (users, action) => {
             let {order} = action.payload;
 
             const existingIds = Object.keys(users.dict);
-            order = order.filter(did => existingIds.indexOf(did) >= 0); // only keep dids that are currently saved
+            order = order.filter(id => existingIds.indexOf(id) >= 0); // only keep dids that are currently saved
             users.order = order;
 
             // remove users that are not in input order list
-            existingIds.filter(did => order.indexOf(did) < 0).forEach(did => {
-                delete users.dict[did];
+            existingIds.filter(id => order.indexOf(id) < 0).forEach(id => {
+                delete users.dict[id];
             });
         },
         resetAccounts: (state, action) => {

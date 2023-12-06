@@ -1,9 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit'
 import {randomUuid} from "@/lib/utils/random";
 import {
-    ColumnConfig,
-    ColumnFeed,
-    ColumnFirehose, ColumnHome, ColumnNotifications,
+    ColumnConfig, ColumnHome, ColumnNotifications,
     ColumnType,
     InColumn, InHome,
     PageOfColumns
@@ -81,20 +79,6 @@ const slice = createSlice({
                 case ColumnType.USERS: {
                     break;
                 }
-                case ColumnType.FIREHOSE: {
-                    const column: ColumnFirehose = {
-                        name,
-                        id, type,
-                        active: true,
-                        icon: "",
-                        keywords: [],
-                        users: [],
-                        thumbnailSize: defaults.thumbnailSize,
-                        width: defaults.columnWidth
-                    }
-                    newColumn = column;
-                    break;
-                }
             }
             state.pages.dict[pageId].columns.push(id);
             state.columnDict[id] = newColumn;
@@ -103,12 +87,12 @@ const slice = createSlice({
             let {order} = action.payload;
 
             const existingIds = Object.keys(state.pages.dict);
-            order = order.filter(did => existingIds.indexOf(did) >= 0); // only keep dids that are currently saved
+            order = order.filter(id => existingIds.indexOf(id) >= 0); // only keep dids that are currently saved
             state.pages.order = order;
 
             // remove pages that are not in input order list
-            existingIds.filter(did => order.indexOf(did) < 0).forEach(did => {
-                delete state.pages.dict[did];
+            existingIds.filter(id => order.indexOf(id) < 0).forEach(id => {
+                delete state.pages.dict[id];
             });
         },
         setColumnOrder: (state, action) => {

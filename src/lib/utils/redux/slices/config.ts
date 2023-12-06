@@ -10,7 +10,8 @@ interface Config {
     altTextPrompt: boolean
     offsetLeft: boolean // align to left or to avatar
     fontSize: FontSize
-    primaryDid: string
+    primaryBlueskyDid: string // for bluesky
+    primaryMastodonAcct: string // for mastodon
     basicKey: string
     columnWidth: number
     refreshMs: RefreshTimingType
@@ -27,7 +28,8 @@ export const initialState:Config = {
     altTextPrompt: true,
     offsetLeft: true,
     fontSize: FontSize.Medium,
-    primaryDid: "",
+    primaryBlueskyDid: "",
+    primaryMastodonAcct: "",
     basicKey: "",
     currentPage:"",
 

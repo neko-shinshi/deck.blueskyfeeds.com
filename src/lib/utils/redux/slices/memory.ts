@@ -1,23 +1,31 @@
 import { createSlice } from '@reduxjs/toolkit'
 import {Post} from "@/lib/utils/types-constants/post";
 import {setPathOfObject} from "@/lib/utils/object";
-import {UserData} from "@/lib/utils/types-constants/user-data";
+import {BlueskyUserData, UserData} from "@/lib/utils/types-constants/user-data";
 import {ColumnMode} from "@/lib/utils/types-constants/column";
 
 
 export interface MemoryState {
-    columns: {[id:string]: {postUris:string[], lastTs:number, mode?:ColumnMode, cursor:string}} // load more resets to the top
-
-    firehose:{cursor: string, lastTs: number} // firehose reference
+    columns: {
+        [id:string]: {
+            postUris: {
+                current: string[],
+                pending: string[]
+            }
+            lastTs:number,
+            mode?:ColumnMode,
+            cursor:string
+        }
+    } // load more resets to the top
 
     posts: {[uri:string]: Post} // Saved post info
-    userData:{[did:string]: UserData} // SAVED ACCOUNT INFO
+    userData:{[id:string]: UserData} // SAVED ACCOUNT INFO
     alert?: string
 }
 
 // don't persist this, start from scratch when first connected if main, recover from last point
 // lastTs is to make sure old fetch or collision does not spoil data
-const initialState:MemoryState = {posts:{}, columns:{}, firehose:{cursor:"", lastTs: 0}, userData:{}};
+const initialState:MemoryState = {posts:{}, columns:{}, userData:{}};
 
 const slice = createSlice({
     name:"memory",
@@ -32,7 +40,10 @@ const slice = createSlice({
             if (Array.isArray(ids)) {
                 ids.forEach(id => {
                     memory.columns[id] = {
-                        postUris:[],
+                        postUris:{
+                            current:[],
+                            pending:[]
+                        },
                         lastTs: 0,
                         cursor: ""
                     }

@@ -1,12 +1,12 @@
 import {useSelector, useDispatch} from "react-redux";
 import PostItem from "@/lib/components/column/PostItem"
 import {ColumnConfig, ColumnModeThread} from "@/lib/utils/types-constants/column";
-import {BiArrowBack} from "react-icons/bi";
+import {BiArrowBack, BiArrowToLeft} from "react-icons/bi";
 import {updateMemory} from "@/lib/utils/redux/slices/memory";
 import clsx from "clsx";
 import {useEffect} from "react";
 
-export default function ColumnThread({thread, column}: {thread:ColumnModeThread, column:ColumnConfig}) {
+export default function ColumnTypeThread({thread, column}: {thread:ColumnModeThread, column:ColumnConfig}) {
     //@ts-ignore
     const memory = useSelector((state) => state.memory);
     //@ts-ignore
@@ -22,6 +22,19 @@ export default function ColumnThread({thread, column}: {thread:ColumnModeThread,
 
     return <>
         <div className="h-[3rem] flex place-items-center gap-2 justify-start">
+            {
+                memory.columns[column.id].mode.parent &&
+                <div className="w-8 h-8 p-1 border border-theme_dark-I0 rounded-full mr-2 bg-theme_dark-I1 hover:bg-theme_dark-I2 shrink-0 grid place-items-center"
+                     onClick={() => {
+                         let command:any = {};
+                         command[`columns.${column.id}.mode`] = null;
+                         console.log(JSON.stringify(command, null,2 ))
+                         dispatch(updateMemory(command));
+                     }}
+                >
+                    <BiArrowToLeft className="w-4 h-4 text-theme_dark-I0" />
+                </div>
+            }
             <div className="w-8 h-8 p-1 border border-theme_dark-I0 rounded-full mr-2 bg-theme_dark-I1 hover:bg-theme_dark-I2 shrink-0 grid place-items-center"
                  onClick={() => {
                      let command:any = {};
@@ -34,13 +47,12 @@ export default function ColumnThread({thread, column}: {thread:ColumnModeThread,
             </div>
            Thread
         </div>
-        <div className="flex flex-col overflow-y-hidden hover:overflow-y-auto scrollbar scrollbar-thins pr-4 hover:pr-0 h-[calc(100%-3rem)] text-black gap-2">
+        <div className="flex flex-col overflow-y-auto scrollbar-thin pr-4 hover:pr-0 h-[calc(100%-3rem)] text-black gap-2">
             {
                 thread.posts.reduce((acc, post) => {
                     let offset:number;
                     if (!acc.found) {
                         const isCurrent = post.uri === thread.mainUri;
-                        console.log("CHECK", post.uri, thread.mainUri);
                         if (isCurrent) {
                             offset = 0;
                             acc.found = true;
