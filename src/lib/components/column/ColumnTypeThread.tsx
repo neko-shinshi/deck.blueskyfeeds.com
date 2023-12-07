@@ -47,7 +47,7 @@ export default function ColumnTypeThread({thread, column}: {thread:ColumnModeThr
             </div>
            Thread
         </div>
-        <div className="flex flex-col overflow-y-auto scrollbar-thin pr-4 hover:pr-0 h-[calc(100%-3rem)] text-black gap-2">
+        <div className="flex flex-col overflow-y-auto scrollbar-thin pr-2 hover:pr-0 h-[calc(100%-3rem)] text-black gap-2">
             {
                 thread.posts.reduce((acc, post) => {
                     let offset:number;

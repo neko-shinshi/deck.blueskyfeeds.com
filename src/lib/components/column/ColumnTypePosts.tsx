@@ -59,7 +59,7 @@ export default function ColumnTypePosts({attributes, listeners, column}) {
         </div>
         <div className={clsx("h-0.5 bg-red-600")} />
         <div className="w-full h-full relative">
-            <div className="absolute inset-0 flex flex-col overflow-y-auto scrollbar-thin pr-4 h-[calc(100%-3rem)] text-black gap-2"
+            <div className="absolute inset-0 flex flex-col overflow-y-auto scrollbar-thin pr-2 h-[calc(100%-3rem)] text-black gap-2"
                  onScroll={(event) => {
                      const target:any = event.target;
                      if (target.scrollTop === 0) {
