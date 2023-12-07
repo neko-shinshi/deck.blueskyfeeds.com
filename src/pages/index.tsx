@@ -8,6 +8,17 @@ import {setColumnOrder} from "@/lib/utils/redux/slices/pages";
 import SectionColumns from "@/lib/components/SectionColumns";
 import {initializeColumn} from "@/lib/utils/redux/slices/memory";
 import LoginSwitcher from "@/lib/components/LoginSwitcher";
+import PopupFormSignInBluesky from "@/lib/components/popups/PopupFormSignInBluesky";
+import {PopupState} from "@/lib/utils/types-constants/popup";
+import PopupUserList from "@/lib/components/popups/PopupUserList";
+import PopupGlobalSettings from "@/lib/components/popups/PopupGlobalSettings";
+import PopupColumnPickType from "@/lib/components/popups/PopupColumnPickType";
+import PopupPostAction from "@/lib/components/popups/PopupPostAction";
+
+import TimeAgo from "javascript-time-ago";
+
+import en from 'javascript-time-ago/locale/en.json'
+import {PopupProvider, usePopupContext} from "@/lib/providers/PopupProvider";
 
 export default function Main ({}) {
     //@ts-ignore
@@ -16,12 +27,18 @@ export default function Main ({}) {
     const pages = useSelector((state) => state.pages);
     //@ts-ignore
     const config = useSelector((state) => state.config);
-
     const dispatch = useDispatch();
-    const [columnIds, setColumnIds] = useState<string[]>([]);
 
+    // This does NOT use redux so that it's not shared
+    const [columnIds, setColumnIds] = useState<string[]>([]);
+    const {popupConfig, setPopupConfig} = usePopupContext();
 
     useEffect(() => {
+        console.log("popupConfig", popupConfig);
+    }, [popupConfig]);
+
+    useEffect(() => {
+        TimeAgo.addDefaultLocale(en);
         const ids = Object.keys(pages.columnDict);
         if (ids.length > 0) {
             dispatch(initializeColumn({__terminate:true, ids}));
@@ -53,8 +70,18 @@ export default function Main ({}) {
         <HeadExtended
             title="Skyship - Deck"
             description="A TweetDeck alternative for Bluesky & Mastodon"/>
-
         <RefreshHandler/>
+
+        <PopupFormSignInBluesky
+            isOpen={popupConfig && popupConfig.state === PopupState.LOGIN}
+            setOpen={setPopupConfig}/>
+        <PopupUserList
+            isOpen={popupConfig && popupConfig.state === PopupState.USERS}
+            setOpen={setPopupConfig}/>
+        <PopupGlobalSettings isOpen={popupConfig && popupConfig.state === PopupState.SETTINGS} setOpen={setPopupConfig}/>
+        <PopupColumnPickType isOpen={popupConfig && popupConfig.state === PopupState.ADD_COLUMN} setOpen={setPopupConfig}/>
+        <PopupPostAction isOpen={popupConfig && popupConfig.state === PopupState.POST_ACTION} setOpen={setPopupConfig}/>
+
 
         <div className="h-screen w-full bg-theme_dark-L0">
             {
@@ -73,6 +100,5 @@ export default function Main ({}) {
             }
 
         </div>
-    </>
-
+   </>
 }

@@ -16,12 +16,26 @@ export default function ColumnTypePosts({attributes, listeners, column}) {
     const accounts = useSelector((state) => state.accounts);
     const dispatch = useDispatch();
 
+    const scrollRef = useRef(null);
+
+    const loadUpdates = () => {
+        const col = memory.columns[column.id];
+        if (col && col.postUris.pending.length > 0) {
+            let command = {};
+            command[`columns.${column.id}.postUris.current`] = col.postUris.pending;
+            dispatch(updateMemory(command));
+        }
+        if (scrollRef.current) {
+            scrollRef.current.scrollTo({top:0, behavior:"smooth"});
+        }
+    }
+
     return <>
         <div className="h-[3rem] flex place-items-center gap-2 justify-between">
             <div className="flex place-items-center h-full gap-2 overflow-hidden">
                 <RxDragHandleDots2 className="w-8 h-full p-1 text-theme_dark-I0 shrink-0" {...attributes} {...listeners}/>
-                <div className="w-6 h-6 border border-black rounded-full shrink-0 relative">
-
+                <div className="w-6 h-6 border border-black rounded-full shrink-0 relative peer"
+                     onClick={loadUpdates}>
                     <div className="h-6 w-6 absolute inset-0 bg-theme_dark-L0 rounded-full border border-theme_dark-I0">
                         <ColumnIcon config={column}/>
                     </div>
@@ -32,15 +46,8 @@ export default function ColumnTypePosts({attributes, listeners, column}) {
                         </div>
                     }
                 </div>
-                <div className="line-clamp-2 text-theme_dark-I0 hover:underline"
-                     onClick={() => {
-                         const col = memory.columns[column.id];
-                         if (col && col.postUris.pending.length > 0) {
-                             let command = {};
-                             command[`columns.${column.id}.postUris.current`] = col.postUris.pending;
-                             dispatch(updateMemory(command));
-                         }
-                     }}
+                <div className="line-clamp-2 text-theme_dark-I0 peer-hover:underline hover:underline"
+                     onClick={loadUpdates}
                 >
                     {column.name}
                 </div>
@@ -60,6 +67,7 @@ export default function ColumnTypePosts({attributes, listeners, column}) {
         <div className={clsx("h-0.5 bg-red-600")} />
         <div className="w-full h-full relative">
             <div className="absolute inset-0 flex flex-col overflow-y-auto scrollbar-thin pr-2 h-[calc(100%-3rem)] text-black gap-2"
+                 ref={scrollRef}
                  onScroll={(event) => {
                      const target:any = event.target;
                      if (target.scrollTop === 0) {

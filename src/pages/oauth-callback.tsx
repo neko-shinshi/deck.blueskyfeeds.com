@@ -65,7 +65,7 @@ export default function Main ({server, access_token, profile}) {
     useEffect(() => {
         console.log("got", server, access_token, profile);
         if (server && access_token && profile) {
-
+            // Store inside REDUX!!
         }
 
         router.replace("/");

@@ -7,7 +7,6 @@ import {BsFillBellFill, BsFillLightningChargeFill} from "react-icons/bs";
 import {FaPlus} from "react-icons/fa";
 import clsx from "clsx";
 import {useState} from "react";
-import {PopupConfig, PopupState, PopupUsers} from "@/lib/components/SectionControls";
 import {addColumn} from "@/lib/utils/redux/slices/pages";
 import {useDispatch, useSelector} from "react-redux";
 import {randomUuid} from "@/lib/utils/random";
@@ -15,7 +14,7 @@ import AvatarUser from "@/lib/components/AvatarUser";
 
 const columnData = [
     {type: ColumnType.HOME, icon: <BiSolidHome className="h-6 w-6"/>, description: "The Default Following Feed of an account"},
-    {type: ColumnType.FEED, icon: <ImFeed className="h-6 w-6"/>, description: "A saved feed, or enter the feed url / uri"},
+    {type: ColumnType.FEED, icon: <ImFeed className="h-6 w-6"/>, description: "A saved feed, or enter the feed URL / URI"},
     {type: ColumnType.NOTIFS, icon: <div className="grid place-items-center h-6 w-6"><BsFillBellFill className="h-6 w-6"/></div>, description: "Filterable notifications from your accounts"},
     {type: ColumnType.USERS, icon: <PiUserListBold className="h-6 w-6"/>, description: "A list of users from a Public Bluesky List or a Private list"},
     {type: ColumnType.SEARCH, icon: <BiSearchAlt className="h-6 w-6"/>, description: "Use the built-in search feature to follow posts with keywords"},
@@ -35,13 +34,25 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
     const TypeButton = ({x}) => {
         const [expanded, setExpanded] = useState<false | ColumnType>(false);
         return <div key={x.type}
-                    className={clsx(" p-1.5",)}
+                    className={clsx("p-1.5")}
         >
-            <div className="flex place-items-center gap-2 hover:bg-gray-700" onClick={() => {
+            <div className="flex place-items-center gap-2 hover:bg-gray-700" onClick={async () => {
                 if (expanded === x.type) {
                     setExpanded(false);
                 } else {
                     setExpanded(x.type);
+                    // get the feeds of each logged in user
+                    /*
+                    if (x.type === ColumnType.FEED) {
+                        accounts.order.reduce((acc, id) => {
+                            const account = accounts.dict[id];
+                            if (account) {
+                                acc.push(account.)
+                            }
+
+                            return acc;
+                        }, [])
+                    }*/
                 }
             }}>
                 <FaPlus className="h-4 w-4"/> {x.icon}
@@ -52,7 +63,7 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
             </div>
 
             {
-                expanded === x.type && x.type === ColumnType.HOME && <>
+                expanded === ColumnType.HOME && <>
                     {
                         accounts.order.reduce((acc, id) => {
                             const account = accounts.dict[id];
@@ -89,7 +100,7 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
     return <Popup
         isOpen={isOpen}
         setOpen={setOpen}
-        className="bg-theme_dark-L1 rounded-2xl text-black text-theme_dark-T1">
+        className="bg-theme_dark-L1 rounded-md border border-theme_dark-I0 text-theme_dark-T1">
         <h1 className="text-center text-base font-semibold text-theme_dark-T0 p-2">
             <span>Choose a Column Type to Add</span>
         </h1>
@@ -98,6 +109,5 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
                 columnData.map((x,i) => <TypeButton key={x.type} x={x}/>)
             }
         </div>
-
     </Popup>
 }

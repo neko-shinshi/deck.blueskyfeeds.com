@@ -10,7 +10,7 @@ import {
     TextPart
 } from "@/lib/utils/types-constants/post";
 import {logOut} from "@/lib/utils/redux/slices/accounts";
-import {showAlert, updateMemory} from "@/lib/utils/redux/slices/memory";
+import {updateMemory} from "@/lib/utils/redux/slices/memory";
 import {getAgent} from "@/lib/utils/bsky/bsky";
 import {store} from "@/lib/utils/redux/store";
 import {BskyAgent} from "@atproto/api";

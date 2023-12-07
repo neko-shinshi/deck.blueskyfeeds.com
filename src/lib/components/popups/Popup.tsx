@@ -14,7 +14,7 @@ export default function Popup(
         children:any,
         className?:string,
         isOpen:boolean,
-        setOpen:(boolean) => void,
+        setOpen:(any) => void,
         preventManualEscape?:boolean,
         onCloseCallback?: () => void
         initialFocus?:any

@@ -1,6 +1,5 @@
 import Popup from "@/lib/components/popups/Popup";
 import {useDispatch, useSelector} from "react-redux";
-import Image from "next/image";
 import {BsInfo} from "react-icons/bs";
 import {PiCrownSimpleBold, PiCrownSimpleFill} from "react-icons/pi";
 import {MdDeleteForever, MdLogout} from "react-icons/md";
@@ -24,46 +23,42 @@ import {BiLogInCircle} from "react-icons/bi";
 import PopupFormSignInBluesky from "@/lib/components/popups/PopupFormSignInBluesky";
 import {makeInitialState as makePageInitialState, resetPages} from "@/lib/utils/redux/slices/pages";
 import {resetMemory} from "@/lib/utils/redux/slices/memory";
-import {PopupUsers} from "@/lib/components/SectionControls";
 import {BlueskyAccount} from "@/lib/utils/types-constants/user-data";
 import AvatarUser from "@/lib/components/AvatarUser";
+import {PopupConfigUsers, PopupState} from "@/lib/utils/types-constants/popup";
+import {usePopupContext} from "@/lib/providers/PopupProvider";
 
-enum PopupState {
+enum UserPopupState {
     Logout,
     Remove,
     RemoveAll
 }
 
-interface PopupConfig {
-    state: PopupState,
+interface UserPopupConfig {
+    state: UserPopupState,
     title: string
     did?: string
 }
 
-export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boolean,setOpen:any, popupConfig:PopupUsers}) {
+export default function PopupUserList({isOpen, setOpen}:{isOpen:boolean,setOpen:any}) {
     //@ts-ignore
     const accounts = useSelector((state) => state.accounts);
     //@ts-ignore
     const config = useSelector((state) => state.config);
     const dispatch = useDispatch();
     const [userIds, setUserIds] = useState<string[]>([]);
-    const [mode, setMode] = useState<"menu"|"select"|"view">("select");
-    const [title, setTitle] = useState("");
     const [loginOpen, setLoginOpen] = useState<false|"bluesky"|"mastodon">(false);
     const [initialUser, setInitialUser] = useState<BlueskyAccount>(null);
-    const [userPopup, setUserPopup] = useState<false|PopupConfig>(false);
+    const [userPopup, setUserPopup] = useState<false|UserPopupConfig>(false);
+    const [title, setTitle] = useState("");
+    const {popupConfig} = usePopupContext();
+
 
     useEffect(() => {
-        if (isOpen && popupConfig) {
-            if (popupConfig.selectCallback) {
-                setMode("select");
-            } else {
-                console.log("menu");
-                setMode("menu")
-            }
-            setTitle(popupConfig.title)
+        if (popupConfig && popupConfig.state === PopupState.USERS) {
+            setTitle((popupConfig as PopupConfigUsers).title);
         }
-    }, [popupConfig, isOpen]);
+    }, [popupConfig])
 
 
     useEffect(() => {
@@ -92,7 +87,7 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
             setNodeRef,
             transform,
             transition,
-        } = useSortable({id: did, disabled: !!popupConfig?.selectCallback});
+        } = useSortable({id: did});
 
         const style = {
             transform: CSS.Transform.toString(transform),
@@ -108,20 +103,9 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
 
                     <div className={clsx("flex place-items-center justify-stretch grow gap-1 p-1")}
                          onClick={ () => {
-                             if (user.active) {
-
-                             } else {
-
-                             }
-
-                             if (popupConfig?.selectCallback) {
-                                 popupConfig.selectCallback(did);
-                                 setOpen(false);
-                             }
                          }}>
-                        {
-                            mode === "menu" && <RxDragHandleDots2 className="w-5 h-5 text-theme_dark-I0" {...attributes} {...listeners}/>
-                        }
+                         <RxDragHandleDots2 className="w-5 h-5 text-theme_dark-I0" {...attributes} {...listeners}/>
+
 
                         <div className="w-8 h-8 aspect-square relative border border-theme-dark-I0 rounded-full">
                             <AvatarUser avatar={user?.avatar} alt={user?.displayName}/>
@@ -134,64 +118,63 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
                         </div>
                     </div>
 
-                    {
-                        mode === "menu" &&
-                        <div className="flex gap-2 p-1">
-                            {
-                                user.active &&
-                                <div className="bg-white hover:bg-gray-100 border border-black rounded-full h-8 w-8 grid place-items-center">
-                                    {
-                                        did === config.primaryBlueskyDid?
-                                            <PiCrownSimpleFill
-                                                className="w-6 h-6 text-amber-500"
-                                                aria-label="Primary"/> :
-                                            <PiCrownSimpleBold
-                                                className="w-6 h-6 text-black hover:text-amber-500"
-                                                aria-label="Primary"
-                                                onClick={() => {
-                                                    dispatch(setConfigValue({primaryBlueskyDid: did}));
-                                                    alert("Primary user updated");
-                                                }}/>
-                                    }
-                                </div>
-                            }
 
-                            {
-                                // Use the selected user to look at itself, if logged out, try the primary user
-                                config.primaryBlueskyDid &&
-                                <div className="bg-white hover:bg-gray-100 border border-black rounded-full h-8 w-8 grid place-items-center">
-                                    <BsInfo className="w-8 h-8 pb-0.5 pr-0.5 text-black" aria-label="Profile"/>
-                                </div>
-                            }
+                    <div className="flex gap-2 p-1">
+                        {
+                            user.active &&
+                            <div className="bg-white hover:bg-gray-100 border border-black rounded-full h-8 w-8 grid place-items-center">
+                                {
+                                    did === config.primaryBlueskyDid?
+                                        <PiCrownSimpleFill
+                                            className="w-6 h-6 text-amber-500"
+                                            aria-label="Primary"/> :
+                                        <PiCrownSimpleBold
+                                            className="w-6 h-6 text-black hover:text-amber-500"
+                                            aria-label="Primary"
+                                            onClick={() => {
+                                                dispatch(setConfigValue({primaryBlueskyDid: did}));
+                                                alert("Primary user updated");
+                                            }}/>
+                                }
+                            </div>
+                        }
 
-                            {
-                                user.active &&
+                        {
+                            // Use the selected user to look at itself, if logged out, try the primary user
+                            config.primaryBlueskyDid &&
+                            <div className="bg-white hover:bg-gray-100 border border-black rounded-full h-8 w-8 grid place-items-center">
+                                <BsInfo className="w-8 h-8 pb-0.5 pr-0.5 text-black" aria-label="Profile"/>
+                            </div>
+                        }
+
+                        {
+                            user.active &&
+                            <div className="bg-white hover:bg-gray-100 border border-black rounded-full h-8 w-8 grid place-items-center"
+                                 onClick={() => setUserPopup({state:UserPopupState.Logout, did: did, title: `Logout user @${user.handle}?`})}
+                            >
+                                <MdLogout className="w-5 h-5 text-red-500"/>
+                            </div>
+                        }
+                        {
+                            !user.active && <>
                                 <div className="bg-white hover:bg-gray-100 border border-black rounded-full h-8 w-8 grid place-items-center"
-                                     onClick={() => setUserPopup({state:PopupState.Logout, did: did, title: `Logout user @${user.handle}?`})}
+                                     onClick={() => {
+                                         setInitialUser(user);
+                                         setLoginOpen("bluesky");
+                                     }}
                                 >
-                                    <MdLogout className="w-5 h-5 text-red-500"/>
+                                    <BiLogInCircle className="w-5 h-5 text-green-500"/>
                                 </div>
-                            }
-                            {
-                                !user.active && <>
-                                    <div className="bg-white hover:bg-gray-100 border border-black rounded-full h-8 w-8 grid place-items-center"
-                                         onClick={() => {
-                                             setInitialUser(user);
-                                             setLoginOpen("bluesky");
-                                         }}
-                                    >
-                                        <BiLogInCircle className="w-5 h-5 text-green-500"/>
-                                    </div>
 
-                                    <div className="bg-white hover:bg-gray-100 border border-black rounded-full h-8 w-8 grid place-items-center"
-                                         onClick={() => setUserPopup({state:PopupState.Remove, did: did, title: `Remove user @${user.handle}?`})}
-                                    >
-                                        <MdDeleteForever className="w-5 h-5 text-red-500"/>
-                                    </div>
-                                </>
-                            }
-                        </div>
-                    }
+                                <div className="bg-white hover:bg-gray-100 border border-black rounded-full h-8 w-8 grid place-items-center"
+                                     onClick={() => setUserPopup({state:UserPopupState.Remove, did: did, title: `Remove user @${user.handle}?`})}
+                                >
+                                    <MdDeleteForever className="w-5 h-5 text-red-500"/>
+                                </div>
+                            </>
+                        }
+                    </div>
+
                 </div>
             }
         </>
@@ -213,7 +196,7 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
                 if (!userPopup) {return}
 
                 const did = userPopup.did
-                if (userPopup.state !== PopupState.RemoveAll && config.primaryBlueskyDid === did) {
+                if (userPopup.state !== UserPopupState.RemoveAll && config.primaryBlueskyDid === did) {
                     // Choose a new primary randomly
                     const remainingUsers = Object.values(accounts.dict).filter(x => (x as BlueskyAccount).active && (x as BlueskyAccount).id !== did) as BlueskyAccount[];
                     if (remainingUsers.length === 0) {
@@ -226,15 +209,15 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
                     }
                 }
                 switch (userPopup.state) {
-                    case PopupState.Logout: {
+                    case UserPopupState.Logout: {
                         dispatch(logOut({id:did}));
                         break;
                     }
-                    case PopupState.Remove: {
+                    case UserPopupState.Remove: {
                         dispatch(removeAccount({id:did}));
                         break;
                     }
-                    case PopupState.RemoveAll: {
+                    case UserPopupState.RemoveAll: {
                         dispatch(resetConfig(configInitialState));
                         dispatch(resetPages(makePageInitialState()));
                         dispatch(resetAccounts(usersInitialState));
@@ -247,63 +230,48 @@ export default function PopupUserList({isOpen, setOpen, popupConfig}:{isOpen:boo
         <PopupFormSignInBluesky
             isOpen={loginOpen==="bluesky"}
             setOpen={setLoginOpen}
-            initialUser={initialUser}
-            completeCallback={() => {
-                if (popupConfig?.loggedInCallback) {
-                    popupConfig.loggedInCallback();
-                }
-            }}/>
+            initialUser={initialUser}/>
 
-        {
-            mode === "view" && <div className="w-full h-[30rem] bg-white rounded-xl relative">
 
-            </div>
-        }
 
-        {
-            (mode === "select" || mode === "menu") && <>
-                <h1 className="text-center text-base font-semibold text-theme_dark-T0 p-2">
-                    <span>{title}</span>
-                </h1>
-                <DndContext onDragEnd={handleDragEnd}>
-                    <SortableContext items={userIds} strategy={verticalListSortingStrategy}>
-                        {
-                            userIds.reduce((acc, did) => {
-                                const user = accounts.dict[did];
-                                if (user) {
-                                    acc.push(<UserItem key={did} user={user} did={did}/>)
-                                }
-                                return acc;
-                            }, [])
-                        }
-                    </SortableContext>
-                </DndContext>
+        <h1 className="text-center text-base font-semibold text-theme_dark-T0 p-2">
+            <span>{title}</span>
+        </h1>
+        <DndContext onDragEnd={handleDragEnd}>
+            <SortableContext items={userIds} strategy={verticalListSortingStrategy}>
                 {
-                    mode === "menu" && <>
-                        <div className="flex place-items-center justify-stretch gap-2 p-2 hover:bg-gray-700"
-                             onClick={() => {
-                                 setInitialUser(null);
-                                 setLoginOpen("bluesky");
-                             }}>
-                            <div className="w-8 h-8 aspect-square grid place-items-center border border-text-theme_dark-I0 rounded-full">
-                                <FaPlus className="w-5 h-5 text-theme_dark-I0" aria-label="Add Account"/>
-                            </div>
-
-                            <div className="grow">
-                                <div className="text-sm font-semibold text-theme_dark-T0">Add Account</div>
-                            </div>
-                        </div>
-                        <div className="flex justify-end">
-                            <div className="bg-red-800 flex place-items-center justify-stretch rounded-xl p-2 mr-2 hover:bg-gray-400"
-                                 onClick={() => setUserPopup({state: PopupState.RemoveAll, title:"Remove All Accounts and Return to Login page?"})}>
-                                <MdDeleteForever className="w-6 h-6" d/>
-                                <div className="text-sm font-bold">Delete Data & Reset</div>
-                            </div>
-                        </div>
-                    </>
+                    userIds.reduce((acc, did) => {
+                        const user = accounts.dict[did];
+                        if (user) {
+                            acc.push(<UserItem key={did} user={user} did={did}/>)
+                        }
+                        return acc;
+                    }, [])
                 }
-            </>
-        }
+            </SortableContext>
+        </DndContext>
+
+        <div className="flex place-items-center justify-stretch gap-2 p-2 hover:bg-gray-700"
+             onClick={() => {
+                 setInitialUser(null);
+                 setLoginOpen("bluesky");
+             }}>
+            <div className="w-8 h-8 aspect-square grid place-items-center border border-text-theme_dark-I0 rounded-full">
+                <FaPlus className="w-5 h-5 text-theme_dark-I0" aria-label="Add Account"/>
+            </div>
+
+            <div className="grow">
+                <div className="text-sm font-semibold text-theme_dark-T0">Add Account</div>
+            </div>
+        </div>
+        <div className="flex justify-end">
+            <div className="bg-red-800 flex place-items-center justify-stretch rounded-xl p-2 mr-2 hover:bg-gray-400"
+                 onClick={() => setUserPopup({state: UserPopupState.RemoveAll, title:"Remove All Accounts and Return to Login page?"})}>
+                <MdDeleteForever className="w-6 h-6" d/>
+                <div className="text-sm font-bold">Delete Data & Reset</div>
+            </div>
+        </div>
+
 
     </Popup>
 }

@@ -108,6 +108,8 @@ const slice = createSlice({
         },
         removeColumn: (state, action) => {
             const {columnId} = action.payload;
+            state.pages.order = state.pages.order.filter(x => x !== columnId);
+            delete state.columnDict[columnId];
         },
         resetPages: (state, action) => {
             for (const [key, value] of Object.entries(action.payload)) {

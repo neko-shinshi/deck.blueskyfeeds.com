@@ -3,8 +3,8 @@ import clsx from "clsx";
 import FormSignInBluesky from "@/lib/components/FormSignInBluesky";
 import {BlueskyAccount} from "@/lib/utils/types-constants/user-data";
 
-export default function PopupFormSignInBluesky({isOpen, setOpen, initialUser=null, completeCallback}:
-        {isOpen:boolean, setOpen:any, initialUser?: BlueskyAccount, completeCallback?:any}) {
+export default function PopupFormSignInBluesky({isOpen, setOpen, initialUser=null}:
+        {isOpen:boolean, setOpen:any, initialUser?: BlueskyAccount}) {
     return <Popup
         isOpen={isOpen}
         setOpen={setOpen}
@@ -12,12 +12,6 @@ export default function PopupFormSignInBluesky({isOpen, setOpen, initialUser=nul
             "text-left overflow-hidden shadow-xl transform transition-all sm:align-middle sm:max-w-md sm:w-full ")}
     >
         <FormSignInBluesky
-            initialUser={initialUser}
-            completeCallback={() => {
-                setOpen(false);
-                if (completeCallback) {
-                    completeCallback();
-                }
-            }}/>
+            initialUser={initialUser}/>
     </Popup>
 }

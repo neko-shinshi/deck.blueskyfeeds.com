@@ -3,44 +3,16 @@ import Image from "next/image";
 import {BsFillGearFill} from "react-icons/bs";
 import {LuMessageSquarePlus} from "react-icons/lu";
 import {BiSearch} from "react-icons/bi";
-import {FaPlus} from "react-icons/fa";
-import {useSelector} from "react-redux";
-import PopupFormSignInBluesky from "@/lib/components/popups/PopupFormSignInBluesky";
-import PopupUserList from "@/lib/components/popups/PopupUserList";
-import {useEffect, useState} from "react";
-import PopupGlobalSettings from "@/lib/components/popups/PopupGlobalSettings";
-import PopupColumnPickType from "@/lib/components/popups/PopupColumnPickType";
+import { useSelector} from "react-redux";
 import ColumnIcon from "@/lib/components/ColumnIcon";
 import {DndContext} from "@dnd-kit/core";
 import {SortableContext, useSortable, verticalListSortingStrategy} from "@dnd-kit/sortable";
 import {CSS} from '@dnd-kit/utilities';
 import AvatarUser from "@/lib/components/AvatarUser";
+import {TbColumnInsertRight} from "react-icons/tb";
+import {PopupConfigUsers, PopupState} from "@/lib/utils/types-constants/popup";
+import {usePopupContext} from "@/lib/providers/PopupProvider";
 
-export enum PopupState {
-    LOGIN,
-    USERS,
-    ADD_COLUMN,
-    MANAGE_COLUMN,
-    SETTINGS,
-    NEW_POST,
-    SEARCH
-}
-
-export interface PopupConfig {
-    state: PopupState,
-}
-
-interface PopupManageColumn extends PopupConfig {
-    state: PopupState.MANAGE_COLUMN,
-    id: string
-}
-
-export interface PopupUsers extends PopupConfig {
-    state: PopupState.USERS,
-    title: string,
-    selectCallback?: any
-    loggedInCallback?: any
-}
 
 export default function SectionControls ({columnIds, handleColumnDragEnd}) {
     //@ts-ignore
@@ -50,12 +22,7 @@ export default function SectionControls ({columnIds, handleColumnDragEnd}) {
     //@ts-ignore
     const pages = useSelector((state) => state.pages);
 
-    const [popupState, updatePopupState] = useState<PopupConfig|false>(false);
-
-    const setPopupState = (v) => {
-        console.log("set", v)
-        updatePopupState(v);
-    }
+    const {setPopupConfig} = usePopupContext();
 
     const ControlDraggable = ({column}) => {
         const {
@@ -87,19 +54,6 @@ export default function SectionControls ({columnIds, handleColumnDragEnd}) {
     }
 
     return <>
-        <PopupFormSignInBluesky
-            isOpen={popupState && popupState.state === PopupState.LOGIN}
-            setOpen={setPopupState}/>
-
-        <PopupUserList
-            isOpen={popupState && popupState.state === PopupState.USERS}
-            setOpen={setPopupState}
-            popupConfig={popupState && popupState.state === PopupState.USERS && popupState as PopupUsers}
-        />
-
-        <PopupGlobalSettings isOpen={popupState && popupState.state === PopupState.SETTINGS} setOpen={setPopupState}/>
-
-        <PopupColumnPickType isOpen={popupState && popupState.state === PopupState.ADD_COLUMN} setOpen={setPopupState}/>
 
         <div className="w-16 flex flex-col justify-between shrink-0">
             <div className="flex flex-col place-items-center gap-2">
@@ -137,7 +91,7 @@ export default function SectionControls ({columnIds, handleColumnDragEnd}) {
                 </div>
                 <div className="w-10 h-10 bg-theme_dark-I1 hover:bg-theme_dark-I2 rounded-full border border-theme_dark_I0 grid place-items-center"
                      onClick={() => {
-                         setPopupState({state:PopupState.ADD_COLUMN});
+                         setPopupConfig({state:PopupState.ADD_COLUMN});
                          /*
                          const activeUsers = Object.values(users.dict).filter(x => (x as UserData).active);
                          switch (activeUsers.length) {
@@ -162,13 +116,13 @@ export default function SectionControls ({columnIds, handleColumnDragEnd}) {
                          }*/
                      }}
                 >
-                    <FaPlus className="w-4 h-4 text-theme_dark-I0" aria-label="Add Column"/>
+                    <TbColumnInsertRight className="ml-1 w-8 h-8 text-theme_dark-I0" aria-label="Add Column"/>
                 </div>
 
                 <div className="w-full h-[1rem]"/>
 
                 <div className="w-10 h-10 bg-theme_dark-I1 hover:bg-theme_dark-I2 rounded-full border border-theme_dark_I0 grid place-items-center"
-                     onClick={() => setPopupState({state: PopupState.SETTINGS})}>
+                     onClick={() =>  setPopupConfig({state:PopupState.SETTINGS})}>
                     <BsFillGearFill className="w-6 h-6 text-theme_dark-I0" aria-label="Settings"/>
                 </div>
 
@@ -178,9 +132,9 @@ export default function SectionControls ({columnIds, handleColumnDragEnd}) {
                     onClick={() => {
                         console.log("click avatar");
                         if (accounts.order.length === 0) {
-                            setPopupState({state: PopupState.LOGIN});
+                            setPopupConfig({state:PopupState.LOGIN})
                         } else {
-                            setPopupState({state: PopupState.USERS, title: "Saved Accounts"});
+                            setPopupConfig({state:PopupState.USERS, title: "Saved Accounts"} as PopupConfigUsers);
                         }
                     }} />
 

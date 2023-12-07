@@ -27,6 +27,8 @@ import AvatarFeed from "@/lib/components/AvatarFeed";
 import Image from "next/image";
 import {ThumbnailSize} from "@/lib/utils/types-constants/thumbnail-size";
 import {BsListNested} from "react-icons/bs";
+import {usePopupContext} from "@/lib/providers/PopupProvider";
+import {PopupConfigPostAction, PopupState} from "@/lib/utils/types-constants/popup";
 
 export default function PostItem({post, column, highlight=false}: {post:Post, column:ColumnConfig, highlight:boolean}) {
     //@ts-ignore
@@ -35,7 +37,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
     const memory = useSelector((state) => state.memory);
     //@ts-ignore
     const accounts = useSelector((state) => state.accounts);
-    const dispatch = useDispatch();
+    const {setPopupConfig} = usePopupContext();
 
     const openThread = async (uri) => {
         console.log("opening ", uri);
@@ -50,9 +52,10 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
 
     const thumbSizeToNumber = () => {
         switch (column.thumbnailSize) {
-            case ThumbnailSize.SMALL: return 50;
-            case ThumbnailSize.MEDIUM: return 100;
-            case ThumbnailSize.LARGE: return 200;
+            case ThumbnailSize.X_SMALL: return 50;
+            case ThumbnailSize.SMALL: return 200;
+            case ThumbnailSize.MEDIUM: return 300;
+            case ThumbnailSize.LARGE: return 400;
         }
     }
 
@@ -76,51 +79,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
             </div>
         </div>
     }
-    const PostFacet = ({textPart}:{textPart:TextPart}) => {
-        return <>
-            {
-                textPart.facet && <>
-                    {
-                        textPart.facet.type === "Link" &&
-                        <a href={(textPart.facet as PostFacetLink).uri} className="group"
-                           onClick={(evt) => {
-                               const url = (textPart.facet as PostFacetLink).uri;
-                               console.log(url);
-                           }}
-                        >
-                            <span className="text-blue-500 group-hover:underline">{textPart.text}</span>
-                            <span className="text-gray-500">({(textPart.facet as PostFacetLink).uri.split("/")[2]})</span>
-                        </a>
-                    }
-                    {
-                        textPart.facet.type === "Mention" &&
-                        <span className="text-blue-500 hover:underline"
-                              onClick={(evt) => {
-                                  evt.stopPropagation();
-                                  console.log((textPart.facet as PostFacetMention).did);
-                              }}>
-                            {textPart.text}
-                        </span>
-                    }
-                    {
-                        textPart.facet.type === "Tag" &&
-                        <span className="text-blue-500 hover:underline"
-                              onClick={(evt) => {
-                                  evt.stopPropagation();
-                                  console.log((textPart.facet as PostFacetTag).tag);
-                              }}>
-                            {textPart.text}
-                        </span>
-                    }
-                </>
-            }
 
-            {
-                !textPart.facet &&
-                <span>{textPart.text}</span>
-            }
-        </>
-    }
     const PostImages = ({embedImage}: {embedImage:PostEmbedImages}) => {
         return <>
             {
@@ -132,50 +91,55 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                 column.thumbnailSize !== ThumbnailSize.HIDDEN && <div className="p-4">
                     {
                         embedImage.images.length === 1 &&
-                        <Image height={thumbSizeToNumber()} width={thumbSizeToNumber()} src={embedImage.images[0].thumb} alt={embedImage.images[0].alt}/>
-
+                        <div className="grid place-items-center">
+                            <Image height={thumbSizeToNumber()} width={thumbSizeToNumber()} src={embedImage.images[0].thumb} alt={embedImage.images[0].alt}/>
+                        </div>
                     }
                     {
                         embedImage.images.length === 2 || embedImage.images.length === 4 &&
-                        <div className={clsx("grid grid-cols-2", column.thumbnailSize===ThumbnailSize.SMALL && "w-44", column.thumbnailSize===ThumbnailSize.MEDIUM && "w-64")}>
-                            {
-                                embedImage.images.map((img,i) => {
-                                    return <Image
-                                        key={i}
-                                        height={thumbSizeToNumber()}
-                                        width={thumbSizeToNumber()}
-                                        className="aspect-square object-cover"
-                                        src={img.thumb}
-                                        alt={img.alt}
-                                        onClick={(evt) => {
-                                            evt.stopPropagation();
-                                            console.log("image!")
-                                        }}
-                                    />
-                                })
-                            }
+                        <div className="grid place-items-center">
+                            <div className={clsx("grid grid-cols-2", column.thumbnailSize===ThumbnailSize.SMALL && "w-44", column.thumbnailSize===ThumbnailSize.MEDIUM && "w-64")}>
+                                {
+                                    embedImage.images.map((img,i) => {
+                                        return <Image
+                                            key={i}
+                                            height={thumbSizeToNumber()}
+                                            width={thumbSizeToNumber()}
+                                            className="aspect-square object-cover"
+                                            src={img.thumb}
+                                            alt={img.alt}
+                                            onClick={(evt) => {
+                                                evt.stopPropagation();
+                                                console.log("image!")
+                                            }}
+                                        />
+                                    })
+                                }
+                            </div>
                         </div>
                     }
 
                     {
                         embedImage.images.length === 3 &&
-                        <div className={clsx("grid grid-cols-3 grid-flow-col", column.thumbnailSize===ThumbnailSize.SMALL && "w-44", column.thumbnailSize===ThumbnailSize.MEDIUM && "w-64")}>
-                            {
-                                embedImage.images.map((img,i) => {
-                                    return <Image
-                                        key={i}
-                                        height={thumbSizeToNumber()}
-                                        width={thumbSizeToNumber()}
-                                        className={clsx(i === 0 && embedImage.images.length === 3 && "row-span-2 col-span-2", "aspect-square object-cover w-full h-full")}
-                                        src={img.thumb}
-                                        alt={img.alt}
-                                        onClick={(evt) => {
-                                            evt.stopPropagation();
-                                            console.log("image!")
-                                        }}
-                                    />
-                                })
-                            }
+                        <div className="grid place-items-center">
+                            <div className={clsx("grid grid-cols-3 grid-flow-col", column.thumbnailSize===ThumbnailSize.SMALL && "w-44", column.thumbnailSize===ThumbnailSize.MEDIUM && "w-64")}>
+                                {
+                                    embedImage.images.map((img,i) => {
+                                        return <Image
+                                            key={i}
+                                            height={thumbSizeToNumber()}
+                                            width={thumbSizeToNumber()}
+                                            className={clsx(i === 0 && embedImage.images.length === 3 && "row-span-2 col-span-2", "aspect-square object-cover w-full h-full")}
+                                            src={img.thumb}
+                                            alt={img.alt}
+                                            onClick={(evt) => {
+                                                evt.stopPropagation();
+                                                console.log("image!")
+                                            }}
+                                        />
+                                    })
+                                }
+                            </div>
                         </div>
                     }
                 </div>
@@ -186,7 +150,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
         </>
     }
     const PostQuote = ({record}:{record:RecordPost}) => {
-        return  <div className="bg-theme_dark-L2 p-2 border border-transparent hover:border-white" onClick={() => {openThread(record.uri)} }>
+        return  <div className="p-2 border border-gray-500 hover:border-white rounded-md" onClick={() => {openThread(record.uri)} }>
             <PostHeader id={record.authorDid} indexedAt={record.indexedAt} mini={true}/>
             <div className="text-theme_dark-T0">{record.text}</div>
             {
@@ -239,7 +203,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
     }
 
     const PostExternal = ({embedExternal}: {embedExternal: PostEmbedExternal}) => {
-        return <div/>
+        return <div>External</div>
     }
 
     const PostEmbeds = ({postItem}) => {
@@ -299,16 +263,16 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
             {post.replyTo && <div className="text-theme_dark-T1 flex place-items-center gap-1 p-1">
                 <FaReply className="h-3 w-3 peer"
                          onClick={() => openThread(post.uri)}/>
-                <span className="hover:underline peer-hover:underline"
-                      onClick={() => openThread(post.uri)}>Reply to</span>
+                <div className="hover:underline peer-hover:underline shrink-0"
+                      onClick={() => openThread(post.uri)}>Reply to</div>
                 <div className="whitespace-nowrap text-ellipsis overflow-hidden hover:underline">{` ${memory.userData[post.replyTo].displayName}`}</div>
             </div>}
             <div className="p-1">
                 {
-                    post.textParts && post.textParts.map((textPart, i) => <>
+                    post.textParts && post.textParts.map((textPart, i) => <span key={i}>
                         {
                             textPart.facet?.type === "Link" &&
-                            <a key={i} href={(textPart.facet as PostFacetLink).uri} className="group"
+                            <a href={(textPart.facet as PostFacetLink).uri} className="group"
                                onClick={(evt) => evt.stopPropagation()}
                                target="_blank" rel="noreferrer">
                                 <span className="text-blue-500 group-hover:underline">{textPart.text}</span>
@@ -317,7 +281,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                         }
                         {
                             textPart.facet?.type === "Mention" &&
-                            <span key={i}
+                            <span
                                   className="text-blue-500 hover:underline"
                                   onClick={(evt) => {
                                       evt.stopPropagation();
@@ -328,7 +292,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                         }
                         {
                             textPart.facet?.type === "Tag" &&
-                            <span key={i}
+                            <span
                                   className="text-blue-500 hover:underline"
                                   onClick={(evt) => {
                                       evt.stopPropagation();
@@ -339,9 +303,9 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                         }
                         {
                             !textPart.facet &&
-                            <span key={i}>{textPart.text}</span>
+                            <span >{textPart.text}</span>
                         }
-                    </>)
+                    </span>)
                 }
                 {
                     !post.textParts && post.text
@@ -363,7 +327,6 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                         type="button"
                         className="flex place-items-center justify-center gap-1 hover:bg-gray-400 min-w-6 min-h-6 p-1"
                         onClick={(evt) => {
-                            evt.stopPropagation();
                             console.log("reply");
                         }}>
                         <HiOutlineChatBubbleOvalLeft className="w-4 h-4"/>
@@ -375,7 +338,6 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                         type="button"
                         className="flex place-items-center justify-center gap-1 hover:bg-gray-400 min-w-6 min-h-6 p-1"
                         onClick={(evt) => {
-                            evt.stopPropagation();
                             console.log("repost");
                         }}>
                         <BiRepost className="h-4 w-4" />
@@ -387,7 +349,6 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                         type="button"
                         className="flex place-items-center justify-center gap-1 hover:bg-gray-400 min-w-6 min-h-6 p-1"
                         onClick={(evt) => {
-                            evt.stopPropagation();
                             console.log("like");
                         }}>
                         <AiOutlineHeart className="h-4 w-4" />
@@ -399,8 +360,11 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                         type="button"
                         className="flex place-items-center gap-1 hover:bg-gray-400 min-w-6 min-h-6 p-1"
                         onClick={(evt) => {
-                            evt.stopPropagation();
                             console.log("etc");
+                            setPopupConfig({
+                                state: PopupState.POST_ACTION,
+                                uri: post.uri
+                            } as PopupConfigPostAction);
                         }}
                     >
                         <FaEllipsis className="h-4 w-4" />

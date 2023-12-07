@@ -1,10 +1,7 @@
 import { BskyAgent }  from "@atproto/api";
 import {decrypt, parseKey} from "@/lib/utils/crypto";
 import {addOrUpdateAccount, logOut} from "@/lib/utils/redux/slices/accounts";
-import {showAlert} from "@/lib/utils/redux/slices/memory";
 import {store} from "@/lib/utils/redux/store";
-
-
 
 
 // Try login with password
@@ -31,7 +28,7 @@ export const getAgent = async (userObj, basicKey) => {
                console.log("no network");
            } else {
                store.dispatch(logOut({did:userObj.id}));
-               store.dispatch(showAlert(`Error: ${userObj.displayName} logged out`));
+               alert(`Error: ${userObj.displayName} logged out`);
            }
            return null;
        }
@@ -49,10 +46,26 @@ const updateAgent = async (agent, service, usernameOrEmail, encryptedPassword) =
         const {data} = await agent.getProfile({actor:did});
         const {displayName, avatar} = data;
         console.log("addOrUpdateAccount FromRESUME");
-        store.dispatch(addOrUpdateAccount({service, usernameOrEmail, encryptedPassword, id:did, displayName, avatar, handle, refreshJwt, accessJwt, lastTs:now}));
+        store.dispatch(addOrUpdateAccount({service, usernameOrEmail, encryptedPassword, id:did, displayName:displayName||handle, avatar, handle, refreshJwt, accessJwt, lastTs:now}));
     } catch (e) {
         if (e.status === 1 && e.error.startsWith("TypeError: NetworkError")) {
             console.log("no network");
         }
     }
+}
+
+export const REASONSPAM = 'com.atproto.moderation.defs#reasonSpam'
+/** Direct violation of server rules, laws, terms of service */
+export const REASONVIOLATION = 'com.atproto.moderation.defs#reasonViolation'
+/** Misleading identity, affiliation, or content */
+export const REASONMISLEADING = 'com.atproto.moderation.defs#reasonMisleading'
+/** Unwanted or mislabeled sexual content */
+export const REASONSEXUAL = 'com.atproto.moderation.defs#reasonSexual'
+/** Rude, harassing, explicit, or otherwise unwelcoming behavior */
+export const REASONRUDE = 'com.atproto.moderation.defs#reasonRude'
+/** Other: reports not falling under another report category */
+export const REASONOTHER = 'com.atproto.moderation.defs#reasonOther'
+
+const createModerationReport = async (agent, uri, cid, reason, reasonType) => {
+    await agent.createModerationReport({reasonType, reason, subject:{uri, cid}})
 }

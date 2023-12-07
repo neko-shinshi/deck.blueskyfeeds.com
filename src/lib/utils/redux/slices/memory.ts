@@ -3,6 +3,8 @@ import {Post} from "@/lib/utils/types-constants/post";
 import {setPathOfObject} from "@/lib/utils/object";
 import {BlueskyUserData, UserData} from "@/lib/utils/types-constants/user-data";
 import {ColumnMode} from "@/lib/utils/types-constants/column";
+import {PopupConfig} from "@/lib/utils/types-constants/popup";
+
 
 
 export interface MemoryState {
@@ -17,13 +19,11 @@ export interface MemoryState {
             cursor:string
         }
     } // load more resets to the top
-
     posts: {[uri:string]: Post} // Saved post info
-    userData:{[id:string]: UserData} // SAVED ACCOUNT INFO
-    alert?: string
+    userData:{[id:string]: UserData} // Saved other users info
 }
 
-// don't persist this, start from scratch when first connected if main, recover from last point
+// Don't persist, start from scratch when first connected if main, otherwise recover from last point
 // lastTs is to make sure old fetch or collision does not spoil data
 const initialState:MemoryState = {posts:{}, columns:{}, userData:{}};
 
@@ -31,10 +31,6 @@ const slice = createSlice({
     name:"memory",
     initialState,
     reducers:{
-        showAlert: (memory, action) => {
-            const {msg} = action.payload;
-            memory.alert = msg;
-        },
         initializeColumn: (memory, action) => {
             const {ids} = action.payload;
             if (Array.isArray(ids)) {
@@ -66,5 +62,5 @@ const slice = createSlice({
     }
 });
 
-export const {showAlert, initializeColumn, updateMemory, resetMemory} = slice.actions
+export const {initializeColumn, updateMemory, resetMemory} = slice.actions
 export default slice.reducer
