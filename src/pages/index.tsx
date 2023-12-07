@@ -51,8 +51,8 @@ export default function Main ({}) {
 
     return <>
         <HeadExtended
-            title="Deck by Skyship.app"
-            description="A TweetDeck alternative for BlueSky"/>
+            title="Skyship - Deck"
+            description="A TweetDeck alternative for Bluesky & Mastodon"/>
 
         <RefreshHandler/>
 
