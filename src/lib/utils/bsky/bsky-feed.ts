@@ -61,7 +61,7 @@ export const getTbdAuthors = async (agent, authorsTbd, authors, lastTs, userData
             const {data:{profiles}} = await agent.getProfiles({actors:chunk});
             profiles.forEach(x => {
                 const {did, handle, avatar, displayName} = x;
-                authors.set(did, {avatar, handle, displayName, did, lastTs});
+                authors.set(did, {avatar, handle, displayName:displayName||handle, did, lastTs});
             });
         } catch (e) {
             if (e.status === 429) {
@@ -74,7 +74,7 @@ export const getTbdAuthors = async (agent, authorsTbd, authors, lastTs, userData
 
 const processAuthorGetDid = (author, lastTs, authors) => {
     const {avatar, handle, displayName, did} = author;
-    authors.set(did, {avatar, handle, displayName, did, lastTs});
+    authors.set(did, {avatar, handle, displayName:displayName||handle, did, lastTs});
     return did;
 }
 

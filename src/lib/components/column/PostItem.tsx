@@ -26,6 +26,7 @@ import {FaEllipsis} from "react-icons/fa6";
 import AvatarFeed from "@/lib/components/AvatarFeed";
 import Image from "next/image";
 import {ThumbnailSize} from "@/lib/utils/types-constants/thumbnail-size";
+import {BsListNested} from "react-icons/bs";
 
 export default function PostItem({post, column, highlight=false}: {post:Post, column:ColumnConfig, highlight:boolean}) {
     //@ts-ignore
@@ -36,14 +37,14 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
     const accounts = useSelector((state) => state.accounts);
     const dispatch = useDispatch();
 
-    const openThread = async () => {
-        console.log("opening ", post.uri);
+    const openThread = async (uri) => {
+        console.log("opening ", uri);
         // column observer OR primaryDid
         const id = 'observer' in column? (column as ObservedColumn).observer : config.primaryBlueskyDid;
         if (!id) {
             alert("no account available to open thread");
         } else {
-            await getPostThread(id, column.id, post.uri);
+            await getPostThread(id, column.id, uri);
         }
     }
 
@@ -55,17 +56,17 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
         }
     }
 
-    const PostHeader = ({id, indexedAt}) => {
+    const PostHeader = ({id, indexedAt, mini=false}) => {
         const user = memory.userData[id];
         return <div className="flex justify-between">
-            <div className="flex gap-1 grow-0 overflow-hidden ">
-                <div className="w-10 h-10 relative aspect-square">
-                    <AvatarUser avatar={user.avatar}/>
+            <div className="flex gap-2 grow-0 overflow-hidden place-items-center group">
+                <div className={clsx(mini? "w-6 h-6": "w-8 h-8", "relative aspect-square rounded-full border border-theme_dark-I0")}>
+                    <AvatarUser avatar={user.avatar} alt={user.displayName}/>
                 </div>
 
-                <div className="overflow-hidden ">
-                    <div className="text-theme_dark-T0 text-sm truncate">{user.displayName || user.handle}</div>
-                    <div className="hover:underline text-theme_dark-T1 text-xs">@{user.handle}</div>
+                <div className="overflow-hidden">
+                    <div className={clsx(mini? "text-xs": "text-sm", "text-theme_dark-T0 truncate")}>{user.displayName || user.handle}</div>
+                    <div className="text-theme_dark-T1 text-xs group-hover:underline">@{user.handle}</div>
                 </div>
             </div>
 
@@ -139,16 +140,17 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                         <div className={clsx("grid grid-cols-2", column.thumbnailSize===ThumbnailSize.SMALL && "w-44", column.thumbnailSize===ThumbnailSize.MEDIUM && "w-64")}>
                             {
                                 embedImage.images.map((img,i) => {
-                                    return <Image key={i}
-                                                  height={thumbSizeToNumber()}
-                                                  width={thumbSizeToNumber()}
-                                                  className="aspect-square object-cover"
-                                                  src={img.thumb}
-                                                  alt={img.alt}
-                                                  onClick={(evt) => {
-                                                      evt.stopPropagation();
-                                                      console.log("image!")
-                                                  }}
+                                    return <Image
+                                        key={i}
+                                        height={thumbSizeToNumber()}
+                                        width={thumbSizeToNumber()}
+                                        className="aspect-square object-cover"
+                                        src={img.thumb}
+                                        alt={img.alt}
+                                        onClick={(evt) => {
+                                            evt.stopPropagation();
+                                            console.log("image!")
+                                        }}
                                     />
                                 })
                             }
@@ -160,16 +162,17 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                         <div className={clsx("grid grid-cols-3 grid-flow-col", column.thumbnailSize===ThumbnailSize.SMALL && "w-44", column.thumbnailSize===ThumbnailSize.MEDIUM && "w-64")}>
                             {
                                 embedImage.images.map((img,i) => {
-                                    return <Image key={i}
-                                                  height={thumbSizeToNumber()}
-                                                  width={thumbSizeToNumber()}
-                                                className={clsx(i === 0 && embedImage.images.length === 3 && "row-span-2 col-span-2", "aspect-square object-cover w-full h-full")}
-                                                src={img.thumb}
-                                                alt={img.alt}
-                                                onClick={(evt) => {
-                                                    evt.stopPropagation();
-                                                    console.log("image!")
-                                                }}
+                                    return <Image
+                                        key={i}
+                                        height={thumbSizeToNumber()}
+                                        width={thumbSizeToNumber()}
+                                        className={clsx(i === 0 && embedImage.images.length === 3 && "row-span-2 col-span-2", "aspect-square object-cover w-full h-full")}
+                                        src={img.thumb}
+                                        alt={img.alt}
+                                        onClick={(evt) => {
+                                            evt.stopPropagation();
+                                            console.log("image!")
+                                        }}
                                     />
                                 })
                             }
@@ -183,8 +186,8 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
         </>
     }
     const PostQuote = ({record}:{record:RecordPost}) => {
-        return  <div className="bg-theme_dark-L2 p-2">
-            <PostHeader id={record.authorDid} indexedAt={record.indexedAt}/>
+        return  <div className="bg-theme_dark-L2 p-2 border border-transparent hover:border-white" onClick={() => {openThread(record.uri)} }>
+            <PostHeader id={record.authorDid} indexedAt={record.indexedAt} mini={true}/>
             <div className="text-theme_dark-T0">{record.text}</div>
             {
                 record.embed && record.embed.type === "RecordWithMedia" && (record.embed as PostEmbedRecordWithMedia).media.type === "Images" &&
@@ -207,7 +210,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
     const PostList = ({record}:{record:RecordList}) => {
         return  <div className="bg-theme_dark-L2 p-2">
             <div className="w-8 h-8 relative">
-                <AvatarUser avatar={record.avatar}/>
+                <AvatarUser avatar={record.avatar} alt={record.name}/>
             </div>
             <div>{record.name}</div>
             <div>{record.purpose}</div>
@@ -277,8 +280,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
         </>
     }
 
-    return <div className={clsx("w-full rounded-md flex flex-col p-2 whitespace-pre-line text-xs hover:bg-gray-700", highlight? "bg-slate-700" : "bg-theme_dark-L1")}
-                onClick={openThread}>
+    return <div className={clsx("w-full rounded-md flex flex-col p-2 whitespace-pre-line text-xs border border-transparent hover:border-white", highlight? "bg-slate-700" : "bg-theme_dark-L1")}>
         {
             post.reposterDid &&
             <div className="text-theme_dark-T0 flex place-items-center pl-6 mb-1 hover:underline"
@@ -294,11 +296,14 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
         <PostHeader id={post.authorDid} indexedAt={post.indexedAt}/>
 
         <div className={clsx(config.offsetLeft && "pl-10", "text-theme_dark-T0 overflow-hidden")}>
-            {post.replyTo && <div className="text-theme_dark-T1 flex place-items-center hover:underline">
-                <FaReply className="h-3 w-3 mr-1"/>
-                <div className="whitespace-nowrap text-ellipsis overflow-hidden">Reply to {memory.userData[post.replyTo].displayName}</div>
+            {post.replyTo && <div className="text-theme_dark-T1 flex place-items-center gap-1 p-1">
+                <FaReply className="h-3 w-3 peer"
+                         onClick={() => openThread(post.uri)}/>
+                <span className="hover:underline peer-hover:underline"
+                      onClick={() => openThread(post.uri)}>Reply to</span>
+                <div className="whitespace-nowrap text-ellipsis overflow-hidden hover:underline">{` ${memory.userData[post.replyTo].displayName}`}</div>
             </div>}
-            <div>
+            <div className="p-1">
                 {
                     post.textParts && post.textParts.map((textPart, i) => <>
                         {
@@ -348,6 +353,12 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
             <div>
                 <div className="w-full h-0.5 bg-gray-700" />
                 <div className="flex gap-4">
+                    <button
+                        type="button"
+                        className="flex place-items-center justify-center gap-1 hover:bg-gray-400 min-w-6 min-h-6 p-1"
+                        onClick={() => openThread(post.uri)}>
+                        <BsListNested className="w-4 h-4"/>
+                    </button>
                     <button
                         type="button"
                         className="flex place-items-center justify-center gap-1 hover:bg-gray-400 min-w-6 min-h-6 p-1"

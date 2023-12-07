@@ -68,7 +68,7 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
                                     }}
                                 >
                                     <div className="w-6 h-6 relative aspect-square">
-                                        <AvatarUser avatar={account.avatar}/>
+                                        <AvatarUser avatar={account.avatar} alt={account.displayName}/>
                                     </div>
                                     <div>
                                         <div className="text-sm text-theme_dark-T0">{account.displayName}</div>

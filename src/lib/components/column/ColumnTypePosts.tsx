@@ -28,7 +28,7 @@ export default function ColumnTypePosts({attributes, listeners, column}) {
                     {
                         'observer' in column &&
                         <div className="h-4 w-4 absolute -right-1.5 -bottom-1.5 border border-theme_dark-I0 rounded-full">
-                            <AvatarUser avatar={accounts.dict[column.observer].avatar}/>
+                            <AvatarUser avatar={accounts.dict[column.observer].avatar} alt={accounts.dict[column.observer].displayName}/>
                         </div>
                     }
                 </div>
