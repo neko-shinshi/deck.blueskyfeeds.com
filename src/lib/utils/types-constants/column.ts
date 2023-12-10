@@ -117,5 +117,5 @@ export interface ColumnModeLoading extends ColumnMode {
     header: string
 }
 
-export const MIN_WIDTH = 10;
-export const MAX_WIDTH = 40;
+export const MIN_WIDTH = 20;
+export const MAX_WIDTH = 50;

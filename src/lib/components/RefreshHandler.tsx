@@ -161,9 +161,6 @@ export default function RefreshHandler({}) {
                 for (let [id, columns] of toFetch) {
                     const userObj = accounts.dict[id];
                     if (userObj) {
-
-                        console.log("user", userObj);
-
                         let pass = true;
                         let agent = await getAgent(userObj, config.basicKey);
                         if (!agent) {
@@ -171,7 +168,6 @@ export default function RefreshHandler({}) {
                             continue; // Skip this username
                         }
 
-                        console.log("pass", pass);
                         if (pass) {
                             const cols = columns as ColumnConfig[];
                             let authors = new Map<string, BlueskyUserData>();
@@ -189,10 +185,12 @@ export default function RefreshHandler({}) {
                                             for (let [key, value] of posts.entries()) {
                                                 command[`posts.${key}`] = value;
                                             }
-                                            if (memory.columns[col.id].postUris.current.length === 0) {
-                                                command[`columns.${col.id}.postUris.current`] = uris;
+                                            if (memory.columns[col.id].postUris.current.uris.length === 0) {
+                                                command[`columns.${col.id}.postUris.current.uris`] = uris;
+                                                command[`columns.${col.id}.postUris.current.cursor`] = cursor;
                                             } else {
-                                                command[`columns.${col.id}.postUris.pending`] = uris;
+                                                command[`columns.${col.id}.postUris.pending.uris`] = uris;
+                                                command[`columns.${col.id}.postUris.current.cursor`] = cursor;
                                             }
                                         } catch (e) {
                                             console.error(e);
@@ -209,10 +207,12 @@ export default function RefreshHandler({}) {
                                             for (let [key, value] of posts.entries()) {
                                                 command[`posts.${key}`] = value;
                                             }
-                                            if (memory.columns[col.id].postUris.current.length === 0) {
-                                                command[`columns.${col.id}.postUris.current`] = uris;
+                                            if (memory.columns[col.id].postUris.current.uris.length === 0) {
+                                                command[`columns.${col.id}.postUris.current.uris`] = uris;
+                                                command[`columns.${col.id}.postUris.current.cursor`] = cursor;
                                             } else {
-                                                command[`columns.${col.id}.postUris.pending`] = uris;
+                                                command[`columns.${col.id}.postUris.pending.uris`] = uris;
+                                                command[`columns.${col.id}.postUris.current.cursor`] = cursor;
                                             }
                                         } catch (e) {
                                             console.error(e);
@@ -241,10 +241,12 @@ export default function RefreshHandler({}) {
                                             for (let [key, value] of posts.entries()) {
                                                 command[`posts.${key}`] = value;
                                             }
-                                            if (memory.columns[col.id].postUris.current.length === 0) {
-                                                command[`columns.${col.id}.postUris.current`] = uris;
+                                            if (memory.columns[col.id].postUris.current.uris.length === 0) {
+                                                command[`columns.${col.id}.postUris.current.uris`] = uris;
+                                                command[`columns.${col.id}.postUris.current.cursor`] = cursor;
                                             } else {
-                                                command[`columns.${col.id}.postUris.pending`] = uris;
+                                                command[`columns.${col.id}.postUris.pending.uris`] = uris;
+                                                command[`columns.${col.id}.postUris.current.cursor`] = cursor;
                                             }
                                         } catch (e) {
                                             console.error(e);

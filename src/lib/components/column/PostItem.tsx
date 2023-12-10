@@ -29,6 +29,7 @@ import {ThumbnailSize} from "@/lib/utils/types-constants/thumbnail-size";
 import {BsListNested} from "react-icons/bs";
 import {usePopupContext} from "@/lib/providers/PopupProvider";
 import {PopupConfigPostAction, PopupState} from "@/lib/utils/types-constants/popup";
+import {useLongPress} from "use-long-press";
 
 export default function PostItem({post, column, highlight=false}: {post:Post, column:ColumnConfig, highlight:boolean}) {
     //@ts-ignore
@@ -38,6 +39,14 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
     //@ts-ignore
     const accounts = useSelector((state) => state.accounts);
     const {setPopupConfig} = usePopupContext();
+
+    const longPressPost = useLongPress(()=> {}, {
+        cancelOnMovement:25,
+        cancelOutsideElement:true,
+        onFinish:(evt, target) => {
+            openThread(post.uri);
+        },
+    });
 
     const openThread = async (uri) => {
         console.log("opening ", uri);
@@ -64,12 +73,12 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
         return <div className="flex justify-between">
             <div className="flex gap-2 grow-0 overflow-hidden place-items-center group">
                 <div className={clsx(mini? "w-6 h-6": "w-8 h-8", "relative aspect-square rounded-full border border-theme_dark-I0")}>
-                    <AvatarUser avatar={user.avatar} alt={user.displayName}/>
+                    <AvatarUser avatar={user?.avatar} alt={user?.displayName}/>
                 </div>
 
                 <div className="overflow-hidden">
-                    <div className={clsx(mini? "text-xs": "text-sm", "text-theme_dark-T0 truncate")}>{user.displayName || user.handle}</div>
-                    <div className="text-theme_dark-T1 text-xs group-hover:underline">@{user.handle}</div>
+                    <div className={clsx(mini? "text-xs": "text-sm", "text-theme_dark-T0 truncate")}>{user?.displayName || user?.handle}</div>
+                    <div className="text-theme_dark-T1 text-xs group-hover:underline">@{user?.handle}</div>
                 </div>
             </div>
 
@@ -244,7 +253,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
         </>
     }
 
-    return <div className={clsx("w-full rounded-md flex flex-col p-2 whitespace-pre-line text-xs border border-transparent hover:border-white", highlight? "bg-slate-700" : "bg-theme_dark-L1")}>
+    return <div {...longPressPost()} className={clsx("w-full rounded-md flex flex-col p-2 whitespace-pre-line text-xs border border-transparent hover:border-white", highlight? "bg-slate-700" : "bg-theme_dark-L1")}>
         {
             post.reposterDid &&
             <div className="text-theme_dark-T0 flex place-items-center pl-6 mb-1 hover:underline"
@@ -320,13 +329,17 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                     <button
                         type="button"
                         className="flex place-items-center justify-center gap-1 hover:bg-gray-400 min-w-6 min-h-6 p-1"
-                        onClick={() => openThread(post.uri)}>
+                        onClick={(evt) => {
+                            evt.stopPropagation();
+                            openThread(post.uri);
+                        }}>
                         <BsListNested className="w-4 h-4"/>
                     </button>
                     <button
                         type="button"
                         className="flex place-items-center justify-center gap-1 hover:bg-gray-400 min-w-6 min-h-6 p-1"
                         onClick={(evt) => {
+                            evt.stopPropagation();
                             console.log("reply");
                         }}>
                         <HiOutlineChatBubbleOvalLeft className="w-4 h-4"/>
@@ -338,6 +351,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                         type="button"
                         className="flex place-items-center justify-center gap-1 hover:bg-gray-400 min-w-6 min-h-6 p-1"
                         onClick={(evt) => {
+                            evt.stopPropagation();
                             console.log("repost");
                         }}>
                         <BiRepost className="h-4 w-4" />
@@ -349,6 +363,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                         type="button"
                         className="flex place-items-center justify-center gap-1 hover:bg-gray-400 min-w-6 min-h-6 p-1"
                         onClick={(evt) => {
+                            evt.stopPropagation();
                             console.log("like");
                         }}>
                         <AiOutlineHeart className="h-4 w-4" />
@@ -360,6 +375,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                         type="button"
                         className="flex place-items-center gap-1 hover:bg-gray-400 min-w-6 min-h-6 p-1"
                         onClick={(evt) => {
+                            evt.stopPropagation();
                             console.log("etc");
                             setPopupConfig({
                                 state: PopupState.POST_ACTION,

@@ -1,6 +1,6 @@
 import {updateMemory} from "@/lib/utils/redux/slices/memory";
 import {BiArrowBack} from "react-icons/bi";
-import {ColumnConfig, FetchedColumn} from "@/lib/utils/types-constants/column";
+import {ColumnConfig, FetchedColumn, MAX_WIDTH, MIN_WIDTH} from "@/lib/utils/types-constants/column";
 import {useSelector, useDispatch} from "react-redux";
 import {HiChevronLeft, HiChevronRight} from "react-icons/hi";
 import {MdDeleteForever} from "react-icons/md";
@@ -129,7 +129,7 @@ export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
                         <button type="button"
                                 className="w-8 h-8 p-1 border border-theme_dark-I0 rounded-lg mr-2 bg-theme_dark-I1 hover:bg-theme_dark-I2 shrink-0 grid place-items-center"
                                 onClick={() => {
-                                    const v = Math.max((sliderVal*10-1)/10, 18);
+                                    const v = Math.max((sliderVal*10-1)/10, MIN_WIDTH);
                                     setSliderVal(v);
                                     dispatchSliderVal(v);
                                 }}
@@ -137,14 +137,15 @@ export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
                             <FaMinus className="w-4 h-4" />
                         </button>
                         <input
+                            key={column.width}
                             className="w-full h-2 rounded-lg cursor-pointer accent-red-700"
-                            type="range" min="20" max="26" step="0.1" defaultValue={column.width}
+                            type="range" min={MIN_WIDTH} max={MAX_WIDTH} step="0.1" defaultValue={column.width}
                             onMouseUp={dispatchSliderVal} onTouchEnd={dispatchSliderVal}
                             onChange={(evt) => setSliderVal(parseFloat(evt.target.value))}/>
                         <button type="button"
                                 className="w-8 h-8 p-1 border border-theme_dark-I0 rounded-lg mr-2 bg-theme_dark-I1 hover:bg-theme_dark-I2 shrink-0 grid place-items-center"
                                 onClick={() => {
-                                    const v = Math.min((sliderVal*10+1)/10, 26);
+                                    const v = Math.min((sliderVal*10+1)/10, MAX_WIDTH);
                                     setSliderVal(v);
                                     dispatchSliderVal(v);
                                 }}

@@ -3,7 +3,7 @@ import {Post} from "@/lib/utils/types-constants/post";
 import {setPathOfObject} from "@/lib/utils/object";
 import {BlueskyUserData, UserData} from "@/lib/utils/types-constants/user-data";
 import {ColumnMode} from "@/lib/utils/types-constants/column";
-import {PopupConfig} from "@/lib/utils/types-constants/popup";
+import {Feed} from "@/lib/utils/types-constants/feed";
 
 
 
@@ -11,21 +11,27 @@ export interface MemoryState {
     columns: {
         [id:string]: {
             postUris: {
-                current: string[],
-                pending: string[]
+                current: {
+                    uris:string[]
+                    cursor:string
+                }
+                pending: {
+                    uris:string[]
+                    cursor:string
+                }
             }
-            lastTs:number,
-            mode?:ColumnMode,
-            cursor:string
+            lastTs:number
+            mode?:ColumnMode
         }
     } // load more resets to the top
     posts: {[uri:string]: Post} // Saved post info
+    feeds:{[uri:string]: Feed}
     userData:{[id:string]: UserData} // Saved other users info
 }
 
 // Don't persist, start from scratch when first connected if main, otherwise recover from last point
 // lastTs is to make sure old fetch or collision does not spoil data
-const initialState:MemoryState = {posts:{}, columns:{}, userData:{}};
+const initialState:MemoryState = {posts:{}, columns:{}, userData:{}, feeds:{}};
 
 const slice = createSlice({
     name:"memory",
@@ -37,11 +43,16 @@ const slice = createSlice({
                 ids.forEach(id => {
                     memory.columns[id] = {
                         postUris:{
-                            current:[],
-                            pending:[]
+                            current:{
+                                uris:[],
+                                cursor:""
+                            },
+                            pending:{
+                                uris:[],
+                                cursor:""
+                            }
                         },
-                        lastTs: 0,
-                        cursor: ""
+                        lastTs: 0
                     }
                 })
             }

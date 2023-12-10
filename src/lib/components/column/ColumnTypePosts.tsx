@@ -20,7 +20,7 @@ export default function ColumnTypePosts({attributes, listeners, column}) {
 
     const loadUpdates = () => {
         const col = memory.columns[column.id];
-        if (col && col.postUris.pending.length > 0) {
+        if (col && col.postUris.pending.uris.length > 0) {
             let command = {};
             command[`columns.${column.id}.postUris.current`] = col.postUris.pending;
             dispatch(updateMemory(command));
@@ -70,16 +70,18 @@ export default function ColumnTypePosts({attributes, listeners, column}) {
                  ref={scrollRef}
                  onScroll={(event) => {
                      const target:any = event.target;
+
                      if (target.scrollTop === 0) {
                          console.log("top"); // auto push
-                     } else if (target.scrollHeight - target.scrollTop === target.clientHeight) {
-                         console.log("bottom");
+                     } else if (target.scrollHeight - target.scrollTop <= target.clientHeight + 2000) {
+                         console.log("near or at bottom");
+                         // Pull more using cursor
                      } else {
-
+                         console.log(target.scrollHeight - target.scrollTop, target.clientHeight);
                      }
                  }}>
                 {
-                    memory.columns[column.id] && memory.columns[column.id].postUris.current.reduce((acc, uri) => {
+                    memory.columns[column.id] && memory.columns[column.id].postUris.current.uris.reduce((acc, uri) => {
                         const post = memory.posts[uri];
                         if (post) {
                             acc.push(<PostItem key={uri} post={post} column={column} highlight={false}/>)

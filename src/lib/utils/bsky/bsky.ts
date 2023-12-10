@@ -2,6 +2,7 @@ import { BskyAgent }  from "@atproto/api";
 import {decrypt, parseKey} from "@/lib/utils/crypto";
 import {addOrUpdateAccount, logOut} from "@/lib/utils/redux/slices/accounts";
 import {store} from "@/lib/utils/redux/store";
+import {Feed} from "@/lib/utils/types-constants/feed";
 
 
 // Try login with password
@@ -68,4 +69,111 @@ export const REASONOTHER = 'com.atproto.moderation.defs#reasonOther'
 
 const createModerationReport = async (agent, uri, cid, reason, reasonType) => {
     await agent.createModerationReport({reasonType, reason, subject:{uri, cid}})
+}
+
+export const getMyFeeds = async (agents):Promise<Feed[]> => {
+    let feedMap = new Map<string, Feed>();
+    const destructureAndAdd = (x, flags, uri) => {
+        const {displayName, description, likeCount, avatar, creator:{did:creator}, indexedAt} = x;
+        feedMap.set(uri, {
+            uri,
+            displayName:displayName||"",
+            description:description||"",
+            likeCount,
+            avatar:avatar||"",
+            creator,
+            indexedAt,
+            ...flags
+        } as Feed);
+    }
+
+    for (const agent of agents) {
+        let [custom, saved] = await Promise.all([
+            getCustomFeeds(agent),
+            getSavedFeeds(agent)
+        ]);
+
+        saved.forEach(x => {
+            const {uri} = x;
+            const existing = feedMap.get(uri);
+            if (existing) {
+                // copy flags
+                if (x.pinned) {
+                    existing.pinned = true;
+                }
+                existing.saved = true;
+            } else {
+                destructureAndAdd(x, {saved:true, pinned: x.pinned}, uri);
+            }
+        });
+
+        custom.forEach(x => {
+            const {uri} = x;
+            const existing = feedMap.get(uri);
+            if (existing) {
+                // copy flags
+                existing.custom = true;
+            } else {
+                destructureAndAdd(x, {custom:true}, uri);
+            }
+        });
+    }
+
+
+    const feeds = [...feedMap.values()];
+    feeds.sort((x,y) => {
+        if (x.displayName === y.displayName) {
+            return x.indexedAt > y.indexedAt? 1: -1;
+        }
+        return x.displayName > y.displayName? 1 : -1;
+    });
+
+
+    return feeds;
+}
+
+const getSavedFeeds = async (agent):Promise<any[]> => {
+    const getSavedFeedIds = async () => {
+        let {data} = await agent.api.app.bsky.actor.getPreferences();
+        const feeds = data.preferences.find(x =>  x["$type"] === "app.bsky.actor.defs#savedFeedsPref");
+        if (feeds) {
+            const {$type, ...rest} = feeds;
+            return rest;
+        }
+
+        return [];
+    }
+
+    const result = [];
+    const {saved, pinned} = await getSavedFeedIds();
+    if (saved) {
+        const {data:{feeds}} = await agent.api.app.bsky.feed.getFeedGenerators({feeds: saved});
+        return feeds.map(x => {
+            if (pinned.indexOf(x.uri) >= 0) {
+                return {...x, pinned:true};
+            }
+            return x;
+        });
+    }
+    return result;
+}
+
+
+
+
+export const getCustomFeeds = async (agent) => {
+    let cursor = {};
+    let results = [];
+    do {
+        const params = {actor: agent.session.did, ...cursor};
+        const {data} = await agent.api.app.bsky.feed.getActorFeeds(params);
+        const {cursor:newCursor, feeds} = data;
+        feeds.forEach(x => results.push(x));
+        if (!newCursor) {
+            cursor = null;
+        } else {
+            cursor = {cursor: newCursor};
+        }
+    } while (cursor);
+    return results;
 }
