@@ -80,7 +80,9 @@ export interface InHome extends InColumn {
 
 export interface InColumnFeed extends InColumn {
     type: ColumnType.FEED
+    observer: string
     uri: string
+    icon: string
 }
 
 export interface InColumnUsers extends InColumn {

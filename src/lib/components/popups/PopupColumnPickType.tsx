@@ -1,6 +1,6 @@
 import Popup from "@/lib/components/popups/Popup";
 import {ColumnType} from "@/lib/utils/types-constants/column";
-import {BiSearchAlt, BiSolidHome} from "react-icons/bi";
+import {BiSearch, BiSearchAlt, BiSolidHome} from "react-icons/bi";
 import {ImFeed} from "react-icons/im";
 import {PiUserListBold} from "react-icons/pi";
 import {BsFillBellFill} from "react-icons/bs";
@@ -13,6 +13,10 @@ import {randomUuid} from "@/lib/utils/random";
 import AvatarUser from "@/lib/components/AvatarUser";
 import {getAgent, getMyFeeds} from "@/lib/utils/bsky/bsky";
 import AvatarFeed from "@/lib/components/AvatarFeed";
+import {TbColumnInsertRight} from "react-icons/tb";
+import {TiPin} from "react-icons/ti";
+import {GiAtom} from "react-icons/gi";
+import {LiaAtomSolid} from "react-icons/lia";
 
 const columnData = [
     {type: ColumnType.HOME, icon: <BiSolidHome className="h-6 w-6"/>, description: "The Default Following Feed of an account"},
@@ -81,18 +85,13 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
                 switch(x.type) {
                     case ColumnType.FEED: {
                         setMode({mode:ColumnTypeMode.BUSY});
-
-
-
-                        const accountFeedArray = await Promise.all(accounts.order.reduce((acc, x) => {
+                        const feeds = await getMyFeeds(accounts.order.reduce((acc, x) => {
                             const account = accounts.dict[x];
                             if (account && account.type === "b") {
-                                acc.push(getFeeds(account));
+                                acc.push(account);
                             }
                             return acc;
-                        }, []));
-
-
+                        }, []), memory.basicKey);
                         setMode({mode:ColumnTypeMode.FEED, feeds} as ColumnTypeFeedData);
                         break;
                     }
@@ -118,8 +117,8 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
                                         switch (expanded) {
                                             case ColumnType.HOME: {
                                                 setOpen(false);
-                                                const homeId = randomUuid();
-                                                const b = {pageId: config.currentPage, name: `Home`, config: {id: homeId, type: ColumnType.HOME, observer: id}, defaults: config};
+                                                const colId = randomUuid();
+                                                const b = {pageId: memory.currentPage, name: `Home`, config: {id: colId, type: ColumnType.HOME, observer: id}, defaults: config};
                                                 dispatch(addColumn(b));
                                                 break;
                                             }
@@ -151,7 +150,6 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
         setOpen={setOpen}
         className="bg-theme_dark-L1 rounded-md border border-theme_dark-I0 text-theme_dark-T1">
 
-        <div>
             {
                 mode.mode === ColumnTypeMode.ROOT && <>
                     <h1 className="text-center text-base font-semibold text-theme_dark-T0 p-2">
@@ -176,36 +174,50 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
             }
             {
                 mode.mode === ColumnTypeMode.FEED &&
-                <div>
+                <div className="w-[26rem]">
                     <h1 className="text-center text-base font-semibold text-theme_dark-T0 p-2">
                         <span>Choose a Feed</span>
                     </h1>
-                    <div className="flex place-items-center">
+                    <div className="flex place-items-center p-2">
                         <input type="text" placeholder="Search Saved Feeds or Add via URI/URL" className="w-full"/>
-                        <button type="button">Add</button>
+                        <BiSearch className="w-6 h-6"/>
                     </div>
                     {
                         (mode as ColumnTypeFeedData).feeds.map(x =>
-                            <div key={x.uri} className="flex place-items-center justify-between gap-1 p-2">
-                                <div className="flex place-items-center gap-1">
-                                    <div className="h-6 w-6 relative"><AvatarFeed avatar={x.avatar}/></div>
-                                    <div>{x.displayName}</div>
-                                </div>
-                                <div className="flex place-items-center gap-1">
-                                    {
-                                        x.pinned && <div>Pinned</div>
-                                    }
-                                    {
-                                        x.custom && <div>Custom</div>
-                                    }
+                            <div key={x.uri}
+                                 className="flex place-items-center justify-between gap-1 p-2 hover:bg-theme_dark-I1"
+                                 onClick={() => {
+                                     if (mode.mode === ColumnTypeMode.FEED) {
+                                         setMode({mode:ColumnTypeMode.BUSY});
+                                         const colId = randomUuid();
+                                         const b = {pageId: memory.currentPage, name: `Home`, config: {id: colId, type: ColumnType.HOME, observer: accounts.primaryBlueskyDid}, defaults: config};
+                                         dispatch(addColumn(b));
 
-                                    <button type="button">Add</button>
+
+                                         setOpen(false);
+                                     }
+                                 }}
+                            >
+                                <div className="flex place-items-center gap-3">
+                                    <div className="h-12 w-12 relative shrink-0 rounded-full border border-theme_dark-I0">
+                                        <AvatarFeed avatar={x.avatar}/>
+                                        {
+                                            x.pinned && <TiPin className="absolute h-5 w-5 -top-2 -right-1 rounded-full border border-theme_dark-I0 bg-theme_dark-I1" />
+                                        }
+                                        {
+                                            x.custom && <LiaAtomSolid className="absolute font-bold h-5 w-5 -bottom-2 -right-1 rounded-full border border-theme_dark-I0 bg-theme_dark-I1" />
+                                        }
+                                    </div>
+                                    <div>
+                                        <div className="text-sm font-bold">{x.displayName}</div>
+                                        <div className="text-xs line-clamp-2">{x.description}</div>
+                                    </div>
                                 </div>
+                                <FaPlus className="shrink-0 w-6 h-6 p-1" />
 
                             </div>)
                     }
                 </div>
             }
-        </div>
     </Popup>
 }

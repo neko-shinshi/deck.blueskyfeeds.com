@@ -6,7 +6,7 @@ import SectionControls from "@/lib/components/SectionControls";
 import {arrayMove} from "@dnd-kit/sortable";
 import {setColumnOrder} from "@/lib/utils/redux/slices/pages";
 import SectionColumns from "@/lib/components/SectionColumns";
-import {initializeColumn} from "@/lib/utils/redux/slices/memory";
+import {initializeColumn, startApp} from "@/lib/utils/redux/slices/memory";
 import LoginSwitcher from "@/lib/components/LoginSwitcher";
 import PopupFormSignInBluesky from "@/lib/components/popups/PopupFormSignInBluesky";
 import {PopupState} from "@/lib/utils/types-constants/popup";
@@ -27,6 +27,8 @@ export default function Main ({}) {
     const pages = useSelector((state) => state.pages);
     //@ts-ignore
     const config = useSelector((state) => state.config);
+    //@ts-ignore
+    const memory = useSelector((state) => state.memory);
     const dispatch = useDispatch();
 
     // This does NOT use redux so that it's not shared
@@ -43,14 +45,32 @@ export default function Main ({}) {
         if (ids.length > 0) {
             dispatch(initializeColumn({__terminate:true, ids}));
         }
+
+        console.log("total pages", pages.pages.order.length);
+        switch (pages.pages.order.length) {
+            case 0: {
+                // User automatically asked to sign in
+                break;
+            }
+            case 1: {
+                console.log("start app!");
+                const pageId = pages.pages.order[0];
+                dispatch(startApp({__terminate:true, pageId}));
+                break;
+            }
+            default: {
+                // Show a POPUP to decide which page
+                break;
+            }
+        }
     }, []);
 
 
     useEffect(() => {
-        if (config.currentPage && pages && pages.pages.dict[config.currentPage]) {
-            setColumnIds(pages.pages.dict[config.currentPage].columns.filter(colId => pages.columnDict[colId]));
+        if (memory.currentPage && pages && pages.pages.dict[memory.currentPage]) {
+            setColumnIds(pages.pages.dict[memory.currentPage].columns.filter(colId => pages.columnDict[colId]));
         }
-    }, [config, pages]);
+    }, [memory, pages]);
 
     function handleColumnDragEnd(event) {
         const {active, over} = event;
@@ -62,7 +82,7 @@ export default function Main ({}) {
 
             const result = arrayMove(columnIds, oldIndex, newIndex);
             console.log("new", result);
-            dispatch(setColumnOrder({order:result, pageId: config.currentPage}));
+            dispatch(setColumnOrder({order:result, pageId: memory.currentPage}));
         }
     }
 
@@ -85,14 +105,14 @@ export default function Main ({}) {
 
         <div className="h-screen w-full bg-theme_dark-L0">
             {
-                config && !config.currentPage && <div className="w-full h-screen grid place-items-center  bg-cover bg-center bg-[url('https://files.blueskyfeeds.com/sky.webp')]">
+                memory && !memory.currentPage && <div className="w-full h-screen grid place-items-center  bg-cover bg-center bg-[url('https://files.blueskyfeeds.com/sky.webp')]">
                     <LoginSwitcher initialMode="root"/>
                 </div>
             }
 
 
             {
-                config && config.currentPage &&
+                memory && memory.currentPage &&
                 <div className="w-full h-full flex pr-2 py-2">
                     <SectionControls columnIds={columnIds} handleColumnDragEnd={handleColumnDragEnd}/>
                     <SectionColumns columnIds={columnIds} handleColumnDragEnd={handleColumnDragEnd}/>

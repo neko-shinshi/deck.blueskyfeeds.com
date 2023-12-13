@@ -71,10 +71,14 @@ const createModerationReport = async (agent, uri, cid, reason, reasonType) => {
     await agent.createModerationReport({reasonType, reason, subject:{uri, cid}})
 }
 
-export const getMyFeeds = async (agents):Promise<Feed[]> => {
-    let feedMap = new Map<string, Feed>();
-    const destructureAndAdd = (x, flags, uri) => {
-        const {displayName, description, likeCount, avatar, creator:{did:creator}, indexedAt} = x;
+export const getMyFeeds = async (users, basicKey):Promise<Feed[]> => {
+    let bigFeedMap = new Map<string, Feed>();
+    const destructureAndAdd = (x, flags, uri, feedMap) => {
+        let {displayName, description, likeCount, avatar, creator, indexedAt} = x;
+        if (typeof creator === 'object' && creator !== null) {
+            creator = creator.did;
+        }
+
         feedMap.set(uri, {
             uri,
             displayName:displayName||"",
@@ -87,7 +91,12 @@ export const getMyFeeds = async (agents):Promise<Feed[]> => {
         } as Feed);
     }
 
-    for (const agent of agents) {
+    const feedMaps = await Promise.all(users.map(async user => {
+        const agent = await getAgent(user, basicKey);
+        if (!agent) {
+            return [];
+        }
+        let feedMap = new Map<string, Feed>();
         let [custom, saved] = await Promise.all([
             getCustomFeeds(agent),
             getSavedFeeds(agent)
@@ -103,7 +112,7 @@ export const getMyFeeds = async (agents):Promise<Feed[]> => {
                 }
                 existing.saved = true;
             } else {
-                destructureAndAdd(x, {saved:true, pinned: x.pinned}, uri);
+                destructureAndAdd(x, {saved:true, pinned: x.pinned}, uri, feedMap);
             }
         });
 
@@ -114,20 +123,43 @@ export const getMyFeeds = async (agents):Promise<Feed[]> => {
                 // copy flags
                 existing.custom = true;
             } else {
-                destructureAndAdd(x, {custom:true}, uri);
+                destructureAndAdd(x, {custom:true}, uri, feedMap);
             }
         });
-    }
 
+        return feedMap;
+    }));
 
-    const feeds = [...feedMap.values()];
+    console.log(feedMaps);
+
+    feedMaps.forEach(feedMap => {
+        [...feedMap.values()].forEach(x => {
+            const {uri, custom, saved, pinned} = x;
+            console.log(JSON.stringify(x, null, 2));
+            const existing = bigFeedMap.get(uri);
+            if (existing) {
+                if (custom) {
+                    existing.custom = true;
+                }
+                if (saved) {
+                    existing.saved = true;
+                }
+                if (pinned) {
+                    existing.pinned = true;
+                }
+            } else {
+                destructureAndAdd(x, {pinned: !!x.pinned, saved: !!x.saved, custom: !!x.custom}, x.uri, bigFeedMap);
+            }
+        });
+    });
+
+    const feeds = [...bigFeedMap.values()];
     feeds.sort((x,y) => {
         if (x.displayName === y.displayName) {
             return x.indexedAt > y.indexedAt? 1: -1;
         }
         return x.displayName > y.displayName? 1 : -1;
     });
-
 
     return feeds;
 }
@@ -146,13 +178,11 @@ const getSavedFeeds = async (agent):Promise<any[]> => {
 
     const result = [];
     const {saved, pinned} = await getSavedFeedIds();
+
     if (saved) {
         const {data:{feeds}} = await agent.api.app.bsky.feed.getFeedGenerators({feeds: saved});
         return feeds.map(x => {
-            if (pinned.indexOf(x.uri) >= 0) {
-                return {...x, pinned:true};
-            }
-            return x;
+            return {...x, pinned:pinned.indexOf(x.uri) >= 0};
         });
     }
     return result;

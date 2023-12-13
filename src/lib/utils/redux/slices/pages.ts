@@ -1,13 +1,16 @@
-import { createSlice } from '@reduxjs/toolkit'
+import {createSlice} from '@reduxjs/toolkit'
 import {randomUuid} from "@/lib/utils/random";
 import {
-    ColumnConfig, ColumnHome, ColumnNotifications,
+    ColumnConfig,
+    ColumnFeed,
+    ColumnHome,
+    ColumnNotifications,
     ColumnType,
-    InColumn, InHome,
+    InColumn, InColumnFeed,
+    InHome,
     PageOfColumns
 } from "@/lib/utils/types-constants/column";
 import {ALL_NOTIFICATION_TYPES} from "@/lib/utils/types-constants/notification";
-import {setPathOfObject} from "@/lib/utils/object";
 
 
 export const makeInitialState = () => {
@@ -45,7 +48,7 @@ const slice = createSlice({
             switch (type) {
                 case ColumnType.HOME: {
                     const {observer} = config as InHome;
-                    const column:ColumnHome = {
+                    newColumn = {
                         name,
                         id, type,
                         observer,
@@ -54,12 +57,11 @@ const slice = createSlice({
                         thumbnailSize: defaults.thumbnailSize,
                         width: defaults.columnWidth,
                         icon:""
-                    }
-                    newColumn = column;
+                    } as ColumnHome;
                     break;
                 }
                 case ColumnType.NOTIFS: {
-                    const column:ColumnNotifications = {
+                    newColumn = {
                         name,
                         id, type,
                         allowedTypes: ALL_NOTIFICATION_TYPES,
@@ -69,11 +71,22 @@ const slice = createSlice({
                         thumbnailSize: defaults.thumbnailSize,
                         width: defaults.columnWidth,
                         icon:""
-                    }
-                    newColumn = column;
+                    } as ColumnNotifications;
                     break;
                 }
                 case ColumnType.FEED: {
+                    const {observer, uri, icon} = config as InColumnFeed;
+                    newColumn = {
+                        name,
+                        id, type,
+                        observer,
+                        uri,
+                        active: true,
+                        refreshMs: defaults.refreshMs,
+                        thumbnailSize: defaults.thumbnailSize,
+                        width: defaults.columnWidth,
+                        icon
+                    } as ColumnFeed;
                     break;
                 }
                 case ColumnType.USERS: {

@@ -99,10 +99,10 @@ export default function RefreshHandler({}) {
                 const accounts = state.accounts;
                 const memory = state.memory;
                 const config = state.config;
-                if (!config.currentPage) {
+                if (!memory.currentPage) {
                     return;
                 }
-                const pagesToUpdate = [...new Set([...openPages, config.currentPage])];
+                const pagesToUpdate = [...new Set([...openPages, memory.currentPage])];
 
                 // only fetch columns in pages that are open, and accounts that are logged in
 
@@ -275,7 +275,7 @@ export default function RefreshHandler({}) {
         const sendInterval = setInterval(async () => {
             const state = await store.getState();
             const config = state.config;
-            bc.postMessage({id:myId, page: config.currentPage, type:"hb"});
+            bc.postMessage({id:myId, page: memory.currentPage, type:"hb"});
         }, 0.5*1000);
 
         // Determine main
@@ -293,7 +293,7 @@ export default function RefreshHandler({}) {
             }
             const state = await store.getState();
             const config = state.config;
-            openPages = [...new Set([...hbMap.values(), config.currentPage].filter(x => x !== ""))];
+            openPages = [...new Set([...hbMap.values(), memory.currentPage].filter(x => x !== ""))];
             hbMap.clear();
         }, 2*1000);
 

@@ -6,7 +6,7 @@ export default function AvatarUser ({avatar, alt}:{avatar:string, alt:string}) {
             avatar? <Image
                 src={avatar}
                 unoptimized fill
-                className="rounded-full text-transparent"
+                className="rounded-full overflow-hidden"
                 alt={alt}
             />: <svg viewBox="0 0 24 24" fill="none" stroke="none">
                 <desc>{alt}</desc>

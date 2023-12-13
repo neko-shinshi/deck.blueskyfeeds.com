@@ -5,12 +5,12 @@ import Link from "next/link";
 import {HiAtSymbol} from "react-icons/hi";
 import clsx from "clsx";
 import {useDispatch, useSelector} from "react-redux";
-import {addOrUpdateAccount, resetAccounts} from "@/lib/utils/redux/slices/accounts"
-import {setConfigValue, startApp} from "@/lib/utils/redux/slices/config";
+import {addOrUpdateAccount, resetAccounts, setAccountValue} from "@/lib/utils/redux/slices/accounts"
+import {setConfigValue} from "@/lib/utils/redux/slices/config";
 import {useForm} from "react-hook-form";
 import {encrypt, makeKey, parseKey} from "@/lib/utils/crypto";
 import {addColumn} from "@/lib/utils/redux/slices/pages";
-import {initializeColumn} from "@/lib/utils/redux/slices/memory";
+import {initializeColumn, startApp} from "@/lib/utils/redux/slices/memory";
 import recoverDataFromJson from "@/lib/utils/client/recoverDataFromJson";
 import {BlueskyAccount} from "@/lib/utils/types-constants/user-data";
 import {randomUuid} from "@/lib/utils/random";
@@ -79,7 +79,7 @@ export default function FormSignInBluesky ({initialUser=null}:
                 const {data} = await agent.getProfile({actor:did});
                 if (Object.values(accounts.dict).filter(x => (x as BlueskyAccount).active)) {
                     // This user is now the primary!
-                    dispatch(setConfigValue({primaryBlueskyDid: did}))
+                    dispatch(setAccountValue({primaryBlueskyDid: did}))
                 }
                 const {displayName, avatar} = data;
                 let keyString = config.basicKey;

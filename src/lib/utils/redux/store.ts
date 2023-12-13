@@ -83,7 +83,7 @@ export const exportJSON = async () => {
 
     });
     state.config.basicKey = "";
-    state.config.primaryBlueskyDid = "";
+    state.accounts.primaryBlueskyDid = "";
 
     return state;
 }

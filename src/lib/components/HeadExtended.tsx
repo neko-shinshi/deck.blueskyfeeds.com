@@ -1,8 +1,8 @@
 import Head from "next/head";
 import {useRouter} from "next/router";
 
-const DEFAULT_IMAGE_URL = "https://files.anianimals.moe/AniAnimals-OG.jpg";
-const DEFAULT_IMAGE_DESCRIPTION = "Anime Animals Banner";
+const DEFAULT_IMAGE_URL = "https://files.blueskyfeeds.moe/skyship_banner.jpg";
+const DEFAULT_IMAGE_DESCRIPTION = "Skyship App";
 
 export default function HeadExtended(
     {

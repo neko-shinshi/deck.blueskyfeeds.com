@@ -51,7 +51,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
     const openThread = async (uri) => {
         console.log("opening ", uri);
         // column observer OR primaryDid
-        const id = 'observer' in column? (column as ObservedColumn).observer : config.primaryBlueskyDid;
+        const id = 'observer' in column? (column as ObservedColumn).observer : accounts.primaryBlueskyDid;
         if (!id) {
             alert("no account available to open thread");
         } else {

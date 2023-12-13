@@ -2,12 +2,27 @@ import { createSlice } from '@reduxjs/toolkit'
 import {BlueskyAccount, MastodonAccount} from "@/lib/utils/types-constants/user-data";
 
 
-export const initialState:{order:string[], dict:{[id:string]: BlueskyAccount | MastodonAccount}} = {dict: {}, order:[]};
+export const initialState:{
+    order:string[],
+    dict:{[id:string]: BlueskyAccount | MastodonAccount},
+    primaryBlueskyDid: string // for bluesky
+    primaryMastodonAcct: string // for mastodon
+} = {
+    dict: {}, order:[], primaryBlueskyDid:"", primaryMastodonAcct:""
+};
 
 const slice = createSlice({
     name:"accounts",
     initialState,
     reducers:{
+        setAccountValue: (state, action) => {
+            for (const [key, value] of Object.entries(action.payload)) {
+                if (key !== "__terminate") {
+                    state[key] = value;
+                }
+            }
+        },
+
         addOrUpdateAccount: (users, action) => {
             const {service, usernameOrEmail, encryptedPassword, id, displayName, avatar, handle, refreshJwt, accessJwt,
                  lastTs} = action.payload;
@@ -71,5 +86,5 @@ const slice = createSlice({
     }
 });
 
-export const {addOrUpdateAccount, removeAccount, logOut, setAccountOrder, resetAccounts} = slice.actions
+export const {setAccountValue, addOrUpdateAccount, removeAccount, logOut, setAccountOrder, resetAccounts} = slice.actions
 export default slice.reducer

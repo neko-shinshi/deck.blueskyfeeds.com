@@ -8,7 +8,7 @@ export default function AvatarSelfMain ({avatar, onClick, className}) {
             avatar? <Image
                 unoptimized fill
                 src={avatar}
-                className="rounded-full text-transparent"
+                className="rounded-full overflow-hidden"
                 alt={title}
             />: <svg viewBox="0 0 24 24" fill="none" stroke="none">
                 <title>{title}</title>

@@ -10,13 +10,10 @@ interface Config {
     altTextPrompt: boolean
     offsetLeft: boolean // align to left or to avatar
     fontSize: FontSize
-    primaryBlueskyDid: string // for bluesky
-    primaryMastodonAcct: string // for mastodon
     basicKey: string
     columnWidth: number
     refreshMs: RefreshTimingType
     thumbnailSize: ThumbnailSize
-    currentPage:string // When updating this to switch pages, __terminate it so other pages not affected
     showTags: boolean
     version: number
 }
@@ -28,10 +25,7 @@ export const initialState:Config = {
     altTextPrompt: true,
     offsetLeft: true,
     fontSize: FontSize.Medium,
-    primaryBlueskyDid: "",
-    primaryMastodonAcct: "",
     basicKey: "",
-    currentPage:"",
 
     // Globals Defaults
     columnWidth: 21,
@@ -45,11 +39,6 @@ const slice = createSlice({
     name:"config",
     initialState,
     reducers:{
-        startApp: (state, action) => {
-            const {pageId} = action.payload;
-            state.currentPage = pageId;
-        },
-
         setConfigValue: (state, action) => {
             for (const [key, value] of Object.entries(action.payload)) {
                 if (key !== "__terminate") {
@@ -65,5 +54,5 @@ const slice = createSlice({
     }
 });
 
-export const {startApp, setConfigValue, resetConfig} = slice.actions
+export const {setConfigValue, resetConfig} = slice.actions
 export default slice.reducer

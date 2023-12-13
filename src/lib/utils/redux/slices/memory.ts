@@ -26,17 +26,23 @@ export interface MemoryState {
     } // load more resets to the top
     posts: {[uri:string]: Post} // Saved post info
     feeds:{[uri:string]: Feed}
+    feedsList:string[] // cached result of uris
     userData:{[id:string]: UserData} // Saved other users info
+    currentPage:string
 }
 
 // Don't persist, start from scratch when first connected if main, otherwise recover from last point
 // lastTs is to make sure old fetch or collision does not spoil data
-const initialState:MemoryState = {posts:{}, columns:{}, userData:{}, feeds:{}};
+const initialState:MemoryState = {posts:{}, columns:{}, userData:{}, feeds:{}, feedsList:[], currentPage:""};
 
 const slice = createSlice({
     name:"memory",
     initialState,
     reducers:{
+        startApp: (state, action) => {
+            const {pageId} = action.payload;
+            state.currentPage = pageId;
+        },
         initializeColumn: (memory, action) => {
             const {ids} = action.payload;
             if (Array.isArray(ids)) {
@@ -73,5 +79,5 @@ const slice = createSlice({
     }
 });
 
-export const {initializeColumn, updateMemory, resetMemory} = slice.actions
+export const {startApp, initializeColumn, updateMemory, resetMemory} = slice.actions
 export default slice.reducer

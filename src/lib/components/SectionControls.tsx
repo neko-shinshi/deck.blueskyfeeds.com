@@ -128,7 +128,7 @@ export default function SectionControls ({columnIds, handleColumnDragEnd}) {
 
                 <AvatarSelfMain
                     className="w-10 h-10 border border-theme_dark_I0 rounded-full"
-                    avatar={config.primaryBlueskyDid && accounts.dict[config.primaryBlueskyDid]?.avatar}
+                    avatar={accounts.primaryBlueskyDid && accounts.dict[accounts.primaryBlueskyDid]?.avatar}
                     onClick={() => {
                         console.log("click avatar");
                         if (accounts.order.length === 0) {

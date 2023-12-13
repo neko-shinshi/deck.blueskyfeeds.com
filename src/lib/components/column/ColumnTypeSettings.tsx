@@ -27,13 +27,13 @@ export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
     const nameRef = useRef(null);
 
     const changeOrder = (diff) => {
-        let columnIds = pages.pages.dict[config.currentPage].columns.filter(colId => pages.columnDict[colId]);
+        let columnIds = pages.pages.dict[memory.currentPage].columns.filter(colId => pages.columnDict[colId]);
         const oldIndex = columnIds.indexOf(column.id);
         if (oldIndex < 0) {console.log("can't find column"); return;}
         let newIndex = oldIndex + diff;
         if (newIndex < 0) {console.log("far left"); return;}
         const result = arrayMove(columnIds, oldIndex, newIndex);
-        dispatch(setColumnOrder({order:result, pageId: config.currentPage}));
+        dispatch(setColumnOrder({order:result, pageId: memory.currentPage}));
     }
     const dispatchSliderVal = (val) => {
         if (!isNaN(val)) {
@@ -64,7 +64,7 @@ export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
                     <div>Move Column</div>
                     {
                         (() => {
-                            let columnIds = pages.pages.dict[config.currentPage].columns.filter(colId => pages.columnDict[colId]);
+                            let columnIds = pages.pages.dict[memory.currentPage].columns.filter(colId => pages.columnDict[colId]);
                             const oldIndex = columnIds.indexOf(column.id);
                             if (oldIndex < 0) {
                                 return <div/>
