@@ -5,16 +5,16 @@ import Link from "next/link";
 import {HiAtSymbol} from "react-icons/hi";
 import clsx from "clsx";
 import {useDispatch, useSelector} from "react-redux";
-import {addOrUpdateAccount, resetAccounts, setAccountValue} from "@/lib/utils/redux/slices/accounts"
+import {addOrUpdateAccount, resetAccounts} from "@/lib/utils/redux/slices/accounts"
 import {setConfigValue} from "@/lib/utils/redux/slices/config";
 import {useForm} from "react-hook-form";
 import {encrypt, makeKey, parseKey} from "@/lib/utils/crypto";
-import {addColumn} from "@/lib/utils/redux/slices/pages";
+import {addColumn, updatePageConfig} from "@/lib/utils/redux/slices/pages";
 import {initializeColumn, startApp} from "@/lib/utils/redux/slices/memory";
 import recoverDataFromJson from "@/lib/utils/client/recoverDataFromJson";
 import {BlueskyAccount} from "@/lib/utils/types-constants/user-data";
 import {randomUuid} from "@/lib/utils/random";
-import {ColumnType} from "@/lib/utils/types-constants/column";
+import {ColumnHome, ColumnNotifications, ColumnType} from "@/lib/utils/types-constants/column";
 
 export default function FormSignInBluesky ({initialUser=null}:
 {initialUser?:BlueskyAccount}) {
@@ -77,10 +77,6 @@ export default function FormSignInBluesky ({initialUser=null}:
                 const {did, handle, refreshJwt, accessJwt} = agent.session;
                 const now = new Date().getTime();
                 const {data} = await agent.getProfile({actor:did});
-                if (Object.values(accounts.dict).filter(x => (x as BlueskyAccount).active)) {
-                    // This user is now the primary!
-                    dispatch(setAccountValue({primaryBlueskyDid: did}))
-                }
                 const {displayName, avatar} = data;
                 let keyString = config.basicKey;
                 if (!keyString) {
@@ -91,14 +87,14 @@ export default function FormSignInBluesky ({initialUser=null}:
                 const key = await parseKey(keyString);
                 const encryptedPassword = await encrypt(key, password);
 
-                if (accounts.order.length === 0 && pages.pages.order.length > 0) {
+                if (accounts.order.length === 0 && pages.pageOrder.length > 0) {
                     // First user logged in, pre-fill columns
-                    const pageId = pages.pages.order[0];
+                    const pageId = pages.pageOrder[0];
                     const notifId = randomUuid();
                     const homeId = randomUuid();
-                    const a = {pageId, name:"Notifications",config:{id:notifId, type:ColumnType.NOTIFS}, defaults: config};
+                    const a = {pageId, name:"Notifications",config:{id:notifId, type:ColumnType.NOTIFS, observers: [did]} as ColumnNotifications, defaults: config};
 
-                    const b = {pageId, name:`Home`, config:{id:homeId, type:ColumnType.HOME, observer: did}, defaults: config};
+                    const b = {pageId, name:`Home`, config:{id:homeId, type:ColumnType.HOME, observers: [did]} as ColumnHome, defaults: config};
 
                     dispatch(addColumn(a));
                     dispatch(addColumn(b));

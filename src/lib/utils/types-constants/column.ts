@@ -10,6 +10,7 @@ export interface PageOfColumns {
     maskCw: boolean
     hideCw: boolean
     cwLabels: CwType[] // CwLabel type
+    icon: string
 }
 
 export enum ColumnType {
@@ -29,15 +30,13 @@ export interface ColumnConfig {
     // Use global defaults first
     width: number
     thumbnailSize: ThumbnailSize
-    icon: string // base64 icon
+    icon: string // custom base64 icon, otherwise use default or feed's default
+
+    observers: string[]
 }
 
 export interface FetchedColumn {
     refreshMs: RefreshTimingType // Uses global default
-}
-
-export interface ObservedColumn {
-    observer: string
 }
 
 
@@ -52,45 +51,39 @@ export interface ColumnSearch extends ColumnConfig, FetchedColumn {
     string: string // search this string
 }
 
-export interface ColumnHome extends ColumnConfig, ObservedColumn, FetchedColumn {
+export interface ColumnHome extends ColumnConfig, FetchedColumn {
     type: ColumnType.HOME
 }
 
-export interface ColumnFeed extends ColumnConfig, ObservedColumn, FetchedColumn {
+export interface ColumnFeed extends ColumnConfig, FetchedColumn {
     type: ColumnType.FEED
     uri: string
 }
 
-export interface ColumnUsers extends ColumnConfig, ObservedColumn, FetchedColumn {
+export interface ColumnUsers extends ColumnConfig, FetchedColumn {
     type: ColumnType.USERS
     uri: string
-    showReplies: boolean
-    keywords: string[]
 }
 
 export interface InColumn {
     id: string
-    type: ColumnType,
+    type: ColumnType
     name: string
+    observers: string[]
+    icon: string
 }
 
-export interface InHome extends InColumn {
-    observer: string
-}
+export interface InHome extends InColumn {}
 
 export interface InColumnFeed extends InColumn {
     type: ColumnType.FEED
-    observer: string
     uri: string
-    icon: string
 }
 
 export interface InColumnUsers extends InColumn {
     type: ColumnType.USERS
-    uris: string[] // query these users
+    uris: string // use a public or 'private' list
 }
-
-
 
 
 // Column Modes
@@ -105,6 +98,7 @@ export interface ColumnModeThread extends ColumnMode {
     mode: "thread"
     posts: Post[]
     mainUri: string
+    viewer: string
 }
 
 // Look at a profile in detail

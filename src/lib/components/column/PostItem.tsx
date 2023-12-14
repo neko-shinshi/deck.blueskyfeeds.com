@@ -12,9 +12,9 @@ import {
     RecordPost,
     TextPart
 } from "@/lib/utils/types-constants/post";
-import {ColumnConfig, ObservedColumn} from "@/lib/utils/types-constants/column";
+import {ColumnConfig} from "@/lib/utils/types-constants/column";
 import {useDispatch, useSelector} from "react-redux";
-import AvatarUser from "@/lib/components/AvatarUser";
+import AvatarUser from "@/lib/components/ui/AvatarUser";
 import clsx from "clsx";
 import ReactTimeAgo from 'react-time-ago'
 import {BiRepost} from "react-icons/bi";
@@ -23,7 +23,7 @@ import {getPostThread} from "@/lib/utils/bsky/bsky-feed";
 import {HiOutlineChatBubbleOvalLeft} from "react-icons/hi2";
 import {AiOutlineHeart} from "react-icons/ai";
 import {FaEllipsis} from "react-icons/fa6";
-import AvatarFeed from "@/lib/components/AvatarFeed";
+import AvatarFeed from "@/lib/components/ui/AvatarFeed";
 import Image from "next/image";
 import {ThumbnailSize} from "@/lib/utils/types-constants/thumbnail-size";
 import {BsListNested} from "react-icons/bs";
@@ -44,19 +44,16 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
         cancelOnMovement:25,
         cancelOutsideElement:true,
         onFinish:(evt, target) => {
-            openThread(post.uri);
+            if (!highlight) {
+                openThread(post.uri);
+            }
         },
     });
 
     const openThread = async (uri) => {
         console.log("opening ", uri);
         // column observer OR primaryDid
-        const id = 'observer' in column? (column as ObservedColumn).observer : accounts.primaryBlueskyDid;
-        if (!id) {
-            alert("no account available to open thread");
-        } else {
-            await getPostThread(id, column.id, uri);
-        }
+        await getPostThread(column.observers[0], column.id, uri);
     }
 
     const thumbSizeToNumber = () => {
@@ -97,7 +94,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                 </div>
             }
             {
-                column.thumbnailSize !== ThumbnailSize.HIDDEN && <div className="p-4">
+                column.thumbnailSize !== ThumbnailSize.HIDDEN && <div className="p-1">
                     {
                         embedImage.images.length === 1 &&
                         <div className="grid place-items-center">
@@ -324,17 +321,30 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
             <PostEmbeds postItem={post}/>
 
             <div>
+                {
+                    highlight && (post.replyCount > 0 || post.repostCount > 0 || post.likeCount > 0) && <>
+                        <div className="w-full h-0.5 bg-gray-700" />
+                        <div className="flex gap-4">
+                            {post.replyCount > 0 && <div>{post.replyCount} {post.replyCount === 1? "Reply" : "Replies"}</div>}
+                            {post.repostCount > 0 && <div>{post.repostCount} {post.repostCount === 1? "Repost" : "Reposts" }</div>}
+                            {post.likeCount > 0 && <div>{post.likeCount} {post.likeCount === 1? "Like" : "Likes"}</div>}
+                        </div>
+                    </>
+                }
                 <div className="w-full h-0.5 bg-gray-700" />
                 <div className="flex gap-4">
-                    <button
-                        type="button"
-                        className="flex place-items-center justify-center gap-1 hover:bg-gray-400 min-w-6 min-h-6 p-1"
-                        onClick={(evt) => {
-                            evt.stopPropagation();
-                            openThread(post.uri);
-                        }}>
-                        <BsListNested className="w-4 h-4"/>
-                    </button>
+                    {
+                        !highlight && <button
+                            type="button"
+                            className="flex place-items-center justify-center gap-1 hover:bg-gray-400 min-w-6 min-h-6 p-1"
+                            onClick={(evt) => {
+                                evt.stopPropagation();
+                                openThread(post.uri);
+                            }}>
+                            <BsListNested className="w-4 h-4"/>
+                        </button>
+                    }
+
                     <button
                         type="button"
                         className="flex place-items-center justify-center gap-1 hover:bg-gray-400 min-w-6 min-h-6 p-1"
@@ -344,7 +354,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                         }}>
                         <HiOutlineChatBubbleOvalLeft className="w-4 h-4"/>
                         {
-                            post.replyCount > 0 && post.replyCount
+                            !highlight && post.replyCount > 0 && post.replyCount
                         }
                     </button>
                     <button
@@ -356,7 +366,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                         }}>
                         <BiRepost className="h-4 w-4" />
                         {
-                            post.repostCount > 0 && post.repostCount
+                            !highlight && post.repostCount > 0 && post.repostCount
                         }
                     </button>
                     <button
@@ -368,7 +378,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                         }}>
                         <AiOutlineHeart className="h-4 w-4" />
                         {
-                            post.likeCount > 0 && post.likeCount
+                            !highlight && post.likeCount > 0 && post.likeCount
                         }
                     </button>
                     <button

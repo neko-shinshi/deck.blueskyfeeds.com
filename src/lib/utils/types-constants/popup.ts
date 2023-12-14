@@ -8,7 +8,9 @@ export enum PopupState {
     SETTINGS,
     NEW_POST,
     SEARCH,
-    POST_ACTION
+    POST_ACTION,
+    PICK_PAGE,
+    MEDIA_GALLERY
 }
 
 export interface PopupConfig {

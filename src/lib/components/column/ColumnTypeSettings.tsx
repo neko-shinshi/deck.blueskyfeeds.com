@@ -1,7 +1,7 @@
 import {updateMemory} from "@/lib/utils/redux/slices/memory";
 import {BiArrowBack} from "react-icons/bi";
-import {ColumnConfig, FetchedColumn, MAX_WIDTH, MIN_WIDTH} from "@/lib/utils/types-constants/column";
-import {useSelector, useDispatch} from "react-redux";
+import {ColumnConfig, ColumnType, FetchedColumn, MAX_WIDTH, MIN_WIDTH} from "@/lib/utils/types-constants/column";
+import {useDispatch, useSelector} from "react-redux";
 import {HiChevronLeft, HiChevronRight} from "react-icons/hi";
 import {MdDeleteForever} from "react-icons/md";
 import {removeColumn, setColumnOrder, updateColumn} from "@/lib/utils/redux/slices/pages";
@@ -9,15 +9,16 @@ import {arrayMove} from "@dnd-kit/sortable";
 import {useRef, useState} from "react";
 import {FaMinus, FaPlus} from "react-icons/fa";
 import {ThumbnailSize} from "@/lib/utils/types-constants/thumbnail-size";
-import {RiCheckboxBlankCircleLine, RiCheckboxCircleFill, RiCheckboxCircleLine} from "react-icons/ri";
+import {RiCheckboxBlankCircleLine, RiCheckboxCircleFill} from "react-icons/ri";
 import {RefreshTimingType} from "@/lib/utils/types-constants/refresh-timings";
 import clsx from "clsx";
+import AvatarUser from "@/lib/components/ui/AvatarUser";
 
 export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
     //@ts-ignore
     const memory = useSelector((state) => state.memory);
     //@ts-ignore
-    const config = useSelector((state) => state.config);
+    const accounts = useSelector((state) => state.accounts);
     //@ts-ignore
     const pages = useSelector((state) => state.pages);
 
@@ -27,7 +28,7 @@ export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
     const nameRef = useRef(null);
 
     const changeOrder = (diff) => {
-        let columnIds = pages.pages.dict[memory.currentPage].columns.filter(colId => pages.columnDict[colId]);
+        let columnIds = pages.pageDict[memory.currentPage].columns.filter(colId => pages.columnDict[colId]);
         const oldIndex = columnIds.indexOf(column.id);
         if (oldIndex < 0) {console.log("can't find column"); return;}
         let newIndex = oldIndex + diff;
@@ -61,10 +62,10 @@ export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
         <div className="space-y-2 p-2 bg-theme_dark-L1 rounded-md">
             <div className="flex justify-between place-items-center">
                 <div className="flex gap-2 place-items-center">
-                    <div>Move Column</div>
+                    <div className="font-bold">Move Column</div>
                     {
                         (() => {
-                            let columnIds = pages.pages.dict[memory.currentPage].columns.filter(colId => pages.columnDict[colId]);
+                            let columnIds = pages.pageDict[memory.currentPage].columns.filter(colId => pages.columnDict[colId]);
                             const oldIndex = columnIds.indexOf(column.id);
                             if (oldIndex < 0) {
                                 return <div/>
@@ -100,12 +101,12 @@ export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
                      }}
                 >
                     <MdDeleteForever className="w-6 h-6"/>
-                    <div>Delete Column</div>
+                    <div className="font-bold">Delete Column</div>
                 </div>
             </div>
             <div className="space-y-4">
                 <div>
-                    <div>Column Name</div>
+                    <div className="font-bold">Column Name</div>
                     <div className="flex place-items-cente gap-2">
                         <input type="text"
                                ref={nameRef}
@@ -124,7 +125,32 @@ export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
                 </div>
 
                 <div>
-                    <div>Column Width ({sliderVal})</div>
+                    <div className="font-bold">Column Icon</div>
+                </div>
+
+                <div className={clsx(column.observers.length === 1 && "flex place-items-center gap-2")}>
+                    <div className="font-bold">Column Account{column.type === ColumnType.NOTIFS && "s"}</div>
+                    {
+                        column.observers.reduce((acc, viewer) => {
+                            const account = accounts.dict[viewer];
+                            if (account) {
+                                acc.push(<div key={viewer} className="flex gap-1 grow-0 overflow-hidden place-items-center group">
+                                    <div
+                                        className={clsx("w-4 h-4", "relative aspect-square rounded-full border border-theme_dark-I0")}>
+                                        <AvatarUser avatar={account.avatar}
+                                                    alt={account.displayName}/>
+                                    </div>
+                                    <div
+                                        className="overflow-hidden text-theme_dark-T1 text-xs group-hover:underline">{account.handle}</div>
+                                </div>)
+                            }
+                            return acc;
+                        }, [])
+                    }
+                </div>
+
+                <div>
+                    <div className="font-bold">Column Width ({sliderVal})</div>
                     <div className="flex place-items-center gap-2">
                         <button type="button"
                                 className="w-8 h-8 p-1 border border-theme_dark-I0 rounded-lg mr-2 bg-theme_dark-I1 hover:bg-theme_dark-I2 shrink-0 grid place-items-center"
@@ -158,7 +184,7 @@ export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
                 </div>
 
                 <div>
-                    <div>Thumbnail Size</div>
+                    <div className="font-bold">Thumbnail Size</div>
                     <div className="flex flex-wrap gap-2">
                         {
                             (Object.values(ThumbnailSize)).map(v => {
@@ -185,7 +211,7 @@ export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
                 {
                     'refreshMs' in column &&
                     <div>
-                        <div>Refresh Rate</div>
+                        <div className="font-bold">Refresh Rate</div>
                         <div className="flex flex-wrap gap-2">
                             {
                                 (Object.keys(RefreshTimingType)).filter(v => isNaN(Number(v))).map(v => {

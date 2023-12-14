@@ -1,10 +1,10 @@
-import ColumnIcon from "@/lib/components/ColumnIcon";
+import ColumnIcon from "@/lib/components/column/ColumnIcon";
 import {RxDragHandleDots2} from "react-icons/rx";
 import {BsFillGearFill} from "react-icons/bs";
 import {useSelector, useDispatch} from "react-redux";
 import PostItem from "@/lib/components/column/PostItem"
 import {updateMemory} from "@/lib/utils/redux/slices/memory";
-import AvatarUser from "@/lib/components/AvatarUser";
+import AvatarUser from "@/lib/components/ui/AvatarUser";
 import {useEffect, useRef} from "react";
 import clsx from "clsx";
 export default function ColumnTypePosts({attributes, listeners, column}) {
@@ -39,18 +39,34 @@ export default function ColumnTypePosts({attributes, listeners, column}) {
                     <div className="h-6 w-6 absolute inset-0 bg-theme_dark-L0 rounded-full border border-theme_dark-I0">
                         <ColumnIcon config={column}/>
                     </div>
+                </div>
+                <div>
+                    <div className="line-clamp-2 text-theme_dark-I0 peer-hover:underline hover:underline"
+                         onClick={loadUpdates}
+                    >
+                        {column.name}
+                    </div>
+                    <div className="flex">
                     {
-                        'observer' in column &&
-                        <div className="h-4 w-4 absolute -right-1.5 -bottom-1.5 border border-theme_dark-I0 rounded-full">
-                            <AvatarUser avatar={accounts.dict[column.observer].avatar} alt={accounts.dict[column.observer].displayName}/>
-                        </div>
+                        (column.observers as string[]).reduce((acc, uid) => {
+                            const account = accounts.dict[uid];
+                            if (account) {
+                                acc.push(<div className="flex gap-1 place-items-center" key={uid}>
+                                    <div className="relative h-4 w-4">
+                                        <div className="h-4 w-4 absolute border border-theme_dark-I0 rounded-full">
+                                            <AvatarUser avatar={account.avatar} alt="Avatar"/>
+                                        </div>
+                                    </div>
+
+                                    <div className="text-2xs">{account.handle}</div>
+                                </div>);
+                            }
+                            return acc;
+                        }, [])
                     }
+                    </div>
                 </div>
-                <div className="line-clamp-2 text-theme_dark-I0 peer-hover:underline hover:underline"
-                     onClick={loadUpdates}
-                >
-                    {column.name}
-                </div>
+
             </div>
 
             <div className="w-8 h-8 p-1 border border-theme_dark-I0 rounded-full mr-2 bg-theme_dark-I1 hover:bg-theme_dark-I2 shrink-0 grid place-items-center"

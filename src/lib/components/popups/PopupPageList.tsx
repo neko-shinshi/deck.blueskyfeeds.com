@@ -27,8 +27,8 @@ export default function PopupPageList(
     }, [isOpen]);
 
     useEffect(() => {
-        if (Array.isArray(pages.order)) {
-            setPageIds(pages.order);
+        if (Array.isArray(pages.pageOrder)) {
+            setPageIds(pages.pageOrder);
         }
     }, [pages]);
 
@@ -58,7 +58,7 @@ export default function PopupPageList(
             transition,
         };
 
-        const page = pages.pages.dict[pageId];
+        const page = pages.pageDict[pageId];
 
         return <>
             {
@@ -82,7 +82,7 @@ export default function PopupPageList(
 
                     <div className="flex gap-3 p-1">
                         {
-                            pages.pages.order.length > 1 &&
+                            pages.pageOrder.length > 1 &&
                             <div
                                 className="bg-white hover:bg-gray-100 border border-black rounded-full h-8 w-8 grid place-items-center">
                                 <MdDeleteForever

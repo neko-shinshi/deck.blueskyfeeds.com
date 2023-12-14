@@ -24,7 +24,7 @@ import PopupFormSignInBluesky from "@/lib/components/popups/PopupFormSignInBlues
 import {makeInitialState as makePageInitialState, resetPages} from "@/lib/utils/redux/slices/pages";
 import {resetMemory} from "@/lib/utils/redux/slices/memory";
 import {BlueskyAccount} from "@/lib/utils/types-constants/user-data";
-import AvatarUser from "@/lib/components/AvatarUser";
+import AvatarUser from "@/lib/components/ui/AvatarUser";
 import {PopupConfigUsers, PopupState} from "@/lib/utils/types-constants/popup";
 import {usePopupContext} from "@/lib/providers/PopupProvider";
 

@@ -92,7 +92,7 @@ export default function SectionColumns ({columnIds, handleColumnDragEnd}) {
                                             const column = pages.columnDict[colId];
                                             if (column) {
                                                 acc.push(<Column
-                                                    className={`${i+1 < columnIds.length? "snap-start" : "snap-end"} ${('observer' in column && !accounts.dict[column.observer].active)? "bg-red-900": "bg-transparent"}`}
+                                                    className={`${i+1 < columnIds.length? "snap-start" : "snap-end"} ${(!accounts.dict[column.observers[0]].active)? "bg-red-900": "bg-transparent"}`}
                                                     key={colId} column={column}/>);
                                             }
                                             return acc;

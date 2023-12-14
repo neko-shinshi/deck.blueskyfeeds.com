@@ -376,7 +376,8 @@ export const getPostThread = async (did, columnId, uri) => {
         mode:"thread",
         parent,
         posts,
-        mainUri
+        mainUri,
+        viewer: did
     };
 
     store.dispatch(updateMemory(memoryCommand));

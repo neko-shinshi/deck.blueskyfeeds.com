@@ -46,20 +46,22 @@ export default function Main ({}) {
             dispatch(initializeColumn({__terminate:true, ids}));
         }
 
-        console.log("total pages", pages.pages.order.length);
-        switch (pages.pages.order.length) {
+        switch (pages.pageOrder.length) {
             case 0: {
                 // User automatically asked to sign in
                 break;
             }
             case 1: {
-                console.log("start app!");
-                const pageId = pages.pages.order[0];
-                dispatch(startApp({__terminate:true, pageId}));
+                if (accounts.order.length > 0) {
+                    console.log("start app!");
+                    const pageId = pages.pageOrder[0];
+                    dispatch(startApp({__terminate:true, pageId}));
+                }
                 break;
             }
             default: {
                 // Show a POPUP to decide which page
+                setPopupConfig({state:PopupState.PICK_PAGE});
                 break;
             }
         }
@@ -67,8 +69,8 @@ export default function Main ({}) {
 
 
     useEffect(() => {
-        if (memory.currentPage && pages && pages.pages.dict[memory.currentPage]) {
-            setColumnIds(pages.pages.dict[memory.currentPage].columns.filter(colId => pages.columnDict[colId]));
+        if (memory.currentPage && pages && pages.pageDict[memory.currentPage]) {
+            setColumnIds(pages.pageDict[memory.currentPage].columns.filter(colId => pages.columnDict[colId]));
         }
     }, [memory, pages]);
 

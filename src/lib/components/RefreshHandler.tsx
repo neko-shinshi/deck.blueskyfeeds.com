@@ -108,7 +108,7 @@ export default function RefreshHandler({}) {
 
                 let columnIds = new Set<string>();
                 for (const pageId of pagesToUpdate) {
-                    const page = pages.pages.dict[pageId];
+                    const page = pages.pageDict[pageId];
                     if (page) {
                         page.columns.forEach(x => columnIds.add(x));
                     }
@@ -122,8 +122,9 @@ export default function RefreshHandler({}) {
                     const column = col as FetchedColumn & ColumnConfig;
                     const lastObj = memory.columns[columnId];
                     if (!lastObj || lastObj.lastTs + column.refreshMs < now) {
-                        console.log("refresh", column.name);
-                        switch (column.type) {
+                        const {observers, name, type} = column;
+                        console.log("refresh", name);
+                        switch (type) {
                             case ColumnType.NOTIFS: {
                                 const {hideUsers} = column as ColumnNotifications;
                                 console.log("notifs")
@@ -138,7 +139,7 @@ export default function RefreshHandler({}) {
                                 break;
                             }
                             case ColumnType.HOME: {
-                                const {observer} = column as ColumnHome;
+                                const observer = observers[0];
                                 const userObj = accounts.dict[observer];
                                 console.log("home");
                                 if (userObj && userObj.active) {

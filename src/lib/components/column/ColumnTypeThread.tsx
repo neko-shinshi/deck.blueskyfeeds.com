@@ -5,12 +5,13 @@ import {BiArrowBack, BiArrowToLeft} from "react-icons/bi";
 import {updateMemory} from "@/lib/utils/redux/slices/memory";
 import clsx from "clsx";
 import {useEffect} from "react";
+import AvatarUser from "@/lib/components/ui/AvatarUser";
 
 export default function ColumnTypeThread({thread, column}: {thread:ColumnModeThread, column:ColumnConfig}) {
     //@ts-ignore
     const memory = useSelector((state) => state.memory);
     //@ts-ignore
-    const config = useSelector((state) => state.config);
+    const accounts = useSelector((state) => state.accounts);
     const dispatch = useDispatch();
 
     useEffect(() => {
@@ -45,7 +46,13 @@ export default function ColumnTypeThread({thread, column}: {thread:ColumnModeThr
             >
                 <BiArrowBack className="w-4 h-4 text-theme_dark-I0" />
             </div>
-           Thread
+            <div>Thread as</div>
+            <div className="flex gap-1 grow-0 overflow-hidden place-items-center group">
+                <div className={clsx("w-4 h-4", "relative aspect-square rounded-full border border-theme_dark-I0")}>
+                    <AvatarUser avatar={accounts.dict[thread.viewer]?.avatar} alt={accounts.dict[thread.viewer]?.displayName}/>
+                </div>
+                <div className="overflow-hidden text-theme_dark-T1 text-xs group-hover:underline">{accounts.dict[thread.viewer]?.handle}</div>
+            </div>
         </div>
         <div className="flex flex-col overflow-y-auto scrollbar-thin pr-2 h-[calc(100%-3rem)] text-black gap-2">
             {
