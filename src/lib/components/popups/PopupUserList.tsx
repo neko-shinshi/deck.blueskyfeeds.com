@@ -9,7 +9,7 @@ import {
     logOut,
     removeAccount,
     resetAccounts,
-    setAccountOrder, setAccountValue,
+    setAccountOrder,
 } from "@/lib/utils/redux/slices/accounts";
 import {FaPlus} from "react-icons/fa";
 import {useEffect, useState} from "react";
@@ -120,32 +120,10 @@ export default function PopupUserList({isOpen, setOpen}:{isOpen:boolean,setOpen:
 
 
                     <div className="flex gap-2 p-1">
-                        {
-                            user.active &&
-                            <div className="bg-white hover:bg-gray-100 border border-black rounded-full h-8 w-8 grid place-items-center">
-                                {
-                                    did === accounts.primaryBlueskyDid?
-                                        <PiCrownSimpleFill
-                                            className="w-6 h-6 text-amber-500"
-                                            aria-label="Primary"/> :
-                                        <PiCrownSimpleBold
-                                            className="w-6 h-6 text-black hover:text-amber-500"
-                                            aria-label="Primary"
-                                            onClick={() => {
-                                                dispatch(setAccountValue({primaryBlueskyDid: did}));
-                                                alert("Primary user updated");
-                                            }}/>
-                                }
-                            </div>
-                        }
+                        <div className="bg-white hover:bg-gray-100 border border-black rounded-full h-8 w-8 grid place-items-center">
+                            <BsInfo className="w-8 h-8 pb-0.5 pr-0.5 text-black" aria-label="Profile"/>
+                        </div>
 
-                        {
-                            // Use the selected user to look at itself, if logged out, try the primary user
-                            config.primaryBlueskyDid &&
-                            <div className="bg-white hover:bg-gray-100 border border-black rounded-full h-8 w-8 grid place-items-center">
-                                <BsInfo className="w-8 h-8 pb-0.5 pr-0.5 text-black" aria-label="Profile"/>
-                            </div>
-                        }
 
                         {
                             user.active &&
@@ -196,18 +174,6 @@ export default function PopupUserList({isOpen, setOpen}:{isOpen:boolean,setOpen:
                 if (!userPopup) {return}
 
                 const did = userPopup.did
-                if (userPopup.state !== UserPopupState.RemoveAll && accounts.primaryBlueskyDid === did) {
-                    // Choose a new primary randomly
-                    const remainingUsers = Object.values(accounts.dict).filter(x => (x as BlueskyAccount).active && (x as BlueskyAccount).id !== did) as BlueskyAccount[];
-                    if (remainingUsers.length === 0) {
-                        console.log("no users");
-                        dispatch(setAccountValue({primaryBlueskyDid: ""}));
-                    } else {
-                        const newPrimary = remainingUsers[Math.floor(Math.random()*remainingUsers.length)].id;
-                        console.log("new primary", newPrimary);
-                        dispatch(setAccountValue({primaryBlueskyDid: newPrimary}));
-                    }
-                }
                 switch (userPopup.state) {
                     case UserPopupState.Logout: {
                         dispatch(logOut({id:did}));

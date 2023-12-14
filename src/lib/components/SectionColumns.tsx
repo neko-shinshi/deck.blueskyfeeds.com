@@ -1,12 +1,7 @@
-import {SortableContext, useSortable, horizontalListSortingStrategy} from "@dnd-kit/sortable";
+import {SortableContext, horizontalListSortingStrategy} from "@dnd-kit/sortable";
 import {useSelector} from "react-redux";
 import {DndContext, DragOverlay} from "@dnd-kit/core";
-import clsx from "clsx";
-import {CSS} from '@dnd-kit/utilities';
-import ColumnTypePosts from "@/lib/components/column/ColumnTypePosts"
 import {useEffect, useState} from "react";
-import ColumnTypeThread from "@/lib/components/column/ColumnTypeThread";
-import ColumnTypeSettings from "@/lib/components/column/ColumnTypeSettings";
 import Column from "@/lib/components/column/Column";
 import {useDropzone} from "react-dropzone";
 

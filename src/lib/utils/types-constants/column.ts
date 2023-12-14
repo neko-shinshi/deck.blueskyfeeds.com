@@ -68,9 +68,9 @@ export interface ColumnUsers extends ColumnConfig, FetchedColumn {
 export interface InColumn {
     id: string
     type: ColumnType
-    name: string
+    name?: string
     observers: string[]
-    icon: string
+    icon?: string
 }
 
 export interface InHome extends InColumn {}
@@ -105,7 +105,7 @@ export interface ColumnModeThread extends ColumnMode {
 export interface ColumnModeProfile extends ColumnMode {
     mode: "profile"
     id: string // user's did
-    viewer: string // default to the column id or the primary id, or blank
+    viewer: string // default to the column id or blank
 }
 
 export interface ColumnModeLoading extends ColumnMode {

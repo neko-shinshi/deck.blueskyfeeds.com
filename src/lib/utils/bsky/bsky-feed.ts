@@ -305,7 +305,7 @@ export const processThread = async (agent, authorsTbd, authors, thread) => {
 
 
 export const getPostThread = async (did, columnId, uri) => {
-    let state = await store.getState();
+    let state = store.getState();
     const parent = state.memory.columns[columnId].mode;
     const userObj = state.accounts.dict[did];
     if (!userObj) {return false;}
@@ -351,7 +351,7 @@ export const getPostThread = async (did, columnId, uri) => {
     }
 
     // Check if parent is still the same
-    state = await store.getState(); // Get latest state
+    state = store.getState(); // Get latest state
     if (!state.memory.columns[columnId]) {
         memoryCommand[`columns.${columnId}.mode`] = parent;
         store.dispatch(updateMemory(memoryCommand));

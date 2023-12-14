@@ -6,7 +6,7 @@ import SectionControls from "@/lib/components/SectionControls";
 import {arrayMove} from "@dnd-kit/sortable";
 import {setColumnOrder} from "@/lib/utils/redux/slices/pages";
 import SectionColumns from "@/lib/components/SectionColumns";
-import {initializeColumn, startApp} from "@/lib/utils/redux/slices/memory";
+import {initializeColumn, startApp, updateFeeds} from "@/lib/utils/redux/slices/memory";
 import LoginSwitcher from "@/lib/components/LoginSwitcher";
 import PopupFormSignInBluesky from "@/lib/components/popups/PopupFormSignInBluesky";
 import {PopupState} from "@/lib/utils/types-constants/popup";
@@ -19,6 +19,7 @@ import TimeAgo from "javascript-time-ago";
 
 import en from 'javascript-time-ago/locale/en.json'
 import {PopupProvider, usePopupContext} from "@/lib/providers/PopupProvider";
+import {getMyFeeds} from "@/lib/utils/bsky/bsky";
 
 export default function Main ({}) {
     //@ts-ignore
@@ -44,6 +45,19 @@ export default function Main ({}) {
         const ids = Object.keys(pages.columnDict);
         if (ids.length > 0) {
             dispatch(initializeColumn({__terminate:true, ids}));
+        }
+
+        if (accounts.order.length > 0) {
+            getMyFeeds(accounts.order.reduce((acc, x) => {
+                const account = accounts.dict[x];
+                if (account && account.type === "b") {
+                    acc.push(account);
+                }
+                return acc;
+            }, []), memory.basicKey).then(newFeeds => {
+                console.log("new Feeds", newFeeds);
+                dispatch(updateFeeds({feeds: newFeeds}));
+            });
         }
 
         switch (pages.pageOrder.length) {
@@ -115,7 +129,7 @@ export default function Main ({}) {
 
             {
                 memory && memory.currentPage &&
-                <div className="w-full h-full flex pr-2 py-2">
+                <div className="w-full h-full flex pr-2 py-0.5">
                     <SectionControls columnIds={columnIds} handleColumnDragEnd={handleColumnDragEnd}/>
                     <SectionColumns columnIds={columnIds} handleColumnDragEnd={handleColumnDragEnd}/>
                 </div>

@@ -1,10 +1,16 @@
-import {ColumnConfig, ColumnType} from "@/lib/utils/types-constants/column";
+import {ColumnConfig, ColumnFeed, ColumnType} from "@/lib/utils/types-constants/column";
 import {BsFillBellFill, BsListUl} from "react-icons/bs";
 import {BiSolidHome} from "react-icons/bi";
+import {useSelector} from "react-redux";
+import Image from "next/image";
 
 export default function ColumnIcon ({config}:{config:ColumnConfig}) {
+    //@ts-ignore
+    const memory = useSelector((state) => state.memory);
     if (config.icon) {
-        return <img src={config.icon} />
+        return <Image unoptimized fill src={config.icon} className="overflow-hidden rounded-full" alt="Column Icon"/>
+    } else if (config.type === ColumnType.FEED && memory.feeds[(config as ColumnFeed).uri]?.avatar) {
+        return <Image unoptimized fill src={memory.feeds[(config as ColumnFeed).uri]?.avatar} className="overflow-hidden rounded-full" alt="Column Icon"/>
     }
 
     switch (config.type) {

@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import { getAgentLogin} from "@/lib/utils/bsky/bsky";
+import {getAgentLogin, getMyFeeds} from "@/lib/utils/bsky/bsky";
 import {BsFillInfoCircleFill} from "react-icons/bs";
 import Link from "next/link";
 import {HiAtSymbol} from "react-icons/hi";
@@ -10,11 +10,11 @@ import {setConfigValue} from "@/lib/utils/redux/slices/config";
 import {useForm} from "react-hook-form";
 import {encrypt, makeKey, parseKey} from "@/lib/utils/crypto";
 import {addColumn, updatePageConfig} from "@/lib/utils/redux/slices/pages";
-import {initializeColumn, startApp} from "@/lib/utils/redux/slices/memory";
+import {initializeColumn, startApp, updateFeeds} from "@/lib/utils/redux/slices/memory";
 import recoverDataFromJson from "@/lib/utils/client/recoverDataFromJson";
 import {BlueskyAccount} from "@/lib/utils/types-constants/user-data";
 import {randomUuid} from "@/lib/utils/random";
-import {ColumnHome, ColumnNotifications, ColumnType} from "@/lib/utils/types-constants/column";
+import {ColumnHome, ColumnNotifications, ColumnType, InColumn} from "@/lib/utils/types-constants/column";
 
 export default function FormSignInBluesky ({initialUser=null}:
 {initialUser?:BlueskyAccount}) {
@@ -92,14 +92,17 @@ export default function FormSignInBluesky ({initialUser=null}:
                     const pageId = pages.pageOrder[0];
                     const notifId = randomUuid();
                     const homeId = randomUuid();
-                    const a = {pageId, name:"Notifications",config:{id:notifId, type:ColumnType.NOTIFS, observers: [did]} as ColumnNotifications, defaults: config};
+                    const configNotif:InColumn = {id:notifId, type:ColumnType.NOTIFS, observers: [did], name:"Notifications"};
+                    const configHome:InColumn = {id:homeId, type:ColumnType.HOME, observers: [did], name:"Home"};
 
-                    const b = {pageId, name:`Home`, config:{id:homeId, type:ColumnType.HOME, observers: [did]} as ColumnHome, defaults: config};
-
-                    dispatch(addColumn(a));
-                    dispatch(addColumn(b));
+                    dispatch(addColumn({pageId, config: configNotif, defaults: config}));
+                    dispatch(addColumn({pageId, config: configHome, defaults: config}));
                     dispatch(initializeColumn({ids:[notifId, homeId]}));
                     dispatch(startApp({pageId}));
+
+                    getMyFeeds([{service, usernameOrEmail, encryptedPassword, refreshJwt, accessJwt, id:did}], keyString).then(newFeeds => {
+                        dispatch(updateFeeds({feeds: newFeeds}));
+                    });
                 }
 
                 console.log("addOrUpdateAccount INITIAL")

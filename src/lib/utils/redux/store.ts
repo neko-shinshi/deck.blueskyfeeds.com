@@ -55,7 +55,7 @@ export const store = configureStore({
 export const persistor = persistStore(store);
 
 export const exportJSON = async () => {
-    let state = JSON.parse(JSON.stringify(await store.getState()));
+    let state = JSON.parse(JSON.stringify(store.getState()));
     delete state.memory;
     delete state._persist;
 

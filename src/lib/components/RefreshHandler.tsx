@@ -5,14 +5,14 @@ import {store} from "@/lib/utils/redux/store";
 import {
     ColumnConfig,
     ColumnFeed,
-    ColumnHome,
     ColumnNotifications,
-    ColumnType, ColumnUsers,
+    ColumnType,
+    ColumnUsers,
     FetchedColumn
 } from "@/lib/utils/types-constants/column";
 import {getAgent} from "@/lib/utils/bsky/bsky";
 import {getTbdAuthors, processFeed} from "@/lib/utils/bsky/bsky-feed";
-import {BlueskyUserData, UserData} from "@/lib/utils/types-constants/user-data";
+import {BlueskyUserData} from "@/lib/utils/types-constants/user-data";
 
 export default function RefreshHandler({}) {
     useEffect(() => {
@@ -34,7 +34,7 @@ export default function RefreshHandler({}) {
                     console.log("receive syn");
                     if (mainId === myId) {
                         // Reply with memory
-                        const memory = await store.getState().memory;
+                        const memory = store.getState().memory;
                         const msg = {type:"ack", id, memory};
                         console.log("send ack", msg);
                         bc.postMessage(msg);
@@ -46,8 +46,7 @@ export default function RefreshHandler({}) {
                         console.log("receive ack", inMemory);
                         const {columns, posts, userData} = inMemory as MemoryState;
                         let command:any = {};
-                        const memory = await store.getState().memory;
-
+                        const memory = store.getState().memory;
 
                         // update posts
                         for (const [uri, post] of Object.entries(posts)) {
@@ -73,8 +72,6 @@ export default function RefreshHandler({}) {
                             }
                         }
 
-                        console.log("command", command);
-
                         if (Object.keys(command).length > 0) {
                             store.dispatch(updateMemory(command));
                         }
@@ -94,7 +91,7 @@ export default function RefreshHandler({}) {
         // Fetch messages, or ping for new messages
         const fetchNewMessages = async () => {
             if (mainId === myId) {
-                const state = await store.getState();
+                const state = store.getState();
                 const pages = state.pages;
                 const accounts = state.accounts;
                 const memory = state.memory;
@@ -124,29 +121,34 @@ export default function RefreshHandler({}) {
                     if (!lastObj || lastObj.lastTs + column.refreshMs < now) {
                         const {observers, name, type} = column;
                         console.log("refresh", name);
+                        const addToList = (observer:string) => {
+                            let list = toFetch.get(observer);
+                            if (!list) {list = [column];}
+                            list.push(column);
+                            toFetch.set(observer, list);
+                        }
+
                         switch (type) {
                             case ColumnType.NOTIFS: {
                                 const {hideUsers} = column as ColumnNotifications;
-                                console.log("notifs")
                                 Object.values(accounts.dict)
                                     .filter(x => x.active && hideUsers.indexOf(x.id) < 0)
-                                    .forEach(x => {
-                                        let list = toFetch.get(x.id);
-                                        if (!list) {list = [];}
-                                        list.push(column);
-                                        toFetch.set(x.id, list);
-                                    });
+                                    .forEach(x => addToList(x.id));
                                 break;
                             }
                             case ColumnType.HOME: {
                                 const observer = observers[0];
                                 const userObj = accounts.dict[observer];
-                                console.log("home");
+                                if (userObj && userObj.active && userObj.type === "b") {
+                                    addToList(observer);
+                                }
+                                break;
+                            }
+                            case ColumnType.FEED: {
+                                const observer = observers[0];
+                                const userObj = accounts.dict[observer];
                                 if (userObj && userObj.active) {
-                                    let list = toFetch.get(observer);
-                                    if (!list) {list = [column];}
-                                    list.push(column);
-                                    toFetch.set(observer, list);
+                                    addToList(observer);
                                 }
                                 break;
                             }
@@ -200,9 +202,10 @@ export default function RefreshHandler({}) {
                                     }
                                     case ColumnType.FEED: {
                                         try {
+                                            console.log("try feed", col);
                                             const {uri} = col as ColumnFeed;
                                             // {cursor, limit}
-                                            const {data:{feed, cursor}} = await agent.api.app.bsky.feed.getFeed({feed:uri});
+                                            const {data:{feed, cursor}} = await agent.api.app.bsky.feed.getFeed({feed:`at://${uri.replace("/feed/", "/app.bsky.feed.generator/")}`});
                                             const {uris, posts} = await processFeed(agent, authors, authorsTbd, feed);
 
                                             for (let [key, value] of posts.entries()) {
@@ -274,7 +277,7 @@ export default function RefreshHandler({}) {
 
         // Send a heartbeat
         const sendInterval = setInterval(async () => {
-            const state = await store.getState();
+            const state = store.getState();
             const config = state.config;
             bc.postMessage({id:myId, page: memory.currentPage, type:"hb"});
         }, 0.5*1000);
@@ -292,7 +295,7 @@ export default function RefreshHandler({}) {
                     console.log("New main");
                 }
             }
-            const state = await store.getState();
+            const state = store.getState();
             const config = state.config;
             openPages = [...new Set([...hbMap.values(), memory.currentPage].filter(x => x !== ""))];
             hbMap.clear();

@@ -53,34 +53,26 @@ const slice = createSlice({
             }
         },
         addColumn: (state, action) => {
-            const {pageId, config, defaults, name} = action.payload;
-            const {id, type, observers, icon} = config as InColumn;
+            const {pageId, config, defaults:{refreshMs, thumbnailSize, columnWidth}} = action.payload;
+            const {id, type, observers, icon, name} = config as InColumn;
 
             let newColumn: ColumnConfig;
             switch (type) {
                 case ColumnType.HOME: {
                     newColumn = {
-                        name,
-                        id, type,
-                        observers, icon,
+                        name, id, type, observers, icon,
                         active: true,
-                        refreshMs: defaults.refreshMs,
-                        thumbnailSize: defaults.thumbnailSize,
-                        width: defaults.columnWidth,
+                        refreshMs, thumbnailSize, width:columnWidth
                     } as ColumnHome;
                     break;
                 }
                 case ColumnType.NOTIFS: {
                     newColumn = {
-                        name,
-                        id, type,
-                        observers, icon,
+                        name, id, type, observers, icon,
+                        active: true,
                         allowedTypes: ALL_NOTIFICATION_TYPES,
                         hideUsers: [],
-                        active: true,
-                        refreshMs: defaults.refreshMs,
-                        thumbnailSize: defaults.thumbnailSize,
-                        width: defaults.columnWidth,
+                        refreshMs, thumbnailSize, width:columnWidth
 
                     } as ColumnNotifications;
                     break;
@@ -88,14 +80,10 @@ const slice = createSlice({
                 case ColumnType.FEED: {
                     const {uri} = config as InColumnFeed;
                     newColumn = {
-                        name,
-                        id, type,
-                        observers, icon,
-                        uri,
+                        name, id, type, observers, icon,
                         active: true,
-                        refreshMs: defaults.refreshMs,
-                        thumbnailSize: defaults.thumbnailSize,
-                        width: defaults.columnWidth,
+                        uri,
+                        refreshMs, thumbnailSize, width:columnWidth
                     } as ColumnFeed;
                     break;
                 }

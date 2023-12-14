@@ -14,6 +14,7 @@ import {PopupConfigUsers, PopupState} from "@/lib/utils/types-constants/popup";
 import {usePopupContext} from "@/lib/providers/PopupProvider";
 import {GrPowerCycle} from "react-icons/gr";
 import {FaArrowsRotate} from "react-icons/fa6";
+import {FaUsersCog} from "react-icons/fa";
 
 
 export default function SectionControls ({columnIds, handleColumnDragEnd}) {
@@ -127,18 +128,18 @@ export default function SectionControls ({columnIds, handleColumnDragEnd}) {
                     <BsFillGearFill className="w-5 h-5 text-theme_dark-I0" aria-label="Settings"/>
                 </div>
 
+                <div className="w-8 h-8 bg-theme_dark-I1 hover:bg-theme_dark-I2 rounded-full border border-theme_dark_I0 grid place-items-center"
+                     onClick={() => {
+                         console.log("click avatar");
+                         if (accounts.order.length === 0) {
+                             setPopupConfig({state:PopupState.LOGIN})
+                         } else {
+                             setPopupConfig({state:PopupState.USERS, title: "Saved Accounts"} as PopupConfigUsers);
+                         }
+                     }} >
+                    <FaUsersCog className="w-5 h-5 text-theme_dark-I0" aria-label="Settings"/>
+                </div>
 
-                <AvatarSelfMain
-                    className="w-8 h-8 border border-theme_dark_I0 rounded-full"
-                    avatar={accounts.primaryBlueskyDid && accounts.dict[accounts.primaryBlueskyDid]?.avatar}
-                    onClick={() => {
-                        console.log("click avatar");
-                        if (accounts.order.length === 0) {
-                            setPopupConfig({state:PopupState.LOGIN})
-                        } else {
-                            setPopupConfig({state:PopupState.USERS, title: "Saved Accounts"} as PopupConfigUsers);
-                        }
-                    }} />
 
                 <div className="text-2xs">v0.0.1</div>
 

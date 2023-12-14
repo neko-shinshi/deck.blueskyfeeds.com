@@ -71,7 +71,7 @@ const createModerationReport = async (agent, uri, cid, reason, reasonType) => {
     await agent.createModerationReport({reasonType, reason, subject:{uri, cid}})
 }
 
-export const getMyFeeds = async (users, basicKey):Promise<Feed[]> => {
+export const getMyFeeds = async (users, basicKey, additionalFeeds=[]):Promise<Feed[]> => {
     let bigFeedMap = new Map<string, Feed>();
     const destructureAndAdd = (x, flags, uri, feedMap) => {
         let {displayName, description, likeCount, avatar, creator, indexedAt} = x;
@@ -91,7 +91,7 @@ export const getMyFeeds = async (users, basicKey):Promise<Feed[]> => {
         } as Feed);
     }
 
-    const feedMaps = await Promise.all(users.map(async user => {
+    const feedMaps = await Promise.all(users.map(async (user, i) => {
         const agent = await getAgent(user, basicKey);
         if (!agent) {
             return [];
@@ -99,7 +99,7 @@ export const getMyFeeds = async (users, basicKey):Promise<Feed[]> => {
         let feedMap = new Map<string, Feed>();
         let [custom, saved] = await Promise.all([
             getCustomFeeds(agent),
-            getSavedFeeds(agent)
+            getSavedFeeds(agent, i === 0? additionalFeeds : [])
         ]);
 
         saved.forEach(x => {
@@ -130,12 +130,10 @@ export const getMyFeeds = async (users, basicKey):Promise<Feed[]> => {
         return feedMap;
     }));
 
-    console.log(feedMaps);
-
     feedMaps.forEach(feedMap => {
         [...feedMap.values()].forEach(x => {
-            const {uri, custom, saved, pinned} = x;
-            console.log(JSON.stringify(x, null, 2));
+            const {uri:_uri, custom, saved, pinned} = x;
+            const uri = _uri.slice(5).replaceAll("/app.bsky.feed.generator/", "/feed/"); // Trim at path
             const existing = bigFeedMap.get(uri);
             if (existing) {
                 if (custom) {
@@ -148,23 +146,14 @@ export const getMyFeeds = async (users, basicKey):Promise<Feed[]> => {
                     existing.pinned = true;
                 }
             } else {
-                destructureAndAdd(x, {pinned: !!x.pinned, saved: !!x.saved, custom: !!x.custom}, x.uri, bigFeedMap);
+                destructureAndAdd(x, {pinned: !!x.pinned, saved: !!x.saved, custom: !!x.custom}, uri, bigFeedMap);
             }
         });
     });
-
-    const feeds = [...bigFeedMap.values()];
-    feeds.sort((x,y) => {
-        if (x.displayName === y.displayName) {
-            return x.indexedAt > y.indexedAt? 1: -1;
-        }
-        return x.displayName > y.displayName? 1 : -1;
-    });
-
-    return feeds;
+    return [...bigFeedMap.values()];
 }
 
-const getSavedFeeds = async (agent):Promise<any[]> => {
+const getSavedFeeds = async (agent, additionalFeeds=[]):Promise<any[]> => {
     const getSavedFeedIds = async () => {
         let {data} = await agent.api.app.bsky.actor.getPreferences();
         const feeds = data.preferences.find(x =>  x["$type"] === "app.bsky.actor.defs#savedFeedsPref");
@@ -177,9 +166,11 @@ const getSavedFeeds = async (agent):Promise<any[]> => {
     }
 
     const result = [];
-    const {saved, pinned} = await getSavedFeedIds();
+    let {saved, pinned} = await getSavedFeedIds();
 
-    if (saved) {
+    if (saved || additionalFeeds.length > 0) {
+        saved = saved || [];
+        saved = [...new Set([...saved, additionalFeeds])];
         const {data:{feeds}} = await agent.api.app.bsky.feed.getFeedGenerators({feeds: saved});
         return feeds.map(x => {
             return {...x, pinned:pinned.indexOf(x.uri) >= 0};
@@ -191,7 +182,7 @@ const getSavedFeeds = async (agent):Promise<any[]> => {
 
 
 
-export const getCustomFeeds = async (agent) => {
+const getCustomFeeds = async (agent) => {
     let cursor = {};
     let results = [];
     do {

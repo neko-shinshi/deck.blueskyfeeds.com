@@ -52,7 +52,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
 
     const openThread = async (uri) => {
         console.log("opening ", uri);
-        // column observer OR primaryDid
+        // column observer
         await getPostThread(column.observers[0], column.id, uri);
     }
 
@@ -315,6 +315,21 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                 }
                 {
                     !post.textParts && post.text
+                }
+                {
+                    post.tags.length > 0 && <div className="flex gap-2">
+                        {
+                            post.tags.map(tag =>
+                                <div key={tag}
+                                     className="text-blue-500 hover:underline"
+                                     onClick={(evt) => {
+                                         evt.stopPropagation();
+                                         console.log(tag);
+                                     }}>
+                                    #{tag}
+                                </div>)
+                        }
+                    </div>
                 }
             </div>
 
