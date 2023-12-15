@@ -19,7 +19,7 @@ export default function PopupPostAction({isOpen, setOpen}) {
             const actionConfig = popupConfig as PopupConfigPostAction;
             const post = memory.posts[actionConfig.uri];
             if (post) {
-                setPostUrl(post.uri);
+                setPostUrl(`https://bsky.app/profile/${post.uri}`);
                 if (post.text.trim()) {
                     setTranslateUrl( `https://translate.google.com/?sl=auto&tl=en&text=${post.text}`);
                 } else {
