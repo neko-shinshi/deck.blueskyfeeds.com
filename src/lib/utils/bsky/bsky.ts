@@ -3,6 +3,7 @@ import {decrypt, parseKey} from "@/lib/utils/crypto";
 import {addOrUpdateAccount, logOut} from "@/lib/utils/redux/slices/accounts";
 import {store} from "@/lib/utils/redux/store";
 import {Feed} from "@/lib/utils/types-constants/feed";
+import {getUserName} from "@/lib/utils/types-constants/user-data";
 
 
 // Try login with password
@@ -29,7 +30,7 @@ export const getAgent = async (userObj, basicKey) => {
                console.log("no network");
            } else {
                store.dispatch(logOut({did:userObj.id}));
-               alert(`Error: ${userObj.displayName} logged out`);
+               alert(`Error: ${getUserName(userObj)} logged out`);
            }
            return null;
        }

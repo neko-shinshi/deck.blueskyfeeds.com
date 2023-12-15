@@ -224,7 +224,7 @@ const processPost = async (post, now, authors, authorsTbd) => {
     const textParts = processTextToParts(text, facets);
     const uri = _uri.slice(5).replaceAll("/app.bsky.feed.post/", "/post/");
 
-    let postObj:any = {
+    let postObj:Post = {
         uri, cid, textParts, authorDid, text,
         labels: labels? labels.map(x => x.val) : [],
         tags: tags?? [], langs: langs ?? [],
@@ -256,11 +256,12 @@ export const processFeed = async (agent, authors, authorsTbd, feed) => {
         if (reply) {
             const {root, parent} = reply; // ignore root
             postObj.replyTo = processAuthorGetDid(parent.author, now, authors);
+            postObj.parentUri = parent.uri;
         }
 
         if (reason && reason.by && reason["$type"] === "app.bsky.feed.defs#reasonRepost") {
             const {by} = reason;
-            postObj.reposterDid =  processAuthorGetDid(by, now, authors);
+            postObj.reposterDid = processAuthorGetDid(by, now, authors);
         }
         posts.set(uri, postObj);
     }
@@ -274,24 +275,34 @@ export const processFeed = async (agent, authors, authorsTbd, feed) => {
 
 
 // User clicks on a thread, display it
-export const processThread = async (agent, authorsTbd, authors, thread) => {
+export const processThread = async (authorsTbd, authors, thread) => {
     const now = new Date().getTime();
-    const inner = async (thread) => {
+    const inner = async (thread, replyTo = "", parentUri="") => {
         const {post, parent, replies} = thread;
+        const currentPost = await processPost(post, now, authors, authorsTbd);
+
         let result = [];
         if (parent) {
-            (await inner(parent)).forEach(x => {
+            (await inner(parent)).forEach((x, i,arr) => {
+                if (i === arr.length - 1) {
+                    parentUri = x.uri;
+                    replyTo = x.authorDid;
+                }
                 result.push(x);
             });
         }
-        result.push(await processPost(post, now, authors, authorsTbd));
+
+        currentPost.replyTo = replyTo;
+        currentPost.parentUri = parentUri;
+        result.push(currentPost);
         if (replies) {
-            replies.sort((x, y) => {return y.post.indexedAt - x.post.indexedAt}); // sort by reply time
+           // replies.sort((x, y) => {return y.post.indexedAt - x.post.indexedAt}); // sort by reply time
             for (const reply of replies) {
-                result.push(...await inner(reply));
+                (await inner(reply, currentPost.authorDid, currentPost.uri)).forEach(x => {
+                    result.push(x);
+                });
             }
         }
-
 
         return result;
     }
@@ -333,7 +344,9 @@ export const getPostThread = async (did, columnId, uri) => {
     let posts, mainUri;
     try {
         const {data: {thread}} = await agent.getPostThread({uri: `at://${uri.replace("/post/", "/app.bsky.feed.post/")}`});
-        const {posts:_posts, mainUri:_mainUri} = await processThread(agent, authorsTbd, authors, thread);
+        console.log(JSON.stringify(thread, null, 2));
+
+        const {posts:_posts, mainUri:_mainUri} = await processThread(authorsTbd, authors, thread);
         posts = _posts;
         mainUri = _mainUri;
     } catch (e) {
@@ -379,6 +392,13 @@ export const getPostThread = async (did, columnId, uri) => {
         mainUri,
         viewer: did
     };
+
+    /*
+    // Cache thread pulled posts? Probably not necessary
+    posts.forEach(x => {
+        memoryCommand[`posts.${x.uri}`] = x;
+    });
+     */
 
     store.dispatch(updateMemory(memoryCommand));
 

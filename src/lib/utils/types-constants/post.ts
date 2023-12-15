@@ -21,6 +21,7 @@ export interface Post {
     embed?: PostEmbed
     reposterDid?: string
     replyTo?: string
+    parentUri?:string
 }
 
 

@@ -23,7 +23,7 @@ import {BiLogInCircle} from "react-icons/bi";
 import PopupFormSignInBluesky from "@/lib/components/popups/PopupFormSignInBluesky";
 import {makeInitialState as makePageInitialState, resetPages} from "@/lib/utils/redux/slices/pages";
 import {resetMemory} from "@/lib/utils/redux/slices/memory";
-import {BlueskyAccount} from "@/lib/utils/types-constants/user-data";
+import {BlueskyAccount, getUserName} from "@/lib/utils/types-constants/user-data";
 import AvatarUser from "@/lib/components/ui/AvatarUser";
 import {PopupConfigUsers, PopupState} from "@/lib/utils/types-constants/popup";
 import {usePopupContext} from "@/lib/providers/PopupProvider";
@@ -108,12 +108,15 @@ export default function PopupUserList({isOpen, setOpen}:{isOpen:boolean,setOpen:
 
 
                         <div className="w-8 h-8 aspect-square relative border border-theme-dark-I0 rounded-full">
-                            <AvatarUser avatar={user?.avatar} alt={user?.displayName}/>
+                            <AvatarUser avatar={user?.avatar} alt={getUserName(user)}/>
                         </div>
 
 
                         <div className="grow">
-                            <div className="text-sm font-semibold text-theme_dark-T0">{user?.displayName}</div>
+                            {
+                                user?.displayName &&
+                                <div className="text-sm font-semibold text-theme_dark-T0">{user?.displayName}</div>
+                            }
                             <div className="text-xs text-theme_dark-T1">@{user?.handle}</div>
                         </div>
                     </div>

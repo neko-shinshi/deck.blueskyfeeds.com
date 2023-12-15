@@ -32,3 +32,7 @@ export interface BlueskyAccount extends BlueskyUserData, Account {
 export interface MastodonAccount extends MastodonUserData, Account {
     token: string,
 }
+
+export const getUserName = (user:UserData) => {
+    return user.displayName || user.handle;
+}

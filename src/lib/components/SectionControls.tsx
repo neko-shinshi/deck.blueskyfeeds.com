@@ -15,6 +15,7 @@ import {usePopupContext} from "@/lib/providers/PopupProvider";
 import {GrPowerCycle} from "react-icons/gr";
 import {FaArrowsRotate} from "react-icons/fa6";
 import {FaUsersCog} from "react-icons/fa";
+import {getUserName} from "@/lib/utils/types-constants/user-data";
 
 
 export default function SectionControls ({columnIds, handleColumnDragEnd}) {
@@ -49,7 +50,7 @@ export default function SectionControls ({columnIds, handleColumnDragEnd}) {
             </div>
             {
                 <div className="h-4 w-4 absolute -right-1 -bottom-1 border border-theme_dark-I0 rounded-full">
-                    <AvatarUser avatar={accounts.dict[column.observers[0]].avatar} alt={accounts.dict[column.observers[0]].displayName}/>
+                    <AvatarUser avatar={accounts.dict[column.observers[0]].avatar} alt={getUserName(accounts.dict[column.observers[0]])}/>
                 </div>
             }
         </div>

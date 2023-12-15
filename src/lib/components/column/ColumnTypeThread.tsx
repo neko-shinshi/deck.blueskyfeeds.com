@@ -6,6 +6,7 @@ import {updateMemory} from "@/lib/utils/redux/slices/memory";
 import clsx from "clsx";
 import {useEffect} from "react";
 import AvatarUser from "@/lib/components/ui/AvatarUser";
+import {getUserName} from "@/lib/utils/types-constants/user-data";
 
 export default function ColumnTypeThread({thread, column}: {thread:ColumnModeThread, column:ColumnConfig}) {
     //@ts-ignore
@@ -22,10 +23,10 @@ export default function ColumnTypeThread({thread, column}: {thread:ColumnModeThr
     }, [thread]);
 
     return <>
-        <div className="h-[3rem] flex place-items-center gap-2 justify-start">
+        <div className="h-[3rem] flex place-items-center gap-1 justify-start">
             {
                 memory.columns[column.id].mode.parent &&
-                <div className="w-8 h-8 p-1 border border-theme_dark-I0 rounded-full mr-2 bg-theme_dark-I1 hover:bg-theme_dark-I2 shrink-0 grid place-items-center"
+                <div className="w-8 h-8 p-1 border border-theme_dark-I0 rounded-full bg-theme_dark-I1 hover:bg-theme_dark-I2 shrink-0 grid place-items-center"
                      onClick={() => {
                          let command:any = {};
                          command[`columns.${column.id}.mode`] = null;
@@ -36,7 +37,7 @@ export default function ColumnTypeThread({thread, column}: {thread:ColumnModeThr
                     <BiArrowToLeft className="w-4 h-4 text-theme_dark-I0" />
                 </div>
             }
-            <div className="w-8 h-8 p-1 border border-theme_dark-I0 rounded-full mr-2 bg-theme_dark-I1 hover:bg-theme_dark-I2 shrink-0 grid place-items-center"
+            <div className="w-8 h-8 p-1 border border-theme_dark-I0 rounded-full bg-theme_dark-I1 hover:bg-theme_dark-I2 shrink-0 grid place-items-center"
                  onClick={() => {
                      let command:any = {};
                      command[`columns.${column.id}.mode`] = memory.columns[column.id].mode.parent;
@@ -49,7 +50,7 @@ export default function ColumnTypeThread({thread, column}: {thread:ColumnModeThr
             <div>Thread as</div>
             <div className="flex gap-1 grow-0 overflow-hidden place-items-center group">
                 <div className={clsx("w-4 h-4", "relative aspect-square rounded-full border border-theme_dark-I0")}>
-                    <AvatarUser avatar={accounts.dict[thread.viewer]?.avatar} alt={accounts.dict[thread.viewer]?.displayName}/>
+                    <AvatarUser avatar={accounts.dict[thread.viewer]?.avatar} alt={getUserName(accounts.dict[thread.viewer])}/>
                 </div>
                 <div className="overflow-hidden text-theme_dark-T1 text-xs group-hover:underline">{accounts.dict[thread.viewer]?.handle}</div>
             </div>

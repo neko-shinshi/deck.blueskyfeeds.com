@@ -1,6 +1,13 @@
 import {updateMemory} from "@/lib/utils/redux/slices/memory";
 import {BiArrowBack} from "react-icons/bi";
-import {ColumnConfig, ColumnType, FetchedColumn, MAX_WIDTH, MIN_WIDTH} from "@/lib/utils/types-constants/column";
+import {
+    ColumnConfig,
+    ColumnType,
+    FetchedColumn,
+    getColumnName,
+    MAX_WIDTH,
+    MIN_WIDTH
+} from "@/lib/utils/types-constants/column";
 import {useDispatch, useSelector} from "react-redux";
 import {HiChevronLeft, HiChevronRight} from "react-icons/hi";
 import {MdDeleteForever} from "react-icons/md";
@@ -13,6 +20,7 @@ import {RiCheckboxBlankCircleLine, RiCheckboxCircleFill} from "react-icons/ri";
 import {RefreshTimingType} from "@/lib/utils/types-constants/refresh-timings";
 import clsx from "clsx";
 import AvatarUser from "@/lib/components/ui/AvatarUser";
+import {getUserName} from "@/lib/utils/types-constants/user-data";
 
 export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
     //@ts-ignore
@@ -56,7 +64,7 @@ export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
             >
                 <BiArrowBack className="w-4 h-4 text-theme_dark-I0" />
             </div>
-            Settings - {column.name}
+            Settings - {getColumnName(column, memory)}
         </div>
 
         <div className="space-y-2 p-2 bg-theme_dark-L1 rounded-md">
@@ -138,7 +146,7 @@ export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
                                     <div
                                         className={clsx("w-4 h-4", "relative aspect-square rounded-full border border-theme_dark-I0")}>
                                         <AvatarUser avatar={account.avatar}
-                                                    alt={account.displayName}/>
+                                                    alt={getUserName(account)}/>
                                     </div>
                                     <div
                                         className="overflow-hidden text-theme_dark-T1 text-xs group-hover:underline">{account.handle}</div>

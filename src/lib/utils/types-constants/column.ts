@@ -115,3 +115,7 @@ export interface ColumnModeLoading extends ColumnMode {
 
 export const MIN_WIDTH = 20;
 export const MAX_WIDTH = 50;
+
+export const getColumnName = (column:ColumnConfig, memory) => {
+    return column.name || column.type === ColumnType.FEED && memory.feeds[(column as ColumnFeed).uri]?.displayName;
+}

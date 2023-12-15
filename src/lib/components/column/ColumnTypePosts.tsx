@@ -7,7 +7,7 @@ import {updateMemory} from "@/lib/utils/redux/slices/memory";
 import AvatarUser from "@/lib/components/ui/AvatarUser";
 import {useEffect, useRef} from "react";
 import clsx from "clsx";
-import {ColumnType} from "@/lib/utils/types-constants/column";
+import {ColumnType, getColumnName} from "@/lib/utils/types-constants/column";
 export default function ColumnTypePosts({attributes, listeners, column}) {
     //@ts-ignore
     const memory = useSelector((state) => state.memory);
@@ -45,7 +45,7 @@ export default function ColumnTypePosts({attributes, listeners, column}) {
                     <div className="line-clamp-2 text-theme_dark-I0 peer-hover:underline hover:underline"
                          onClick={loadUpdates}
                     >
-                        {column.name || column.type === ColumnType.FEED && memory.feeds[column.uri]?.displayName}
+                        {getColumnName(column, memory)}
                     </div>
                     <div className="flex">
                     {

@@ -30,6 +30,7 @@ import {BsListNested} from "react-icons/bs";
 import {usePopupContext} from "@/lib/providers/PopupProvider";
 import {PopupConfigPostAction, PopupState} from "@/lib/utils/types-constants/popup";
 import {useLongPress} from "use-long-press";
+import {getUserName} from "@/lib/utils/types-constants/user-data";
 
 export default function PostItem({post, column, highlight=false}: {post:Post, column:ColumnConfig, highlight:boolean}) {
     //@ts-ignore
@@ -70,11 +71,11 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
         return <div className="flex justify-between">
             <div className="flex gap-2 grow-0 overflow-hidden place-items-center group">
                 <div className={clsx(mini? "w-6 h-6": "w-8 h-8", "relative aspect-square rounded-full border border-theme_dark-I0")}>
-                    <AvatarUser avatar={user?.avatar} alt={user?.displayName}/>
+                    <AvatarUser avatar={user?.avatar} alt={getUserName(user)}/>
                 </div>
 
                 <div className="overflow-hidden">
-                    <div className={clsx(mini? "text-xs": "text-sm", "text-theme_dark-T0 truncate")}>{user?.displayName || user?.handle}</div>
+                    <div className={clsx(mini? "text-xs": "text-sm", "text-theme_dark-T0 truncate")}>{getUserName(user)}</div>
                     <div className="text-theme_dark-T1 text-xs group-hover:underline">@{user?.handle}</div>
                 </div>
             </div>
@@ -259,20 +260,29 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                      console.log("open reposter", post.reposterDid);
                  }}>
                 <BiRepost className="h-4 w-4 text-green-500" />
-                <div className="whitespace-nowrap text-ellipsis overflow-hidden">Reposted by {memory.userData[post.reposterDid].displayName}</div>
+                <div className="whitespace-nowrap text-ellipsis overflow-hidden">Reposted by {getUserName(memory.userData[post.reposterDid])}</div>
             </div>
         }
 
         <PostHeader id={post.authorDid} indexedAt={post.indexedAt}/>
 
         <div className={clsx(config.offsetLeft && "pl-10", "text-theme_dark-T0 overflow-hidden")}>
-            {post.replyTo && <div className="text-theme_dark-T1 flex place-items-center gap-1 p-1">
-                <FaReply className="h-3 w-3 peer"
-                         onClick={() => openThread(post.uri)}/>
-                <div className="hover:underline peer-hover:underline shrink-0"
-                      onClick={() => openThread(post.uri)}>Reply to</div>
-                <div className="whitespace-nowrap text-ellipsis overflow-hidden hover:underline">{` ${memory.userData[post.replyTo].displayName}`}</div>
-            </div>}
+            {
+                post.replyTo &&
+                <div className="text-theme_dark-T1 flex place-items-center gap-1 p-1">
+                    <FaReply className="h-3 w-3 peer"
+                             onClick={() => openThread(post.parentUri)}/>
+                    <div className="hover:underline peer-hover:underline shrink-0"
+                         onClick={() => openThread(post.parentUri)}>Reply to</div>
+                    <div className="whitespace-nowrap text-ellipsis overflow-hidden hover:underline"
+                         onClick={() => {
+                           console.log("open profile", post.replyTo);
+                         }}
+                    >
+                        {` ${getUserName(memory.userData[post.replyTo])}`}
+                    </div>
+                </div>
+            }
             <div className="p-1">
                 {
                     post.textParts && post.textParts.map((textPart, i) => <span key={i}>
@@ -318,6 +328,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                 }
                 {
                     post.tags.length > 0 && <div className="flex gap-2">
+                        Append:
                         {
                             post.tags.map(tag =>
                                 <div key={tag}
@@ -336,17 +347,17 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
             <PostEmbeds postItem={post}/>
 
             <div>
+                <div className="w-full h-px bg-gray-400 mt-1" />
                 {
                     highlight && (post.replyCount > 0 || post.repostCount > 0 || post.likeCount > 0) && <>
-                        <div className="w-full h-0.5 bg-gray-700" />
-                        <div className="flex gap-4">
+                        <div className="flex gap-4 p-2">
                             {post.replyCount > 0 && <div>{post.replyCount} {post.replyCount === 1? "Reply" : "Replies"}</div>}
                             {post.repostCount > 0 && <div>{post.repostCount} {post.repostCount === 1? "Repost" : "Reposts" }</div>}
                             {post.likeCount > 0 && <div>{post.likeCount} {post.likeCount === 1? "Like" : "Likes"}</div>}
                         </div>
                     </>
                 }
-                <div className="w-full h-0.5 bg-gray-700" />
+
                 <div className="flex gap-4">
                     {
                         !highlight && <button

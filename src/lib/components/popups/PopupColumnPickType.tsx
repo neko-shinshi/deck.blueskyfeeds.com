@@ -16,9 +16,10 @@ import AvatarFeed from "@/lib/components/ui/AvatarFeed";
 import {TiPin} from "react-icons/ti";
 import {LiaAtomSolid} from "react-icons/lia";
 import {Feed} from "@/lib/utils/types-constants/feed";
-import {updateFeeds} from "@/lib/utils/redux/slices/memory";
+import {initializeColumn, updateFeeds} from "@/lib/utils/redux/slices/memory";
 
 import useState from 'react-usestateref'
+import {getUserName} from "@/lib/utils/types-constants/user-data";
 
 const columnData = [
     {type: ColumnType.HOME, icon: <BiSolidHome className="h-6 w-6"/>, description: "The Default Following Feed of an account"},
@@ -62,18 +63,6 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
 
     }, [isOpen]);
 
-    const FeedSelect = ({feedItems}) => {
-        return <div>
-            {
-                feedItems.map(feed =>
-                    <div key={feed.uri} className="flex place-items-center">
-                        <div className="w-8 h-8 relative"><AvatarFeed avatar={feed.avatar}/></div>
-                        <div>{feed.displayName}</div>
-                    </div>)
-            }
-        </div>
-    }
-
     const TypeButton = ({x}) => {
         const [expanded, setExpanded] = useState<false | ColumnType>(false);
         return <div key={x.type}
@@ -95,12 +84,10 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
                             return x.displayName > y.displayName? 1 : -1;
                         });
                         const id = randomUuid();
-                        console.log("oldMode", mode);
-
                         const newMode = {mode:ColumnTypeMode.FEED, feeds, id} as ColumnTypeFeedData;
-                        console.log("newMode", newMode);
                         setMode(newMode);
 
+                        // Refresh feeds
                         getMyFeeds(accounts.order.reduce((acc, x) => {
                             const account = accounts.dict[x];
                             if (account && account.type === "b") {
@@ -160,19 +147,22 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
                                             case ColumnType.HOME: {
                                                 setOpen(false);
                                                 const colId = randomUuid();
-                                                const b = {pageId: memory.currentPage, name: `Home`, config: {id: colId, type: ColumnType.HOME, observer: id}, defaults: config};
-                                                dispatch(addColumn(b));
+                                                dispatch(addColumn({pageId: memory.currentPage, name: `Home`, config: {id: colId, type: ColumnType.HOME, observer: id}, defaults: config}));
+                                                dispatch(initializeColumn({ids:[colId]}));
                                                 break;
                                             }
                                         }
                                     }}
                                 >
                                     <div className="w-6 h-6 relative aspect-square">
-                                        <AvatarUser avatar={account.avatar} alt={account.displayName}/>
+                                        <AvatarUser avatar={account.avatar} alt={getUserName(account)}/>
                                     </div>
                                     <div>
-                                        <div className="text-sm text-theme_dark-T0">{account.displayName}</div>
-                                        <div className="text-xs text-theme_dark-T1">@{account.handle}</div>
+                                        {
+                                            account.displayName &&
+                                            <div className="text-sm text-theme_dark-T0">{account.displayName}</div>
+                                        }
+                                        <div className="text-xs text-theme_dark-T1">{account.handle}</div>
                                     </div>
                                 </div>)
                             }
@@ -246,6 +236,7 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
                                      const colId = randomUuid();
                                      const configFeed:InColumnFeed = {id:colId, type:ColumnType.FEED, observers: [accounts.order[0]], uri:x.uri};
                                      dispatch(addColumn({pageId: memory.currentPage, config: configFeed, defaults: config}));
+                                     dispatch(initializeColumn({ids:[colId]}));
                                      setOpen(false);
                                  }}
                             >

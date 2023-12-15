@@ -20,6 +20,7 @@ import TimeAgo from "javascript-time-ago";
 import en from 'javascript-time-ago/locale/en.json'
 import {PopupProvider, usePopupContext} from "@/lib/providers/PopupProvider";
 import {getMyFeeds} from "@/lib/utils/bsky/bsky";
+import {NextResponse} from "next/server";
 
 export default function Main ({}) {
     //@ts-ignore
