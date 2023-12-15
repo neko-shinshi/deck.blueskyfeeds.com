@@ -4,6 +4,7 @@ import {addOrUpdateAccount, logOut} from "@/lib/utils/redux/slices/accounts";
 import {store} from "@/lib/utils/redux/store";
 import {Feed} from "@/lib/utils/types-constants/feed";
 import {getUserName} from "@/lib/utils/types-constants/user-data";
+import {stripFeedUri, stripPostUri} from "@/lib/utils/at_uri";
 
 
 // Try login with password
@@ -134,7 +135,7 @@ export const getMyFeeds = async (users, basicKey, additionalFeeds=[]):Promise<Fe
     feedMaps.forEach(feedMap => {
         [...feedMap.values()].forEach(x => {
             const {uri:_uri, custom, saved, pinned} = x;
-            const uri = _uri.slice(5).replaceAll("/app.bsky.feed.generator/", "/feed/"); // Trim at path
+            const uri = stripFeedUri(_uri);
             const existing = bigFeedMap.get(uri);
             if (existing) {
                 if (custom) {

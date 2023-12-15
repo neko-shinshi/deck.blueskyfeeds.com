@@ -15,6 +15,7 @@ import {getAgent} from "@/lib/utils/bsky/bsky";
 import {store} from "@/lib/utils/redux/store";
 import {BskyAgent} from "@atproto/api";
 import {randomUuid} from "@/lib/utils/random";
+import {stripFeedUri, stripPostUri} from "@/lib/utils/at_uri";
 
 // Use the public search API to 'create' a feed
 export const searchPosts = async (agent, searchTerm, cursor="") => {
@@ -136,7 +137,7 @@ const processPost = async (post, now, authors, authorsTbd) => {
                 const {uri:_uri, author:{did:authorDid}, value:{text}, labels, indexedAt:_indexedAt, embeds} = record;
                 const indexedAt = new Date(_indexedAt).getTime();
                 authorsTbd.add(authorDid);
-                const uri = _uri.slice(5).replaceAll("/app.bsky.feed.post/", "/post/");
+                const uri = stripPostUri(_uri);
                 if (Array.isArray(embeds) && embeds.length > 0 && embeds[0]["$type"] !== "app.bsky.embed.record#view") {
                     return {record:{type:"Post", uri, authorDid, text, labels, indexedAt, embed: await processEmbed(embeds[0])}};
                 } else {
@@ -222,7 +223,7 @@ const processPost = async (post, now, authors, authorsTbd) => {
     const authorDid = processAuthorGetDid(author, now, authors);
     const {text, langs, tags, facets} = record;
     const textParts = processTextToParts(text, facets);
-    const uri = _uri.slice(5).replaceAll("/app.bsky.feed.post/", "/post/");
+    const uri = stripPostUri(_uri);
 
     let postObj:Post = {
         uri, cid, textParts, authorDid, text,
@@ -256,7 +257,7 @@ export const processFeed = async (agent, authors, authorsTbd, feed) => {
         if (reply) {
             const {root, parent} = reply; // ignore root
             postObj.replyTo = processAuthorGetDid(parent.author, now, authors);
-            postObj.parentUri = parent.uri;
+            postObj.parentUri = stripPostUri(parent.uri);
         }
 
         if (reason && reason.by && reason["$type"] === "app.bsky.feed.defs#reasonRepost") {
@@ -310,7 +311,7 @@ export const processThread = async (authorsTbd, authors, thread) => {
 
     console.log("POSTS", posts);
 
-    const mainUri = thread.post.uri.slice(5).replaceAll("/app.bsky.feed.post/", "/post/");
+    const mainUri = stripPostUri(thread.post.uri);
     return {posts, mainUri};
 }
 
