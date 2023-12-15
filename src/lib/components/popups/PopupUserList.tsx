@@ -225,7 +225,7 @@ export default function PopupUserList({isOpen, setOpen}:{isOpen:boolean,setOpen:
                  setInitialUser(null);
                  setLoginOpen("bluesky");
              }}>
-            <div className="w-8 h-8 aspect-square grid place-items-center border border-text-theme_dark-I0 rounded-full">
+            <div className="w-8 h-8 aspect-square grid place-items-center rounded-full">
                 <FaPlus className="w-5 h-5 text-theme_dark-I0" aria-label="Add Account"/>
             </div>
 

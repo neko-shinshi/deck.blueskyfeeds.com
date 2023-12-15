@@ -43,7 +43,7 @@ export default function LoginSwitcher ({initialMode}:{initialMode:"root"|"mastod
                          }
                      }}
                 >
-                    <BsFiletypeJson  className="h-10 w-10 p-1"/>
+                    <BsFiletypeJson className="h-10 w-10 p-1"/>
                     <div>Recover from JSON</div>
                 </div>
             </>

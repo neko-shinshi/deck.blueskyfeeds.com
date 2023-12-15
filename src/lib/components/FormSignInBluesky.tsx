@@ -16,8 +16,14 @@ import {BlueskyAccount} from "@/lib/utils/types-constants/user-data";
 import {randomUuid} from "@/lib/utils/random";
 import {ColumnHome, ColumnNotifications, ColumnType, InColumn} from "@/lib/utils/types-constants/column";
 
-export default function FormSignInBluesky ({initialUser=null}:
-{initialUser?:BlueskyAccount}) {
+export default function FormSignInBluesky (
+    {
+        initialUser=null,
+        completeCallback
+    }: {
+        initialUser?:BlueskyAccount,
+        completeCallback?:() => void
+    }) {
     //@ts-ignore
     const accounts = useSelector((state) => state.accounts);
     //@ts-ignore
@@ -108,6 +114,9 @@ export default function FormSignInBluesky ({initialUser=null}:
                 console.log("addOrUpdateAccount INITIAL")
 
                 dispatch(addOrUpdateAccount({service, usernameOrEmail, encryptedPassword, id:did, displayName, avatar, handle, refreshJwt, accessJwt, lastTs:now}));
+                if (completeCallback) {
+                    completeCallback();
+                }
             }
 
             setSubmitting(false);

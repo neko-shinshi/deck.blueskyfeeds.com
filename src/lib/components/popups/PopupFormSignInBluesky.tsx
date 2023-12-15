@@ -12,6 +12,8 @@ export default function PopupFormSignInBluesky({isOpen, setOpen, initialUser=nul
             "text-left overflow-hidden shadow-xl transform transition-all sm:align-middle sm:max-w-md sm:w-full ")}
     >
         <FormSignInBluesky
-            initialUser={initialUser}/>
+            initialUser={initialUser}
+            completeCallback={() => setOpen(false)}
+        />
     </Popup>
 }
