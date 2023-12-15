@@ -10,10 +10,9 @@ import {
     RecordFeed,
     RecordList,
     RecordPost,
-    TextPart
 } from "@/lib/utils/types-constants/post";
 import {ColumnConfig} from "@/lib/utils/types-constants/column";
-import {useDispatch, useSelector} from "react-redux";
+import {useSelector} from "react-redux";
 import AvatarUser from "@/lib/components/ui/AvatarUser";
 import clsx from "clsx";
 import ReactTimeAgo from 'react-time-ago'
@@ -160,10 +159,6 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
         return  <div className="p-2 border border-gray-500 hover:border-white rounded-md" onClick={() => {openThread(record.uri)} }>
             <PostHeader id={record.authorDid} indexedAt={record.indexedAt} mini={true}/>
             <div className="text-theme_dark-T0">{record.text}</div>
-            {
-                record.embed && record.embed.type === "RecordWithMedia" && (record.embed as PostEmbedRecordWithMedia).media.type === "Images" &&
-                <PostImages embedImage={(record.embed as PostEmbedRecordWithMedia).media as PostEmbedImages}/>
-            }
 
             <PostEmbeds postItem={record}/>
         </div>
