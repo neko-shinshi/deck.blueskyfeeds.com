@@ -6,7 +6,7 @@ import SectionControls from "@/lib/components/SectionControls";
 import {arrayMove} from "@dnd-kit/sortable";
 import {setColumnOrder} from "@/lib/utils/redux/slices/pages";
 import SectionColumns from "@/lib/components/SectionColumns";
-import {initializeColumn, startApp, updateFeeds} from "@/lib/utils/redux/slices/memory";
+import {initializeColumn, startApp, updateFeeds, updateMemory} from "@/lib/utils/redux/slices/memory";
 import LoginSwitcher from "@/lib/components/LoginSwitcher";
 import PopupFormSignInBluesky from "@/lib/components/popups/PopupFormSignInBluesky";
 import {PopupState} from "@/lib/utils/types-constants/popup";
@@ -55,9 +55,13 @@ export default function Main ({}) {
                     acc.push(account);
                 }
                 return acc;
-            }, []), memory.basicKey).then(newFeeds => {
-                console.log("new Feeds", newFeeds);
-                dispatch(updateFeeds({feeds: newFeeds}));
+            }, []), memory.basicKey).then(({feeds, authors}) => {
+                console.log("new Feeds", feeds);
+                dispatch(updateFeeds({feeds}));
+
+                let memoryCommand = {};
+                authors.forEach(author => memoryCommand[`userData.${author.id}`] = author);
+                dispatch(updateMemory(memoryCommand));
             });
         }
 

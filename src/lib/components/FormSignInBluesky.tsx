@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 import {getAgentLogin} from "@/lib/utils/bsky/agent";
-import {BsFillInfoCircleFill} from "react-icons/bs";
+import {BsFillInfoCircleFill, BsInfoCircle} from "react-icons/bs";
 import Link from "next/link";
 import {HiAtSymbol} from "react-icons/hi";
 import clsx from "clsx";
@@ -10,7 +10,7 @@ import {setConfigValue} from "@/lib/utils/redux/slices/config";
 import {useForm} from "react-hook-form";
 import {encrypt, makeKey, parseKey} from "@/lib/utils/crypto";
 import {addColumn, updatePageConfig} from "@/lib/utils/redux/slices/pages";
-import {initializeColumn, startApp, updateFeeds} from "@/lib/utils/redux/slices/memory";
+import memory, {initializeColumn, startApp, updateFeeds, updateMemory} from "@/lib/utils/redux/slices/memory";
 import recoverDataFromJson from "@/lib/utils/client/recoverDataFromJson";
 import {BlueskyAccount} from "@/lib/utils/types-constants/user-data";
 import {randomUuid} from "@/lib/utils/random";
@@ -31,6 +31,8 @@ export default function FormSignInBluesky (
     const config = useSelector((state) => state.config);
     //@ts-ignore
     const pages = useSelector((state) => state.pages);
+    //@ts-ignore
+    const memory = useSelector((state) => state.memory);
 
     const [warning, setWarning] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -107,8 +109,11 @@ export default function FormSignInBluesky (
                     dispatch(initializeColumn({ids:[notifId, homeId]}));
                     dispatch(startApp({pageId}));
 
-                    getMyFeeds([{service, usernameOrEmail, encryptedPassword, refreshJwt, accessJwt, id:did}], keyString).then(newFeeds => {
-                        dispatch(updateFeeds({feeds: newFeeds}));
+                    getMyFeeds([{service, usernameOrEmail, encryptedPassword, refreshJwt, accessJwt, id:did}], keyString).then(({feeds, authors}) => {
+                        dispatch(updateFeeds({feeds}));
+                        let memoryCommand = {};
+                        authors.forEach(author => memoryCommand[`userData.${author.id}`] = author);
+                        dispatch(updateMemory(memoryCommand));
                     });
                 }
 
@@ -177,7 +182,7 @@ export default function FormSignInBluesky (
             <div>
                 <label htmlFor="password" className="flex justify-items-start place-items-center gap-2 text-sm font-medium text-theme_dark-T1">
                     App Password  <Link href="/faq-app-password" className="flex place-items-center group" target="_blank" rel="noreferrer">
-                    <BsFillInfoCircleFill className="mr-1 w-4 h-4 text-blue-500 group-hover:text-blue-800"/>
+                    <BsInfoCircle className="mr-1 w-4 h-4 text-blue-500 group-hover:text-blue-800"/>
                     <div className=" text-blue-500 group-hover:underline group-hover:text-blue-800">What is this?</div>
                 </Link>
                 </label>

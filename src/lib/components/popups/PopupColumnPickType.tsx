@@ -13,7 +13,7 @@ import {randomUuid} from "@/lib/utils/random";
 import AvatarUser from "@/lib/components/ui/AvatarUser";
 import {getMyFeeds} from "@/lib/utils/bsky/feeds";
 import {Feed} from "@/lib/utils/types-constants/feed";
-import {initializeColumn, updateFeeds} from "@/lib/utils/redux/slices/memory";
+import {initializeColumn, updateFeeds, updateMemory} from "@/lib/utils/redux/slices/memory";
 
 import useState from 'react-usestateref'
 import {getUserName} from "@/lib/utils/types-constants/user-data";
@@ -95,9 +95,13 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
                                 acc.push(account);
                             }
                             return acc;
-                        }, []), memory.basicKey).then(newFeeds => {
+                        }, []), memory.basicKey).then(({feeds:newFeeds, authors}) => {
                             dispatch(updateFeeds({feeds:newFeeds}));
                             console.log("new Feeds", newFeeds);
+
+                            let memoryCommand = {};
+                            authors.forEach(author => memoryCommand[`userData.${author.id}`] = author);
+                            dispatch(updateMemory(memoryCommand));
 
                             // If mode has not updated, update it with latest info
                             console.log(id, modeRef.current);

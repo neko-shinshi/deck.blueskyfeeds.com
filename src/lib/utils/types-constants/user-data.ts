@@ -34,5 +34,6 @@ export interface MastodonAccount extends MastodonUserData, Account {
 }
 
 export const getUserName = (user:UserData) => {
+    if (!user) {return ""}
     return user.displayName || user.handle;
 }

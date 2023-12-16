@@ -9,13 +9,12 @@ import {
     PostFacetTag,
     TextPart
 } from "@/lib/utils/types-constants/post";
-import {logOut} from "@/lib/utils/redux/slices/accounts";
 import {updateMemory} from "@/lib/utils/redux/slices/memory";
 import {getAgent} from "@/lib/utils/bsky/agent";
 import {store} from "@/lib/utils/redux/store";
-import {BskyAgent} from "@atproto/api";
 import {randomUuid} from "@/lib/utils/random";
 import {stripFeedUri, stripPostUri} from "@/lib/utils/at_uri";
+import {getTbdAuthors} from "@/lib/utils/bsky/users";
 
 // Use the public search API to 'create' a feed
 export const searchPosts = async (agent, searchTerm, cursor="") => {
@@ -40,38 +39,7 @@ export const searchPosts = async (agent, searchTerm, cursor="") => {
     return {data:{feed:posts, cursor}};
 }
 
-const USER_REFRESH_BUFFER = 20 * 1000;
-// Fetch authors not updated by the latest query
-export const getTbdAuthors = async (agent, authorsTbd, authors, lastTs, userData) => {
-    if (authorsTbd.size === 0) {return;}
-    Object.keys(authors).forEach(did => authorsTbd.delete(did));
-    if (authorsTbd.size === 0) {return;}
-    [...authorsTbd].forEach(did => {
-        // Already refreshed recently, then skip
-        if (userData[did] && userData[did].lastTs + USER_REFRESH_BUFFER > lastTs) {
-            authorsTbd.delete(did);
-        }
-    });
-    if (authorsTbd.size === 0) {return;}
 
-    const MAX_QUERY = 25;
-    let searchAuthorsArray = [...authorsTbd];
-    for (let i = 0; i < searchAuthorsArray.length; i += MAX_QUERY) {
-        const chunk = searchAuthorsArray.slice(i, i + MAX_QUERY);
-        try {
-            const {data:{profiles}} = await agent.getProfiles({actors:chunk});
-            profiles.forEach(x => {
-                const {did, handle, avatar, displayName} = x;
-                authors.set(did, {avatar, handle, displayName:displayName||handle, did, lastTs});
-            });
-        } catch (e) {
-            if (e.status === 429) {
-                throw makeCustomException("Rate Limited", 429);
-            }
-            console.log(e);
-        }
-    }
-}
 
 const processAuthorGetDid = (author, lastTs, authors) => {
     const {avatar, handle, displayName, did} = author;
@@ -240,7 +208,7 @@ const processPost = async (post, now, authors, authorsTbd) => {
     return postObj;
 }
 
-export const processFeed = async (agent, authors, authorsTbd, feed) => {
+export const processFeed = async (authors, authorsTbd, feed) => {
     let uris = [];
     let posts = new Map<string, Post>();
 

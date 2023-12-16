@@ -1,18 +1,21 @@
 import {BiArrowBack, BiSearch} from "react-icons/bi";
 import {randomUuid} from "@/lib/utils/random";
-import {ColumnType, getColumnName, InColumnFeed} from "@/lib/utils/types-constants/column";
+import {ColumnConfig, ColumnFeed, ColumnType, InColumnFeed} from "@/lib/utils/types-constants/column";
 import {addColumn} from "@/lib/utils/redux/slices/pages";
 import {initializeColumn, updateFeeds, updateMemory} from "@/lib/utils/redux/slices/memory";
 import AvatarFeed from "@/lib/components/ui/AvatarFeed";
 import {TiPin} from "react-icons/ti";
 import {LiaAtomSolid} from "react-icons/lia";
 import {FaPlus} from "react-icons/fa";
-import {ColumnTypeFeedData, ColumnTypeMode, ColumnTypeModeData} from "@/lib/components/popups/PopupColumnPickType";
+import {ColumnTypeFeedData, ColumnTypeMode} from "@/lib/components/popups/PopupColumnPickType";
 import {useDispatch, useSelector} from "react-redux";
-import {useRef, useState} from "react";
+import {useState} from "react";
 import {TbDatabaseSearch} from "react-icons/tb";
 import {Feed} from "@/lib/utils/types-constants/feed";
 import {getFeed} from "@/lib/utils/bsky/feeds";
+import {BsInfoCircle} from "react-icons/bs";
+import clsx from "clsx";
+import {getUserName} from "@/lib/utils/types-constants/user-data";
 
 
 export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
@@ -22,6 +25,8 @@ export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
     const config = useSelector((state) => state.config);
     //@ts-ignore
     const accounts = useSelector((state) => state.accounts);
+    //@ts-ignore
+    const pages = useSelector((state) => state.pages);
 
     const dispatch = useDispatch();
     const [inputValue, setInputValue] = useState<{text:string, externSearch:boolean}>({text:"", externSearch:false});
@@ -46,12 +51,10 @@ export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
                    onChange={(event) => {
                        const v = event.target.value.trim();
                        const parts = v.split("/");
-
-
                        const searchFeedAndUpdateUpdate = (uri) => {
                            const id = randomUuid();
                            setMode({mode:ColumnTypeMode.FEED, feeds:[], id, busy:true});
-                           getFeed(uri, memory, accounts.dict[accounts.order[0]]).then(({update, feed}) => {
+                           getFeed(uri, memory, accounts.dict[accounts.order[0]]).then(({update, feed, author}) => {
                                if (!feed) {
                                    // it is empty
                                    if (modeRef.current.mode === ColumnTypeMode.FEED && modeRef.current.id === id) {
@@ -61,8 +64,10 @@ export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
                                }
                                if (update) {
                                    dispatch(updateFeeds({feeds:[feed]}));
+                                   let memoryCommand = {};
+                                   memoryCommand[`userData.${author.id}`] = author;
+                                   dispatch(updateMemory(memoryCommand));
                                }
-
 
                                if (modeRef.current.mode === ColumnTypeMode.FEED && modeRef.current.id === id) {
                                    setMode({mode:ColumnTypeMode.FEED, feeds: [feed]} as ColumnTypeFeedData);
@@ -71,7 +76,6 @@ export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
                                }
                            });
                        }
-
 
                        if (v.startsWith("https://bsky.app/profile") && parts.length === 7 && parts[5] === "feed") {
                            const search = `at://${parts[4]}/app.bsky.feed.generator/${parts[6]}`;
@@ -100,7 +104,6 @@ export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
                            const id = randomUuid();
                            const newMode = {mode:ColumnTypeMode.FEED, feeds, id} as ColumnTypeFeedData;
                            setMode(newMode);
-
                            setInputValue({text:v, externSearch:true});
                        }
                    }}
@@ -134,14 +137,17 @@ export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
         {
             (mode as ColumnTypeFeedData).feeds.map(x =>
                 <div key={x.uri}
-                     className="flex place-items-center justify-between gap-1 p-2 hover:bg-theme_dark-I1"
+                     className={clsx(
+                         "flex place-items-center justify-between gap-1 p-2 hover:bg-theme_dark-I1",
+                         pages.pageDict[memory.currentPage].columns.find(y => {
+                             const config:ColumnConfig = pages.columnDict[y];
+                             if (config && config.type === ColumnType.FEED) {
+                                 return (config as ColumnFeed).uri === x.uri;
+                             }
+                         }) && "bg-gray-700"
+                     )}
                      onClick={() => {
-                         setMode({mode:ColumnTypeMode.BUSY});
-                         const colId = randomUuid();
-                         const configFeed:InColumnFeed = {id:colId, type:ColumnType.FEED, observers: [accounts.order[0]], uri:x.uri};
-                         dispatch(addColumn({pageId: memory.currentPage, config: configFeed, defaults: config}));
-                         dispatch(initializeColumn({ids:[colId]}));
-                         setOpen(false);
+
                      }}
                 >
                     <div className="flex place-items-center gap-3">
@@ -156,10 +162,31 @@ export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
                         </div>
                         <div>
                             <div className="text-sm font-bold">{x.displayName}</div>
+                            <div className="text-xs font-semibold">by {getUserName(memory.userData[x.creator])}</div>
                             <div className="text-xs line-clamp-2">{x.description}</div>
                         </div>
                     </div>
-                    <FaPlus className="shrink-0 w-6 h-6 p-1" />
+
+                    <div className="shrink-0 flex gap-1">
+                        <BsInfoCircle
+                            className="shrink-0 w-6 h-6 p-1"
+                            onClick={() => {
+
+                            }}/>
+
+
+                        <FaPlus
+                            className="shrink-0 w-6 h-6 p-1"
+                            onClick={() => {
+                                setMode({mode:ColumnTypeMode.BUSY});
+                                const colId = randomUuid();
+                                const configFeed:InColumnFeed = {id:colId, type:ColumnType.FEED, observers: [accounts.order[0]], uri:x.uri};
+                                dispatch(addColumn({pageId: memory.currentPage, config: configFeed, defaults: config}));
+                                dispatch(initializeColumn({ids:[colId]}));
+                                setOpen(false);
+                            }}/>
+                    </div>
+
 
                 </div>)
         }

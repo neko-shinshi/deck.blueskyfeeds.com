@@ -11,8 +11,9 @@ import {
     FetchedColumn
 } from "@/lib/utils/types-constants/column";
 import {getAgent} from "@/lib/utils/bsky/agent";
-import {getTbdAuthors, processFeed} from "@/lib/utils/bsky/bsky-feed";
+import {processFeed} from "@/lib/utils/bsky/bsky-feed";
 import {BlueskyUserData} from "@/lib/utils/types-constants/user-data";
+import {getTbdAuthors} from "@/lib/utils/bsky/users";
 
 export default function RefreshHandler({}) {
     useEffect(() => {
@@ -184,7 +185,7 @@ export default function RefreshHandler({}) {
                                         try {
                                             // {cursor, limit}
                                             const {data: {cursor, feed}} = await agent.getTimeline({});
-                                            const {uris, posts} = await processFeed(agent, authors, authorsTbd, feed);
+                                            const {uris, posts} = await processFeed(authors, authorsTbd, feed);
                                             for (let [key, value] of posts.entries()) {
                                                 command[`posts.${key}`] = value;
                                             }
@@ -206,7 +207,7 @@ export default function RefreshHandler({}) {
                                             const {uri} = col as ColumnFeed;
                                             // {cursor, limit}
                                             const {data:{feed, cursor}} = await agent.api.app.bsky.feed.getFeed({feed:`at://${uri.replace("/feed/", "/app.bsky.feed.generator/")}`});
-                                            const {uris, posts} = await processFeed(agent, authors, authorsTbd, feed);
+                                            const {uris, posts} = await processFeed(authors, authorsTbd, feed);
 
                                             for (let [key, value] of posts.entries()) {
                                                 command[`posts.${key}`] = value;
@@ -240,7 +241,7 @@ export default function RefreshHandler({}) {
                                         try {
                                             const {uri:list} = col as ColumnUsers;
                                             const {data:{feed, cursor}} = await agent.api.app.bsky.feed.getListFeed({list});
-                                            const {uris, posts} = await processFeed(agent, authors, authorsTbd, feed);
+                                            const {uris, posts} = await processFeed(authors, authorsTbd, feed);
 
                                             for (let [key, value] of posts.entries()) {
                                                 command[`posts.${key}`] = value;

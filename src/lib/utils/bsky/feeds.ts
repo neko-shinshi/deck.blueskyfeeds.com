@@ -1,6 +1,7 @@
 import {Feed} from "@/lib/utils/types-constants/feed";
 import {stripFeedUri} from "@/lib/utils/at_uri";
 import {getAgent} from "@/lib/utils/bsky/agent";
+import {BlueskyUserData} from "@/lib/utils/types-constants/user-data";
 
 export const getFeed = async (feedUri, memory, user) => {
     const localUri = stripFeedUri(feedUri);
@@ -18,17 +19,20 @@ export const getFeed = async (feedUri, memory, user) => {
     if (feeds.length === 0) {
         return {update:false, feed:null};
     }
-    return {update:true, feed:feeds[0]};
+    const {displayName, description, likeCount, avatar, creator, indexedAt} = feeds[0];
+    const author:BlueskyUserData = (() => {
+        const {did, handle, avatar, displayName} = creator;
+        const lastTs = new Date().getTime();
+        return {avatar, handle, displayName: displayName || handle, id: did, lastTs, type: "b"};
+    })();
+    const feed:Feed = {uri: feedUri, displayName, description, likeCount, avatar, creator:author.id, indexedAt};
+    return {update:true, feed, author};
 }
 
-export const getMyFeeds = async (users, basicKey, additionalFeeds=[]):Promise<Feed[]> => {
-    let bigFeedMap = new Map<string, Feed>();
+export const getMyFeeds = async (users, basicKey, additionalFeeds=[]):Promise<{feeds:Feed[], authors:BlueskyUserData[]}> => {
+    let bigFeedMap = new Map<string, any>();
     const destructureAndAdd = (x, flags, uri, feedMap) => {
         let {displayName, description, likeCount, avatar, creator, indexedAt} = x;
-        if (typeof creator === 'object' && creator !== null) {
-            creator = creator.did;
-        }
-
         feedMap.set(uri, {
             uri,
             displayName:displayName||"",
@@ -38,15 +42,15 @@ export const getMyFeeds = async (users, basicKey, additionalFeeds=[]):Promise<Fe
             creator,
             indexedAt,
             ...flags
-        } as Feed);
+        });
     }
 
     const feedMaps = await Promise.all(users.map(async (user, i) => {
         const agent = await getAgent(user, basicKey);
         if (!agent) {
-            return [];
+            return {feeds:[], authorsTbd:[]};
         }
-        let feedMap = new Map<string, Feed>();
+        let feedMap = new Map<string, any>();
         let [custom, saved] = await Promise.all([
             getCustomFeeds(agent),
             getSavedFeeds(agent, i === 0? additionalFeeds : [])
@@ -100,7 +104,21 @@ export const getMyFeeds = async (users, basicKey, additionalFeeds=[]):Promise<Fe
             }
         });
     });
-    return [...bigFeedMap.values()];
+
+    const _feeds = [...bigFeedMap.values()];
+    const lastTs = new Date().getTime();
+    const authors:BlueskyUserData[] = [..._feeds.reduce((acc, feed) => {
+        const {did, handle, avatar, displayName} = feed.creator;
+        const author:BlueskyUserData = {avatar, handle, displayName: displayName || handle, id: did, lastTs, type: "b"};
+        acc.set(did, author);
+        return acc;
+    }, new Map<string, BlueskyUserData>()).values()];
+    const feeds:Feed[] = _feeds.map(feed => {
+        feed.creator = feed.creator.did;
+        return feed as Feed;
+    });
+
+    return {feeds, authors};
 }
 
 const getSavedFeeds = async (agent, additionalFeeds=[]):Promise<any[]> => {
