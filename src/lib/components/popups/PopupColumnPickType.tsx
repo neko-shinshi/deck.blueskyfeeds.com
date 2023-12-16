@@ -11,7 +11,7 @@ import {addColumn} from "@/lib/utils/redux/slices/pages";
 import {useDispatch, useSelector} from "react-redux";
 import {randomUuid} from "@/lib/utils/random";
 import AvatarUser from "@/lib/components/ui/AvatarUser";
-import {getMyFeeds} from "@/lib/utils/bsky/bsky";
+import {getMyFeeds} from "@/lib/utils/bsky/feeds";
 import {Feed} from "@/lib/utils/types-constants/feed";
 import {initializeColumn, updateFeeds} from "@/lib/utils/redux/slices/memory";
 
@@ -33,13 +33,14 @@ export enum ColumnTypeMode {
     FEED
 }
 export interface ColumnTypeModeData  {
+    id?: string
     mode: ColumnTypeMode,
 }
 
 export interface ColumnTypeFeedData extends ColumnTypeModeData {
-    id: string
     mode: ColumnTypeMode.FEED
-    feeds: Feed[]
+    feeds: Feed[],
+    busy?: boolean
 }
 
 export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,setOpen:any}) {
@@ -83,7 +84,8 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
                             return x.displayName > y.displayName? 1 : -1;
                         });
                         const id = randomUuid();
-                        const newMode = {mode:ColumnTypeMode.FEED, feeds, id} as ColumnTypeFeedData;
+                        const busy = feeds.length === 0;
+                        const newMode = {mode:ColumnTypeMode.FEED, feeds, id, busy} as ColumnTypeFeedData;
                         setMode(newMode);
 
                         // Refresh feeds
@@ -99,7 +101,7 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
 
                             // If mode has not updated, update it with latest info
                             console.log(id, modeRef.current);
-                            if (modeRef.current.mode === ColumnTypeMode.FEED && (modeRef.current as ColumnTypeFeedData).id === id) {
+                            if (modeRef.current.mode === ColumnTypeMode.FEED && modeRef.current.id === id) {
                                 let feedMap = {...memory.feeds};
                                 newFeeds.forEach(x => {
                                     let feed = feedMap[x.uri];
@@ -204,7 +206,7 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
             }
             {
                 mode.mode === ColumnTypeMode.FEED &&
-                <FeedSelect mode={mode} setMode={setMode} setOpen={setOpen} />
+                <FeedSelect mode={mode} setMode={setMode} setOpen={setOpen} modeRef={modeRef}/>
             }
     </Popup>
 }

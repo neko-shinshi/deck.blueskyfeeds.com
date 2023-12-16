@@ -10,7 +10,7 @@ import {
     ColumnUsers,
     FetchedColumn
 } from "@/lib/utils/types-constants/column";
-import {getAgent} from "@/lib/utils/bsky/bsky";
+import {getAgent} from "@/lib/utils/bsky/agent";
 import {getTbdAuthors, processFeed} from "@/lib/utils/bsky/bsky-feed";
 import {BlueskyUserData} from "@/lib/utils/types-constants/user-data";
 

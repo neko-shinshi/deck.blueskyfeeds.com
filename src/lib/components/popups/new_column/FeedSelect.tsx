@@ -1,8 +1,8 @@
-import {BiSearch} from "react-icons/bi";
+import {BiArrowBack, BiSearch} from "react-icons/bi";
 import {randomUuid} from "@/lib/utils/random";
-import {ColumnType, InColumnFeed} from "@/lib/utils/types-constants/column";
+import {ColumnType, getColumnName, InColumnFeed} from "@/lib/utils/types-constants/column";
 import {addColumn} from "@/lib/utils/redux/slices/pages";
-import {initializeColumn} from "@/lib/utils/redux/slices/memory";
+import {initializeColumn, updateFeeds, updateMemory} from "@/lib/utils/redux/slices/memory";
 import AvatarFeed from "@/lib/components/ui/AvatarFeed";
 import {TiPin} from "react-icons/ti";
 import {LiaAtomSolid} from "react-icons/lia";
@@ -11,9 +11,11 @@ import {ColumnTypeFeedData, ColumnTypeMode, ColumnTypeModeData} from "@/lib/comp
 import {useDispatch, useSelector} from "react-redux";
 import {useRef, useState} from "react";
 import {TbDatabaseSearch} from "react-icons/tb";
+import {Feed} from "@/lib/utils/types-constants/feed";
+import {getFeed} from "@/lib/utils/bsky/feeds";
 
 
-export default function FeedSelect ({mode, setMode, setOpen}) {
+export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
     //@ts-ignore
     const memory = useSelector((state) => state.memory);
     //@ts-ignore
@@ -22,47 +24,101 @@ export default function FeedSelect ({mode, setMode, setOpen}) {
     const accounts = useSelector((state) => state.accounts);
 
     const dispatch = useDispatch();
-    const [inputValue, setInputValue] = useState("");
+    const [inputValue, setInputValue] = useState<{text:string, externSearch:boolean}>({text:"", externSearch:false});
 
-    return <div className="w-[26rem]">
-        <h1 className="text-center text-base font-semibold text-theme_dark-T0 p-2">
-            <span>Choose a Feed</span>
-        </h1>
+    return <div className="w-[28rem]">
+        <div className="h-10 flex place-items-center gap-2 justify-start p-1">
+            <div className="w-8 h-8 p-1 border border-theme_dark-I0 rounded-full mr-2 bg-theme_dark-I1 hover:bg-theme_dark-I2 shrink-0 grid place-items-center"
+                 onClick={() => {
+                     const newMode = {mode:ColumnTypeMode.ROOT};
+                     setMode(newMode);
+                 }}
+            >
+                <BiArrowBack className="w-4 h-4 text-theme_dark-I0" />
+            </div>
+            <div className="font-bold text-base">Choose a Feed</div>
+        </div>
+
         <div className="flex place-items-center p-2 gap-2">
             <input type="text"
-                   placeholder="Search Saved Feeds or Add via URI/URL"
+                   placeholder="Filter Saved Feeds or Add via URI/URL"
                    className="w-full border border-theme_dark-I0 rounded-md p-1 text-sm"
                    onChange={(event) => {
                        const v = event.target.value.trim();
                        const parts = v.split("/");
 
-                       setInputValue("");
+
+                       const searchFeedAndUpdateUpdate = (uri) => {
+                           const id = randomUuid();
+                           setMode({mode:ColumnTypeMode.FEED, feeds:[], id, busy:true});
+                           getFeed(uri, memory, accounts.dict[accounts.order[0]]).then(({update, feed}) => {
+                               if (!feed) {
+                                   // it is empty
+                                   if (modeRef.current.mode === ColumnTypeMode.FEED && modeRef.current.id === id) {
+                                       setMode({mode:ColumnTypeMode.FEED, feeds: []} as ColumnTypeFeedData);
+                                   }
+                                   return;
+                               }
+                               if (update) {
+                                   dispatch(updateFeeds({feeds:[feed]}));
+                               }
+
+
+                               if (modeRef.current.mode === ColumnTypeMode.FEED && modeRef.current.id === id) {
+                                   setMode({mode:ColumnTypeMode.FEED, feeds: [feed]} as ColumnTypeFeedData);
+                               } else {
+                                   console.log("different");
+                               }
+                           });
+                       }
+
+
                        if (v.startsWith("https://bsky.app/profile") && parts.length === 7 && parts[5] === "feed") {
                            const search = `at://${parts[4]}/app.bsky.feed.generator/${parts[6]}`;
-                           console.log("full url");
+                           console.log("url", search);
+                           searchFeedAndUpdateUpdate(search);
+                           setInputValue({text:v, externSearch:false});
                        } else if (v.startsWith("at://") && parts.length === 5 && parts[3] === "app.bsky.feed.generator") {
-                           console.log("at uri");
+                           console.log("at uri", v);
+                           searchFeedAndUpdateUpdate(v);
+                           setInputValue({text:v, externSearch:false});
                        } else {
                            // Search local, but button allows search external
                            console.log("normal", v);
-                           setInputValue(v);
+
+                           const lowerV = v.toLowerCase();
+
+                           let feeds:Feed[] = Object.values(memory.feeds);
+                           feeds = feeds.filter(x => x.displayName.toLowerCase().includes(lowerV) || x.description.toLowerCase().includes(lowerV));
+                           feeds.sort((x,y) => {
+                               if (x.displayName === y.displayName) {
+                                   return x.indexedAt > y.indexedAt? 1: -1;
+                               }
+                               return x.displayName > y.displayName? 1 : -1;
+                           });
+
+                           const id = randomUuid();
+                           const newMode = {mode:ColumnTypeMode.FEED, feeds, id} as ColumnTypeFeedData;
+                           setMode(newMode);
+
+                           setInputValue({text:v, externSearch:true});
                        }
                    }}
             />
             {
-                inputValue && <a href={`https://www.blueskyfeeds.com/?q=${encodeURIComponent(inputValue)}`} target="_blank" rel="noreferrer">
+                inputValue.externSearch && <a href={`https://www.blueskyfeeds.com/?q=${encodeURIComponent(inputValue.text)}`} target="_blank" rel="noreferrer">
                     <TbDatabaseSearch className="w-7 h-7 p-0.5 border border-theme_dark-I0 rounded-full" onClick={() => {
-                        alert("Opened search in a new tab. You can click the feed name ")
+                        alert("Opening search in a new tab. You can copy and paste a feed url here to add it.")
                     }}/>
                 </a>
             }
             {
-                !inputValue && <BiSearch className="w-7 h-7"/>
+                !inputValue.externSearch && <BiSearch className="w-7 h-7"/>
             }
 
         </div>
         {
-            (mode as ColumnTypeFeedData).feeds.length === 0 &&
+            (mode as ColumnTypeFeedData).busy &&
             <div className="grid place-items-center p-12">
                 <div className="flex place-items-center gap-3">
                     <svg aria-hidden="true" className="inline w-10 h-10text-gray-200 animate-spin dark:text-gray-600 fill-blue-600" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">

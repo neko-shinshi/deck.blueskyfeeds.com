@@ -1,5 +1,5 @@
 import {useEffect, useState} from "react";
-import {getAgentLogin, getMyFeeds} from "@/lib/utils/bsky/bsky";
+import {getAgentLogin} from "@/lib/utils/bsky/agent";
 import {BsFillInfoCircleFill} from "react-icons/bs";
 import Link from "next/link";
 import {HiAtSymbol} from "react-icons/hi";
@@ -15,6 +15,7 @@ import recoverDataFromJson from "@/lib/utils/client/recoverDataFromJson";
 import {BlueskyAccount} from "@/lib/utils/types-constants/user-data";
 import {randomUuid} from "@/lib/utils/random";
 import {ColumnHome, ColumnNotifications, ColumnType, InColumn} from "@/lib/utils/types-constants/column";
+import {getMyFeeds} from "@/lib/utils/bsky/feeds";
 
 export default function FormSignInBluesky (
     {

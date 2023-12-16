@@ -11,7 +11,7 @@ import {
 } from "@/lib/utils/types-constants/post";
 import {logOut} from "@/lib/utils/redux/slices/accounts";
 import {updateMemory} from "@/lib/utils/redux/slices/memory";
-import {getAgent} from "@/lib/utils/bsky/bsky";
+import {getAgent} from "@/lib/utils/bsky/agent";
 import {store} from "@/lib/utils/redux/store";
 import {BskyAgent} from "@atproto/api";
 import {randomUuid} from "@/lib/utils/random";
