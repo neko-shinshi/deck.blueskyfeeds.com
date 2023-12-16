@@ -43,7 +43,6 @@ export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
             </div>
             <div className="font-bold text-base">Choose a Feed</div>
         </div>
-
         <div className="flex place-items-center p-2 gap-2">
             <input type="text"
                    placeholder="Filter Saved Feeds or Add via URI/URL"
@@ -86,6 +85,8 @@ export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
                            console.log("at uri", v);
                            searchFeedAndUpdateUpdate(v);
                            setInputValue({text:v, externSearch:false});
+                       } else if (!v) {
+                           setInputValue({text:v, externSearch:false});
                        } else {
                            // Search local, but button allows search external
                            console.log("normal", v);
@@ -110,8 +111,11 @@ export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
             />
             {
                 inputValue.externSearch && <a href={`https://www.blueskyfeeds.com/?q=${encodeURIComponent(inputValue.text)}`} target="_blank" rel="noreferrer">
-                    <TbDatabaseSearch className="w-7 h-7 p-0.5 border border-theme_dark-I0 rounded-full" onClick={() => {
-                        alert("Opening search in a new tab. You can copy and paste a feed url here to add it.")
+                    <TbDatabaseSearch className="w-7 h-7 p-0.5 border border-theme_dark-I0" onClick={(evt) => {
+                        evt.preventDefault();
+                        if (confirm("Search for feed on blueskyfeeds.com? You can copy and paste a feed url in this box later to add it.")) {
+                            window.open(`https://www.blueskyfeeds.com/?q=${encodeURIComponent(inputValue.text)}`, '_blank').focus();
+                        }
                     }}/>
                 </a>
             }
