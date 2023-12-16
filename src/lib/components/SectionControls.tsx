@@ -22,8 +22,6 @@ export default function SectionControls ({columnIds, handleColumnDragEnd}) {
     //@ts-ignore
     const accounts = useSelector((state) => state.accounts);
     //@ts-ignore
-    const config = useSelector((state) => state.config);
-    //@ts-ignore
     const pages = useSelector((state) => state.pages);
 
     const {setPopupConfig} = usePopupContext();
