@@ -95,12 +95,14 @@ export default function RefreshHandler({}) {
                 const state = store.getState();
                 const pages = state.pages;
                 const accounts = state.accounts;
-                const memory = state.memory;
                 const config = state.config;
-                if (!memory.currentPage) {
+                const local = state.local;
+                const memory = state.memory;
+
+                if (!local.currentPage) {
                     return;
                 }
-                const pagesToUpdate = [...new Set([...openPages, memory.currentPage])];
+                const pagesToUpdate = [...new Set([...openPages, local.currentPage])];
 
                 // only fetch columns in pages that are open, and accounts that are logged in
 
@@ -279,8 +281,7 @@ export default function RefreshHandler({}) {
         // Send a heartbeat
         const sendInterval = setInterval(async () => {
             const state = store.getState();
-            const config = state.config;
-            bc.postMessage({id:myId, page: memory.currentPage, type:"hb"});
+            bc.postMessage({id:myId, page: state.local.currentPage, type:"hb"});
         }, 0.5*1000);
 
         // Determine main
@@ -297,8 +298,7 @@ export default function RefreshHandler({}) {
                 }
             }
             const state = store.getState();
-            const config = state.config;
-            openPages = [...new Set([...hbMap.values(), memory.currentPage].filter(x => x !== ""))];
+            openPages = [...new Set([...hbMap.values(), state.local.currentPage].filter(x => x !== ""))];
             hbMap.clear();
         }, 2*1000);
 
@@ -311,11 +311,6 @@ export default function RefreshHandler({}) {
         }
     }, []);
 
-
-    // FOR TESTING
-    //@ts-ignore
-    const memory = useSelector((state) => state.memory);
-    const dispatch = useDispatch();
     return <>
     </>
 }

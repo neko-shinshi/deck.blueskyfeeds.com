@@ -1,21 +1,30 @@
 import {SortableContext, horizontalListSortingStrategy} from "@dnd-kit/sortable";
-import {useSelector} from "react-redux";
+import {shallowEqual, useSelector} from "react-redux";
 import {DndContext, DragOverlay} from "@dnd-kit/core";
 import {useEffect, useState} from "react";
 import Column from "@/lib/components/column/Column";
 import {useDropzone} from "react-dropzone";
+import {StoreState} from "@/lib/utils/redux/store";
 
-export default function SectionColumns ({columnIds, handleColumnDragEnd}) {
-    //@ts-ignore
-    const pages = useSelector((state) => state.pages);
-    //@ts-ignore
-    const accounts = useSelector((state) => state.accounts);
+export default function SectionColumns ({handleColumnDragEnd}) {
+    const columnDict = useSelector((state:StoreState) => state.pages.columnDict);
+    const accounts = useSelector((state:StoreState) => state.accounts);
+    const columnIds = useSelector((state:StoreState) => {
+        const currentPage = state.local.currentPage;
+        if (!currentPage) {
+            return [];
+        }
+        return state.pages.pageDict[currentPage].columns;
+    }, shallowEqual);
+
+    // These two are used for handling drag animation
     const [draggingId, setDraggingId] = useState("");
-
     const handleDragStart = (event) => {
         setDraggingId(event.active.id);
         console.log(event.active.id);
     }
+
+
     const handleDragEnd = (event) => {handleColumnDragEnd(event);}
 
     const {
@@ -84,7 +93,7 @@ export default function SectionColumns ({columnIds, handleColumnDragEnd}) {
                                 <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
                                     {
                                         columnIds.reduce((acc, colId, i) => {
-                                            const column = pages.columnDict[colId];
+                                            const column = columnDict[colId];
                                             if (column) {
                                                 acc.push(<Column
                                                     className={`${i+1 < columnIds.length? "snap-start" : "snap-end"} ${(!accounts.dict[column.observers[0]].active)? "bg-red-900": "bg-transparent"}`}
@@ -96,7 +105,7 @@ export default function SectionColumns ({columnIds, handleColumnDragEnd}) {
                                 </SortableContext>
                                 <DragOverlay>
                                     {
-                                        draggingId && <Column className="bg-theme_dark-L0 bg-opacity-50" column={pages.columnDict[draggingId]}/>
+                                        draggingId && <Column className="bg-theme_dark-L0 bg-opacity-50" column={columnDict[draggingId]}/>
                                     }
                                 </DragOverlay>
                             </DndContext>

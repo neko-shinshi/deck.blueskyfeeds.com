@@ -5,14 +5,14 @@ import {MdGTranslate} from "react-icons/md";
 import {useSelector} from "react-redux";
 import {useEffect, useState} from "react";
 import {PopupConfigPostAction, PopupState} from "@/lib/utils/types-constants/popup";
-import {usePopupContext} from "@/lib/providers/PopupProvider";
+import {StoreState} from "@/lib/utils/redux/store";
 
 export default function PopupPostAction({isOpen, setOpen}) {
-    //@ts-ignore
-    const memory = useSelector((state) => state.memory);
+    const memory = useSelector((state:StoreState) => state.memory);
+    const popupConfig = useSelector((state:StoreState) => state.local.popupConfig);
+
     const [postUrl, setPostUrl] = useState("");
     const [translateUrl, setTranslateUrl] = useState("");
-    const {popupConfig, setPopupConfig} = usePopupContext();
 
     useEffect(() => {
         if (popupConfig && popupConfig.state === PopupState.POST_ACTION) {

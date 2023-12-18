@@ -10,12 +10,14 @@ import {setConfigValue} from "@/lib/utils/redux/slices/config";
 import {useForm} from "react-hook-form";
 import {encrypt, makeKey, parseKey} from "@/lib/utils/crypto";
 import {addColumn, updatePageConfig} from "@/lib/utils/redux/slices/pages";
-import memory, {initializeColumn, startApp, updateFeeds, updateMemory} from "@/lib/utils/redux/slices/memory";
+import memory, {initializeColumn, updateFeeds, updateMemory} from "@/lib/utils/redux/slices/memory";
 import recoverDataFromJson from "@/lib/utils/client/recoverDataFromJson";
 import {BlueskyAccount} from "@/lib/utils/types-constants/user-data";
 import {randomUuid} from "@/lib/utils/random";
 import {ColumnHome, ColumnNotifications, ColumnType, InColumn} from "@/lib/utils/types-constants/column";
 import {getMyFeeds} from "@/lib/utils/bsky/feeds";
+import {setPage} from "@/lib/utils/redux/slices/local";
+import {StoreState} from "@/lib/utils/redux/store";
 
 export default function FormSignInBluesky (
     {
@@ -25,14 +27,9 @@ export default function FormSignInBluesky (
         initialUser?:BlueskyAccount,
         completeCallback?:() => void
     }) {
-    //@ts-ignore
-    const accounts = useSelector((state) => state.accounts);
-    //@ts-ignore
-    const config = useSelector((state) => state.config);
-    //@ts-ignore
-    const pages = useSelector((state) => state.pages);
-    //@ts-ignore
-    const memory = useSelector((state) => state.memory);
+    const accounts = useSelector((state:StoreState) => state.accounts);
+    const config = useSelector((state:StoreState) => state.config);
+    const pages = useSelector((state:StoreState) => state.pages);
 
     const [warning, setWarning] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -107,7 +104,7 @@ export default function FormSignInBluesky (
                     dispatch(addColumn({pageId, config: configNotif, defaults: config}));
                     dispatch(addColumn({pageId, config: configHome, defaults: config}));
                     dispatch(initializeColumn({ids:[notifId, homeId]}));
-                    dispatch(startApp({pageId}));
+                    dispatch(setPage({pageId}));
 
                     getMyFeeds([{service, usernameOrEmail, encryptedPassword, refreshJwt, accessJwt, id:did}], keyString).then(({feeds, authors}) => {
                         dispatch(updateFeeds({feeds}));

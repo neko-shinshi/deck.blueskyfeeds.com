@@ -3,7 +3,7 @@ import Image from "next/image";
 import {BsFillGearFill} from "react-icons/bs";
 import {LuMessageSquarePlus} from "react-icons/lu";
 import {BiSearch} from "react-icons/bi";
-import { useSelector} from "react-redux";
+import {shallowEqual, useSelector} from "react-redux";
 import ColumnIcon from "@/lib/components/column/ColumnIcon";
 import {DndContext} from "@dnd-kit/core";
 import {SortableContext, useSortable, verticalListSortingStrategy} from "@dnd-kit/sortable";
@@ -11,20 +11,23 @@ import {CSS} from '@dnd-kit/utilities';
 import AvatarUser from "@/lib/components/ui/AvatarUser";
 import {TbColumnInsertRight} from "react-icons/tb";
 import {PopupConfigUsers, PopupState} from "@/lib/utils/types-constants/popup";
-import {usePopupContext} from "@/lib/providers/PopupProvider";
-import {GrPowerCycle} from "react-icons/gr";
-import {FaArrowsRotate} from "react-icons/fa6";
 import {FaUsersCog} from "react-icons/fa";
 import {getUserName} from "@/lib/utils/types-constants/user-data";
+import {setPopupConfig} from "@/lib/utils/redux/slices/local";
+import {StoreState} from "@/lib/utils/redux/store";
 
 
-export default function SectionControls ({columnIds, handleColumnDragEnd}) {
-    //@ts-ignore
-    const accounts = useSelector((state) => state.accounts);
-    //@ts-ignore
-    const pages = useSelector((state) => state.pages);
+export default function SectionControls ({handleColumnDragEnd}) {
+    const accounts = useSelector((state:StoreState) => state.accounts);
+    const columnDict = useSelector((state:StoreState) => state.pages.columnDict);
+    const columnIds = useSelector((state:StoreState) => {
+        const currentPage = state.local.currentPage;
+        if (!currentPage) {
+            return [];
+        }
+        return state.pages.pageDict[currentPage].columns;
+    }, shallowEqual);
 
-    const {setPopupConfig} = usePopupContext();
 
     const ControlDraggable = ({column}) => {
         const {
@@ -39,7 +42,6 @@ export default function SectionControls ({columnIds, handleColumnDragEnd}) {
             transform: CSS.Transform.toString(transform),
             transition,
         };
-
 
         return <div ref={setNodeRef} style={style} {...attributes} {...listeners}
                     className="w-8 h-8 shrink-0 relative">
@@ -75,7 +77,7 @@ export default function SectionControls ({columnIds, handleColumnDragEnd}) {
                     <SortableContext items={columnIds} strategy={verticalListSortingStrategy}>
                     {
                         columnIds.reduce((acc,colId) => {
-                            const column = pages.columnDict[colId];
+                            const column = columnDict[colId];
                             if (column) {
                                 acc.push(<ControlDraggable key={colId} column={column}/>)
                             }

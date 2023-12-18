@@ -26,19 +26,15 @@ import AvatarFeed from "@/lib/components/ui/AvatarFeed";
 import Image from "next/image";
 import {ThumbnailSize} from "@/lib/utils/types-constants/thumbnail-size";
 import {BsListNested} from "react-icons/bs";
-import {usePopupContext} from "@/lib/providers/PopupProvider";
 import {PopupConfigPostAction, PopupState} from "@/lib/utils/types-constants/popup";
 import {useLongPress} from "use-long-press";
 import {getUserName} from "@/lib/utils/types-constants/user-data";
+import {setPopupConfig} from "@/lib/utils/redux/slices/local";
+import {StoreState} from "@/lib/utils/redux/store";
 
 export default function PostItem({post, column, highlight=false}: {post:Post, column:ColumnConfig, highlight:boolean}) {
-    //@ts-ignore
-    const config = useSelector((state) => state.config);
-    //@ts-ignore
-    const memory = useSelector((state) => state.memory);
-    //@ts-ignore
-    const accounts = useSelector((state) => state.accounts);
-    const {setPopupConfig} = usePopupContext();
+    const config = useSelector((state:StoreState) => state.config);
+    const memory = useSelector((state:StoreState) => state.memory);
 
     const longPressPost = useLongPress(()=> {}, {
         cancelOnMovement:25,
@@ -272,6 +268,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                     <div className="whitespace-nowrap text-ellipsis overflow-hidden hover:underline"
                          onClick={() => {
                            console.log("open profile", post.replyTo);
+
                          }}
                     >
                         {` ${getUserName(memory.userData[post.replyTo])}`}

@@ -1,7 +1,6 @@
 import Popup from "@/lib/components/popups/Popup";
 import {useDispatch, useSelector} from "react-redux";
 import {BsInfo} from "react-icons/bs";
-import {PiCrownSimpleBold, PiCrownSimpleFill} from "react-icons/pi";
 import {MdDeleteForever, MdLogout} from "react-icons/md";
 import {initialState as configInitialState, resetConfig, setConfigValue} from "@/lib/utils/redux/slices/config";
 import {
@@ -26,7 +25,7 @@ import {resetMemory} from "@/lib/utils/redux/slices/memory";
 import {BlueskyAccount, getUserName} from "@/lib/utils/types-constants/user-data";
 import AvatarUser from "@/lib/components/ui/AvatarUser";
 import {PopupConfigUsers, PopupState} from "@/lib/utils/types-constants/popup";
-import {usePopupContext} from "@/lib/providers/PopupProvider";
+import {StoreState} from "@/lib/utils/redux/store";
 
 enum UserPopupState {
     Logout,
@@ -41,17 +40,14 @@ interface UserPopupConfig {
 }
 
 export default function PopupUserList({isOpen, setOpen}:{isOpen:boolean,setOpen:any}) {
-    //@ts-ignore
-    const accounts = useSelector((state) => state.accounts);
-    //@ts-ignore
-    const config = useSelector((state) => state.config);
+    const accounts = useSelector((state:StoreState) => state.accounts);
+    const popupConfig = useSelector((state:StoreState) => state.local.popupConfig);
     const dispatch = useDispatch();
     const [userIds, setUserIds] = useState<string[]>([]);
     const [loginOpen, setLoginOpen] = useState<false|"bluesky"|"mastodon">(false);
     const [initialUser, setInitialUser] = useState<BlueskyAccount>(null);
     const [userPopup, setUserPopup] = useState<false|UserPopupConfig>(false);
     const [title, setTitle] = useState("");
-    const {popupConfig} = usePopupContext();
 
 
     useEffect(() => {

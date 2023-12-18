@@ -1,17 +1,27 @@
 import { configureStore } from '@reduxjs/toolkit'
 import { persistReducer, persistStore } from 'redux-persist';
 import storage from "redux-persist/lib/storage";
-import config from "@/lib/utils/redux/slices/config";
-import pages from "@/lib/utils/redux/slices/pages";
+import config, {ConfigState} from "@/lib/utils/redux/slices/config";
+import pages, {PagesState} from "@/lib/utils/redux/slices/pages";
 import {BlueskyAccount, MastodonAccount} from "@/lib/utils/types-constants/user-data";
-import memory from "@/lib/utils/redux/slices/memory";
+import memory, {MemoryState} from "@/lib/utils/redux/slices/memory";
 import {combineReducers} from "redux";
 import thunk from 'redux-thunk';
-import accounts from "@/lib/utils/redux/slices/accounts";
+import accounts, {AccountState} from "@/lib/utils/redux/slices/accounts";
+import local, {LocalState} from "@/lib/utils/redux/slices/local";
+
+// https://stackoverflow.com/questions/69480786/how-to-auto-refresh-component-when-redux-state-get-updated
+export interface StoreState {
+    accounts: AccountState
+    config: ConfigState
+    local: LocalState
+    memory: MemoryState,
+    pages: PagesState
+}
 
 const persistedReducer = persistReducer(
-    {key: 'root', storage, blacklist:['memory']},
-    combineReducers({config, pages, accounts, memory})
+    {key: 'root', storage, blacklist:['memory', 'local']},
+    combineReducers({config, pages, accounts, memory, local})
 );
 
 let sc:any;
@@ -30,7 +40,9 @@ const getSyncChannel = () => {
 
 const storageSyncMiddleware = (store) => (next) => (action) => {
     try {
-        if (!action.type.startsWith("persist/") && action.payload?.__terminate !== true) {
+        if (!action.type.startsWith("persist/") && // Don't sync persist actions
+            !action.type.startsWith("local/") && // Don't sync local actions
+            action.payload?.__terminate !== true) {
             const {type, payload} = action;
             const syncChannel = getSyncChannel();
             if (syncChannel) {

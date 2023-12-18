@@ -8,13 +8,11 @@ import AvatarUser from "@/lib/components/ui/AvatarUser";
 import {useEffect, useRef} from "react";
 import clsx from "clsx";
 import {ColumnType, getColumnName} from "@/lib/utils/types-constants/column";
+import {StoreState} from "@/lib/utils/redux/store";
 export default function ColumnTypePosts({attributes, listeners, column}) {
-    //@ts-ignore
-    const memory = useSelector((state) => state.memory);
-    //@ts-ignore
-    const config = useSelector((state) => state.config);
-    //@ts-ignore
-    const accounts = useSelector((state) => state.accounts);
+    const memory = useSelector((state:StoreState) => state.memory);
+    const config = useSelector((state:StoreState) => state.config);
+    const accounts = useSelector((state:StoreState) => state.accounts);
     const dispatch = useDispatch();
 
     const scrollRef = useRef(null);

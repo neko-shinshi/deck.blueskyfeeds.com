@@ -9,13 +9,12 @@ import {DndContext} from "@dnd-kit/core";
 import {CSS} from '@dnd-kit/utilities';
 import {RxDragHandleDots2} from "react-icons/rx";
 import {PiArrowsClockwiseBold} from "react-icons/pi";
+import {StoreState} from "@/lib/utils/redux/store";
 
 
 export default function PopupPageList(
     {isOpen, setOpen}: {isOpen:boolean,setOpen:any}) {
-    //@ts-ignore
-    const pages = useSelector((state) => state.pages);
-    const dispatch = useDispatch();
+    const pages = useSelector((state:StoreState) => state.pages);
 
     const [mode, setMode] = useState<"main"|"rename">("main");
     const [pageIds, setPageIds] = useState<string[]>([]);

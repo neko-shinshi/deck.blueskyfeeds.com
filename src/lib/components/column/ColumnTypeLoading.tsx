@@ -2,10 +2,10 @@ import {updateMemory} from "@/lib/utils/redux/slices/memory";
 import {BiArrowBack} from "react-icons/bi";
 import {useDispatch, useSelector} from "react-redux";
 import {ColumnConfig, ColumnModeLoading} from "@/lib/utils/types-constants/column";
+import {StoreState} from "@/lib/utils/redux/store";
 
 export default function ColumnTypeLoading({column}:{column:ColumnConfig}) {
-    //@ts-ignore
-    const memory = useSelector((state) => state.memory);
+    const memory = useSelector((state:StoreState) => state.memory);
     const dispatch = useDispatch();
     return <>
         <div className="h-[3rem] flex place-items-center gap-2 justify-start">
@@ -19,7 +19,7 @@ export default function ColumnTypeLoading({column}:{column:ColumnConfig}) {
             >
                 <BiArrowBack className="w-4 h-4 text-theme_dark-I0" />
             </div>
-            <div>{memory.columns[column.id].mode.header}</div>
+            <div>{(memory.columns[column.id].mode as ColumnModeLoading).header}</div>
         </div>
         <div className="w-full h-full grid place-items-center">
             <div className="flex place-items-center gap-3 pt-5">

@@ -2,12 +2,13 @@ import { createSlice } from '@reduxjs/toolkit'
 import {BlueskyAccount, MastodonAccount} from "@/lib/utils/types-constants/user-data";
 
 
-export const initialState:{
-    order:string[],
-    dict:{[id:string]: BlueskyAccount | MastodonAccount},
-} = {
-    dict: {}, order:[]
-};
+export interface AccountState {
+    order: string[],
+    dict: { [id: string]: BlueskyAccount | MastodonAccount }
+}
+
+
+export const initialState:AccountState = {dict: {}, order:[]};
 
 const slice = createSlice({
     name:"accounts",

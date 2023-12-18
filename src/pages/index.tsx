@@ -1,53 +1,43 @@
 import HeadExtended from "@/lib/components/HeadExtended";
 import {useEffect, useState} from "react";
-import {useDispatch, useSelector} from "react-redux";
+import {shallowEqual, useDispatch, useSelector} from "react-redux";
 import RefreshHandler from "@/lib/components/RefreshHandler";
 import SectionControls from "@/lib/components/SectionControls";
 import {arrayMove} from "@dnd-kit/sortable";
 import {setColumnOrder} from "@/lib/utils/redux/slices/pages";
 import SectionColumns from "@/lib/components/SectionColumns";
-import {initializeColumn, startApp, updateFeeds, updateMemory} from "@/lib/utils/redux/slices/memory";
+import {initializeColumn, updateFeeds, updateMemory} from "@/lib/utils/redux/slices/memory";
 import LoginSwitcher from "@/lib/components/LoginSwitcher";
-import PopupFormSignInBluesky from "@/lib/components/popups/PopupFormSignInBluesky";
 import {PopupState} from "@/lib/utils/types-constants/popup";
-import PopupUserList from "@/lib/components/popups/PopupUserList";
-import PopupGlobalSettings from "@/lib/components/popups/PopupGlobalSettings";
-import PopupColumnPickType from "@/lib/components/popups/PopupColumnPickType";
-import PopupPostAction from "@/lib/components/popups/PopupPostAction";
+
 
 import TimeAgo from "javascript-time-ago";
 
 import en from 'javascript-time-ago/locale/en.json'
-import {PopupProvider, usePopupContext} from "@/lib/providers/PopupProvider";
 import {getMyFeeds} from "@/lib/utils/bsky/feeds";
-import {NextResponse} from "next/server";
+import {setPage, setPopupConfig} from "@/lib/utils/redux/slices/local";
+import {StoreState} from "@/lib/utils/redux/store";
+import SectionPopups from "@/lib/components/SectionPopups";
 
 export default function Main ({}) {
-    //@ts-ignore
-    const accounts = useSelector((state) => state.accounts);
-    //@ts-ignore
-    const pages = useSelector((state) => state.pages);
-    //@ts-ignore
-    const config = useSelector((state) => state.config);
-    //@ts-ignore
-    const memory = useSelector((state) => state.memory);
+    const accounts = useSelector((state:StoreState) => state.accounts);
+    const pageOrder = useSelector((state:StoreState) => state.pages.pageOrder);
+    const basicKey = useSelector((state:StoreState) => state.config.basicKey);
+    const currentPage = useSelector((state:StoreState) => state.local.currentPage);
+
+    const columnIds = useSelector((state:StoreState) => {
+        const currentPage = state.local.currentPage;
+        if (!currentPage) {
+            return [];
+        }
+        return state.pages.pageDict[currentPage].columns;
+    }, shallowEqual);
+
     const dispatch = useDispatch();
 
-    // This does NOT use redux so that it's not shared
-    const [columnIds, setColumnIds] = useState<string[]>([]);
-    const {popupConfig, setPopupConfig} = usePopupContext();
-
-    useEffect(() => {
-        console.log("popupConfig", popupConfig);
-    }, [popupConfig]);
 
     useEffect(() => {
         TimeAgo.addDefaultLocale(en);
-        const ids = Object.keys(pages.columnDict);
-        if (ids.length > 0) {
-            dispatch(initializeColumn({__terminate:true, ids}));
-        }
-
         if (accounts.order.length > 0) {
             getMyFeeds(accounts.order.reduce((acc, x) => {
                 const account = accounts.dict[x];
@@ -55,7 +45,7 @@ export default function Main ({}) {
                     acc.push(account);
                 }
                 return acc;
-            }, []), memory.basicKey).then(({feeds, authors}) => {
+            }, []), basicKey).then(({feeds, authors}) => {
                 console.log("new Feeds", feeds);
                 dispatch(updateFeeds({feeds}));
 
@@ -65,7 +55,7 @@ export default function Main ({}) {
             });
         }
 
-        switch (pages.pageOrder.length) {
+        switch (pageOrder.length) {
             case 0: {
                 // User automatically asked to sign in
                 break;
@@ -73,8 +63,8 @@ export default function Main ({}) {
             case 1: {
                 if (accounts.order.length > 0) {
                     console.log("start app!");
-                    const pageId = pages.pageOrder[0];
-                    dispatch(startApp({__terminate:true, pageId}));
+                    const pageId = pageOrder[0];
+                    dispatch(setPage({pageId}));
                 }
                 break;
             }
@@ -87,11 +77,6 @@ export default function Main ({}) {
     }, []);
 
 
-    useEffect(() => {
-        if (memory.currentPage && pages && pages.pageDict[memory.currentPage]) {
-            setColumnIds(pages.pageDict[memory.currentPage].columns.filter(colId => pages.columnDict[colId]));
-        }
-    }, [memory, pages]);
 
     function handleColumnDragEnd(event) {
         const {active, over} = event;
@@ -103,7 +88,7 @@ export default function Main ({}) {
 
             const result = arrayMove(columnIds, oldIndex, newIndex);
             console.log("new", result);
-            dispatch(setColumnOrder({order:result, pageId: memory.currentPage}));
+            dispatch(setColumnOrder({order:result, pageId: currentPage}));
         }
     }
 
@@ -111,32 +96,23 @@ export default function Main ({}) {
         <HeadExtended
             title="Skyship - Deck"
             description="A TweetDeck alternative for Bluesky & Mastodon"/>
+
         <RefreshHandler/>
-
-        <PopupFormSignInBluesky
-            isOpen={popupConfig && popupConfig.state === PopupState.LOGIN}
-            setOpen={setPopupConfig}/>
-        <PopupUserList
-            isOpen={popupConfig && popupConfig.state === PopupState.USERS}
-            setOpen={setPopupConfig}/>
-        <PopupGlobalSettings isOpen={popupConfig && popupConfig.state === PopupState.SETTINGS} setOpen={setPopupConfig}/>
-        <PopupColumnPickType isOpen={popupConfig && popupConfig.state === PopupState.ADD_COLUMN} setOpen={setPopupConfig}/>
-        <PopupPostAction isOpen={popupConfig && popupConfig.state === PopupState.POST_ACTION} setOpen={setPopupConfig}/>
-
+        <SectionPopups/>
 
         <div className="h-screen w-full bg-theme_dark-L0">
             {
-                memory && !memory.currentPage && <div className="w-full h-screen grid place-items-center  bg-cover bg-center bg-[url('https://files.blueskyfeeds.com/sky.webp')]">
+                !currentPage && <div className="w-full h-screen grid place-items-center  bg-cover bg-center bg-[url('https://files.blueskyfeeds.com/sky.webp')]">
                     <LoginSwitcher initialMode="root"/>
                 </div>
             }
 
 
             {
-                memory && memory.currentPage &&
+                currentPage &&
                 <div className="w-full h-full flex pr-2 py-0.5">
-                    <SectionControls columnIds={columnIds} handleColumnDragEnd={handleColumnDragEnd}/>
-                    <SectionColumns columnIds={columnIds} handleColumnDragEnd={handleColumnDragEnd}/>
+                    <SectionControls handleColumnDragEnd={handleColumnDragEnd}/>
+                    <SectionColumns handleColumnDragEnd={handleColumnDragEnd}/>
                 </div>
             }
 

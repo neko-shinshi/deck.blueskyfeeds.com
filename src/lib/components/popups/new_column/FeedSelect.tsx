@@ -2,12 +2,12 @@ import {BiArrowBack, BiSearch} from "react-icons/bi";
 import {randomUuid} from "@/lib/utils/random";
 import {ColumnConfig, ColumnFeed, ColumnType, InColumnFeed} from "@/lib/utils/types-constants/column";
 import {addColumn} from "@/lib/utils/redux/slices/pages";
-import {initializeColumn, updateFeeds, updateMemory} from "@/lib/utils/redux/slices/memory";
+import {initializeColumn, MemoryState, updateFeeds, updateMemory} from "@/lib/utils/redux/slices/memory";
 import AvatarFeed from "@/lib/components/ui/AvatarFeed";
 import {TiPin} from "react-icons/ti";
 import {LiaAtomSolid} from "react-icons/lia";
 import {FaPlus} from "react-icons/fa";
-import {ColumnTypeFeedData, ColumnTypeMode} from "@/lib/components/popups/PopupColumnPickType";
+import {ColumnTypeFeedData, ColumnMode} from "@/lib/components/popups/PopupColumnPickType";
 import {useDispatch, useSelector} from "react-redux";
 import {useState} from "react";
 import {TbDatabaseSearch} from "react-icons/tb";
@@ -16,17 +16,16 @@ import {getFeed} from "@/lib/utils/bsky/feeds";
 import {BsInfoCircle} from "react-icons/bs";
 import clsx from "clsx";
 import {getUserName} from "@/lib/utils/types-constants/user-data";
+import {StoreState} from "@/lib/utils/redux/store";
 
 
 export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
-    //@ts-ignore
-    const memory = useSelector((state) => state.memory);
-    //@ts-ignore
-    const config = useSelector((state) => state.config);
-    //@ts-ignore
-    const accounts = useSelector((state) => state.accounts);
-    //@ts-ignore
-    const pages = useSelector((state) => state.pages);
+    const memory = useSelector((state:StoreState) => state.memory);
+    const basicKey = useSelector((state:StoreState) => state.config.basicKey);
+    const currentPage = useSelector((state:StoreState) => state.local.currentPage);
+    const config = useSelector((state:StoreState) => state.config);
+    const accounts = useSelector((state:StoreState) => state.accounts);
+    const pages = useSelector((state:StoreState) => state.pages);
 
     const dispatch = useDispatch();
     const [inputValue, setInputValue] = useState<{text:string, externSearch:boolean}>({text:"", externSearch:false});
@@ -35,7 +34,7 @@ export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
         <div className="h-10 flex place-items-center gap-2 justify-start p-1">
             <div className="w-8 h-8 p-1 border border-theme_dark-I0 rounded-full mr-2 bg-theme_dark-I1 hover:bg-theme_dark-I2 shrink-0 grid place-items-center"
                  onClick={() => {
-                     const newMode = {mode:ColumnTypeMode.ROOT};
+                     const newMode = {mode:ColumnMode.ROOT};
                      setMode(newMode);
                  }}
             >
@@ -52,12 +51,12 @@ export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
                        const parts = v.split("/");
                        const searchFeedAndUpdateUpdate = (uri) => {
                            const id = randomUuid();
-                           setMode({mode:ColumnTypeMode.FEED, feeds:[], id, busy:true});
-                           getFeed(uri, memory, accounts.dict[accounts.order[0]]).then(({update, feed, author}) => {
+                           setMode({mode:ColumnMode.FEED, feeds:[], id, busy:true});
+                           getFeed(uri, memory.feeds, basicKey, accounts.dict[accounts.order[0]]).then(({update, feed, author}) => {
                                if (!feed) {
                                    // it is empty
-                                   if (modeRef.current.mode === ColumnTypeMode.FEED && modeRef.current.id === id) {
-                                       setMode({mode:ColumnTypeMode.FEED, feeds: []} as ColumnTypeFeedData);
+                                   if (modeRef.current.mode === ColumnMode.FEED && modeRef.current.id === id) {
+                                       setMode({mode:ColumnMode.FEED, feeds: []} as ColumnTypeFeedData);
                                    }
                                    return;
                                }
@@ -68,8 +67,8 @@ export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
                                    dispatch(updateMemory(memoryCommand));
                                }
 
-                               if (modeRef.current.mode === ColumnTypeMode.FEED && modeRef.current.id === id) {
-                                   setMode({mode:ColumnTypeMode.FEED, feeds: [feed]} as ColumnTypeFeedData);
+                               if (modeRef.current.mode === ColumnMode.FEED && modeRef.current.id === id) {
+                                   setMode({mode:ColumnMode.FEED, feeds: [feed]} as ColumnTypeFeedData);
                                } else {
                                    console.log("different");
                                }
@@ -103,7 +102,7 @@ export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
                            });
 
                            const id = randomUuid();
-                           const newMode = {mode:ColumnTypeMode.FEED, feeds, id} as ColumnTypeFeedData;
+                           const newMode = {mode:ColumnMode.FEED, feeds, id} as ColumnTypeFeedData;
                            setMode(newMode);
                            setInputValue({text:v, externSearch:true});
                        }
@@ -143,7 +142,7 @@ export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
                 <div key={x.uri}
                      className={clsx(
                          "flex place-items-center justify-between gap-1 p-2 hover:bg-theme_dark-I1",
-                         pages.pageDict[memory.currentPage].columns.find(y => {
+                         pages.pageDict[currentPage].columns.find(y => {
                              const config:ColumnConfig = pages.columnDict[y];
                              if (config && config.type === ColumnType.FEED) {
                                  return (config as ColumnFeed).uri === x.uri;
@@ -182,10 +181,10 @@ export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
                         <FaPlus
                             className="shrink-0 w-6 h-6 p-1"
                             onClick={() => {
-                                setMode({mode:ColumnTypeMode.BUSY});
+                                setMode({mode:ColumnMode.BUSY});
                                 const colId = randomUuid();
                                 const configFeed:InColumnFeed = {id:colId, type:ColumnType.FEED, observers: [accounts.order[0]], uri:x.uri};
-                                dispatch(addColumn({pageId: memory.currentPage, config: configFeed, defaults: config}));
+                                dispatch(addColumn({pageId: currentPage, config: configFeed, defaults: config}));
                                 dispatch(initializeColumn({ids:[colId]}));
                                 setOpen(false);
                             }}/>

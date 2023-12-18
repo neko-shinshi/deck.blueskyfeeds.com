@@ -13,21 +13,19 @@ export enum PopupState {
     MEDIA_GALLERY
 }
 
-export interface PopupConfig {
-    state: PopupState,
-}
+export type PopupConfig = PopupConfigManageColumn | PopupConfigUsers | PopupConfigPostAction | {state: PopupState} | false
 
-export interface PopupConfigManageColumn extends PopupConfig {
+export type PopupConfigManageColumn = {
     state: PopupState.MANAGE_COLUMN,
     id: string
 }
 
-export interface PopupConfigUsers extends PopupConfig {
+export type PopupConfigUsers = {
     state: PopupState.USERS,
     title: string
 }
 
-export interface PopupConfigPostAction extends PopupConfig {
+export type PopupConfigPostAction = {
     state: PopupState.POST_ACTION,
     uri: string
 }

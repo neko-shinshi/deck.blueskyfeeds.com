@@ -21,14 +21,13 @@ import {RefreshTimingType} from "@/lib/utils/types-constants/refresh-timings";
 import clsx from "clsx";
 import AvatarUser from "@/lib/components/ui/AvatarUser";
 import {getUserName} from "@/lib/utils/types-constants/user-data";
+import {StoreState} from "@/lib/utils/redux/store";
 
 export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
-    //@ts-ignore
-    const memory = useSelector((state) => state.memory);
-    //@ts-ignore
-    const accounts = useSelector((state) => state.accounts);
-    //@ts-ignore
-    const pages = useSelector((state) => state.pages);
+    const memory = useSelector((state:StoreState) => state.memory);
+    const accounts = useSelector((state:StoreState) => state.accounts);
+    const pages = useSelector((state:StoreState) => state.pages);
+    const currentPage =  useSelector((state:StoreState) => state.local.currentPage);
 
     const dispatch = useDispatch();
     const [sliderVal, setSliderVal] = useState(column.width);
@@ -36,13 +35,13 @@ export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
     const nameRef = useRef(null);
 
     const changeOrder = (diff) => {
-        let columnIds = pages.pageDict[memory.currentPage].columns.filter(colId => pages.columnDict[colId]);
+        let columnIds = pages.pageDict[currentPage].columns.filter(colId => pages.columnDict[colId]);
         const oldIndex = columnIds.indexOf(column.id);
         if (oldIndex < 0) {console.log("can't find column"); return;}
         let newIndex = oldIndex + diff;
         if (newIndex < 0) {console.log("far left"); return;}
         const result = arrayMove(columnIds, oldIndex, newIndex);
-        dispatch(setColumnOrder({order:result, pageId: memory.currentPage}));
+        dispatch(setColumnOrder({order:result, pageId: currentPage}));
     }
     const dispatchSliderVal = (val) => {
         if (!isNaN(val)) {
@@ -73,7 +72,7 @@ export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
                     <div className="font-bold">Move Column</div>
                     {
                         (() => {
-                            let columnIds = pages.pageDict[memory.currentPage].columns.filter(colId => pages.columnDict[colId]);
+                            let columnIds = pages.pageDict[currentPage].columns.filter(colId => pages.columnDict[colId]);
                             const oldIndex = columnIds.indexOf(column.id);
                             if (oldIndex < 0) {
                                 return <div/>

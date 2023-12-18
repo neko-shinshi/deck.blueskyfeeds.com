@@ -3,14 +3,14 @@ import {stripFeedUri} from "@/lib/utils/at_uri";
 import {getAgent} from "@/lib/utils/bsky/agent";
 import {BlueskyUserData} from "@/lib/utils/types-constants/user-data";
 
-export const getFeed = async (feedUri, memory, user) => {
+export const getFeed = async (feedUri, feedDictionary, basicKey, user) => {
     const localUri = stripFeedUri(feedUri);
-    const localFeed = memory.feeds[localUri];
+    const localFeed = feedDictionary[localUri];
     if (localFeed) {
         return {update:false, feed:localFeed};
     }
 
-    const agent = await getAgent(user, memory.basicKey);
+    const agent = await getAgent(user, basicKey);
     if (!agent) {
         return {update:false, feed:null};
     }

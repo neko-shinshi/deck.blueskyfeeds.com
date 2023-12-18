@@ -12,8 +12,13 @@ import {
 } from "@/lib/utils/types-constants/column";
 import {ALL_NOTIFICATION_TYPES} from "@/lib/utils/types-constants/notification";
 
+export interface PagesState {
+    pageOrder:string[],
+    pageDict:{[id:string]: PageOfColumns}
+    columnDict: {[id:string]: ColumnConfig},
+}
 
-export const makeInitialState = () => {
+export const makeInitialState = ():PagesState => {
     const id = randomUuid();
     const defaultPage:PageOfColumns = {
         name: "My Main Profile",
@@ -33,11 +38,7 @@ export const makeInitialState = () => {
     }
 }
 
-const initialState:{
-    pageOrder:string[],
-    pageDict:{[id:string]: PageOfColumns}
-    columnDict: {[id:string]: ColumnConfig},
-} = makeInitialState();
+const initialState:PagesState = makeInitialState();
 
 const slice = createSlice({
     name:"pages",

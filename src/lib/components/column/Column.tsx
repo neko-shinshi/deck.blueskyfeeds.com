@@ -12,6 +12,8 @@ import ColumnTypeSettings from "@/lib/components/column/ColumnTypeSettings";
 import clsx from "clsx";
 import {useSelector} from "react-redux";
 import ColumnTypeLoading from "@/lib/components/column/ColumnTypeLoading";
+import {StoreState} from "@/lib/utils/redux/store";
+import {ColumnModeThread} from "@/lib/utils/types-constants/column";
 
 
 const remText = {
@@ -319,8 +321,7 @@ const remText = {
 };
 
 export default function Column({column, className=""}) {
-    //@ts-ignore
-    const memory = useSelector((state) => state.memory);
+    const columns = useSelector((state:StoreState) => state.memory.columns);
 
     const {
         attributes,
@@ -341,18 +342,22 @@ export default function Column({column, className=""}) {
     return <div ref={setNodeRef} style={style}
                 className={clsx(className, "shrink-0 h-full overflow-hidden", remText[`${column.width}`])}>
         {
-            memory.columns[column.id] && <>
+            columns[column.id] && <>
                 {
-                    !memory.columns[column.id].mode && <ColumnTypePosts attributes={attributes} listeners={listeners} column={column}/>
+                    !columns[column.id].mode &&
+                    <ColumnTypePosts attributes={attributes} listeners={listeners} column={column}/>
                 }
                 {
-                    memory.columns[column.id].mode?.mode === "thread" && <ColumnTypeThread thread={memory.columns[column.id].mode} column={column}/>
+                    columns[column.id].mode?.mode === "thread" &&
+                    <ColumnTypeThread thread={columns[column.id].mode as ColumnModeThread} column={column}/>
                 }
                 {
-                    memory.columns[column.id].mode?.mode === "settings" && <ColumnTypeSettings column={column}/>
+                    columns[column.id].mode?.mode === "settings" &&
+                    <ColumnTypeSettings column={column}/>
                 }
                 {
-                    memory.columns[column.id].mode?.mode === "loading" &&  <ColumnTypeLoading column={column}/>
+                    columns[column.id].mode?.mode === "loading" &&
+                    <ColumnTypeLoading column={column}/>
                 }
             </>
         }

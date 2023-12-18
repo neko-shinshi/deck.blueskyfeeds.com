@@ -18,6 +18,7 @@ import {initializeColumn, updateFeeds, updateMemory} from "@/lib/utils/redux/sli
 import useState from 'react-usestateref'
 import {getUserName} from "@/lib/utils/types-constants/user-data";
 import FeedSelect from "@/lib/components/popups/new_column/FeedSelect";
+import {StoreState} from "@/lib/utils/redux/store";
 
 const columnData = [
     {type: ColumnType.HOME, icon: <BiSolidHome className="h-6 w-6"/>, description: "The Default Following Feed of an account"},
@@ -27,38 +28,36 @@ const columnData = [
     {type: ColumnType.SEARCH, icon: <BiSearchAlt className="h-6 w-6"/>, description: "Use the built-in search feature to follow posts with keywords"},
 ];
 
-export enum ColumnTypeMode {
+export enum ColumnMode {
     ROOT,
     BUSY,
     FEED
 }
-export interface ColumnTypeModeData  {
-    id?: string
-    mode: ColumnTypeMode,
-}
 
-export interface ColumnTypeFeedData extends ColumnTypeModeData {
-    mode: ColumnTypeMode.FEED
+
+export type ColumnTypeFeedData = {
+    id?: string
+    mode: ColumnMode.FEED
     feeds: Feed[],
     busy?: boolean
 }
 
-export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,setOpen:any}) {
-    //@ts-ignore
-    const memory = useSelector((state) => state.memory);
-    //@ts-ignore
-    const config = useSelector((state) => state.config);
+export type ColumnTypeModeData = ColumnTypeFeedData | {mode: ColumnMode.ROOT} | {mode: ColumnMode.BUSY, id?:string}
 
-    //@ts-ignore
-    const accounts = useSelector((state) => state.accounts);
+
+export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,setOpen:any}) {
+    const memory = useSelector((state:StoreState) => state.memory);
+    const config = useSelector((state:StoreState) => state.config);
+    const accounts = useSelector((state:StoreState) => state.accounts);
+    const currentPage = useSelector((state:StoreState) => state.local.currentPage);
 
     const dispatch = useDispatch();
 
-    const [mode, setMode, modeRef] = useState<ColumnTypeModeData>({mode: ColumnTypeMode.ROOT});
+    const [mode, setMode, modeRef] = useState<ColumnTypeModeData>({mode: ColumnMode.ROOT});
 
     useEffect(() => {
         if (isOpen) {
-            setMode({mode: ColumnTypeMode.ROOT});
+            setMode({mode: ColumnMode.ROOT});
         }
 
     }, [isOpen]);
@@ -85,7 +84,7 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
                         });
                         const id = randomUuid();
                         const busy = feeds.length === 0;
-                        const newMode = {mode:ColumnTypeMode.FEED, feeds, id, busy} as ColumnTypeFeedData;
+                        const newMode = {mode:ColumnMode.FEED, feeds, id, busy} as ColumnTypeFeedData;
                         setMode(newMode);
 
                         // Refresh feeds
@@ -95,7 +94,7 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
                                 acc.push(account);
                             }
                             return acc;
-                        }, []), memory.basicKey).then(({feeds:newFeeds, authors}) => {
+                        }, []), config.basicKey).then(({feeds:newFeeds, authors}) => {
                             dispatch(updateFeeds({feeds:newFeeds}));
                             console.log("new Feeds", newFeeds);
 
@@ -105,7 +104,7 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
 
                             // If mode has not updated, update it with latest info
                             console.log(id, modeRef.current);
-                            if (modeRef.current.mode === ColumnTypeMode.FEED && modeRef.current.id === id) {
+                            if (modeRef.current.mode === ColumnMode.FEED && modeRef.current.id === id) {
                                 let feedMap = {...memory.feeds};
                                 newFeeds.forEach(x => {
                                     let feed = feedMap[x.uri];
@@ -122,7 +121,7 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
                                     return x.displayName > y.displayName? 1 : -1;
                                 });
 
-                                setMode({mode:ColumnTypeMode.FEED, feeds: displayFeeds} as ColumnTypeFeedData);
+                                setMode({mode:ColumnMode.FEED, feeds: displayFeeds} as ColumnTypeFeedData);
                             }
                         });
 
@@ -152,7 +151,7 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
                                             case ColumnType.HOME: {
                                                 setOpen(false);
                                                 const colId = randomUuid();
-                                                dispatch(addColumn({pageId: memory.currentPage, name: `Home`, config: {id: colId, type: ColumnType.HOME, observer: id}, defaults: config}));
+                                                dispatch(addColumn({pageId: currentPage, name: `Home`, config: {id: colId, type: ColumnType.HOME, observer: id}, defaults: config}));
                                                 dispatch(initializeColumn({ids:[colId]}));
                                                 break;
                                             }
@@ -187,7 +186,7 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
         className="bg-theme_dark-L1 rounded-md border border-theme_dark-I0 text-theme_dark-T1">
 
             {
-                mode.mode === ColumnTypeMode.ROOT && <>
+                mode.mode === ColumnMode.ROOT && <>
                     <h1 className="text-center text-base font-semibold text-theme_dark-T0 p-2">
                         <span>Add a Column</span>
                     </h1>
@@ -197,7 +196,7 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
                 </>
             }
             {
-                mode.mode === ColumnTypeMode.BUSY &&
+                mode.mode === ColumnMode.BUSY &&
                 <div className="grid place-items-center p-12">
                     <div className="flex place-items-center gap-3">
                         <svg aria-hidden="true" className="inline w-10 h-10text-gray-200 animate-spin dark:text-gray-600 fill-blue-600" viewBox="0 0 100 101" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -209,7 +208,7 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
                 </div>
             }
             {
-                mode.mode === ColumnTypeMode.FEED &&
+                mode.mode === ColumnMode.FEED &&
                 <FeedSelect mode={mode} setMode={setMode} setOpen={setOpen} modeRef={modeRef}/>
             }
     </Popup>

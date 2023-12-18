@@ -4,7 +4,7 @@ import {ColorMode} from "@/lib/utils/types-constants/color-mode";
 import {RefreshTimingType} from "@/lib/utils/types-constants/refresh-timings";
 import {ThumbnailSize} from "@/lib/utils/types-constants/thumbnail-size";
 
-interface Config {
+export interface ConfigState {
     colorMode: ColorMode
     showScrollbars: boolean
     altTextPrompt: boolean
@@ -18,7 +18,7 @@ interface Config {
     version: number
 }
 
-export const initialState:Config = {
+export const initialState:ConfigState = {
     // Globals
     colorMode: ColorMode.DARK,
     showScrollbars: true,

@@ -17,8 +17,6 @@ import PopupPageList from "@/lib/components/popups/PopupPageList";
 
 export default function PopupGlobalSettings(
     {isOpen, setOpen}: {isOpen:boolean,setOpen:any}) {
-    //@ts-ignore
-    const config = useSelector((state) => state.config);
     const dispatch = useDispatch();
     const [busy, setBusy] = useState(false);
     const [popupType, setPopupType] = useState<"confirm"|"page"|false>(false)

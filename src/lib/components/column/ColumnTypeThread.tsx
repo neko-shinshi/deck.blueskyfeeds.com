@@ -7,12 +7,11 @@ import clsx from "clsx";
 import {useEffect} from "react";
 import AvatarUser from "@/lib/components/ui/AvatarUser";
 import {getUserName} from "@/lib/utils/types-constants/user-data";
+import {StoreState} from "@/lib/utils/redux/store";
 
 export default function ColumnTypeThread({thread, column}: {thread:ColumnModeThread, column:ColumnConfig}) {
-    //@ts-ignore
-    const memory = useSelector((state) => state.memory);
-    //@ts-ignore
-    const accounts = useSelector((state) => state.accounts);
+    const memory = useSelector((state:StoreState) => state.memory);
+    const accounts = useSelector((state:StoreState) => state.accounts);
     const dispatch = useDispatch();
 
     useEffect(() => {
