@@ -1,8 +1,8 @@
 import {BiArrowBack, BiSearch} from "react-icons/bi";
 import {randomUuid} from "@/lib/utils/random";
 import {ColumnConfig, ColumnFeed, ColumnType, InColumnFeed} from "@/lib/utils/types-constants/column";
-import {addColumn} from "@/lib/utils/redux/slices/pages";
-import {initializeColumn, MemoryState, updateFeeds, updateMemory} from "@/lib/utils/redux/slices/memory";
+import {addColumn} from "@/lib/utils/redux/slices/profiles";
+import {initializeColumn, updateFeeds, updateMemory} from "@/lib/utils/redux/slices/memory";
 import AvatarFeed from "@/lib/components/ui/AvatarFeed";
 import {TiPin} from "react-icons/ti";
 import {LiaAtomSolid} from "react-icons/lia";
@@ -20,12 +20,23 @@ import {StoreState} from "@/lib/utils/redux/store";
 
 
 export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
-    const memory = useSelector((state:StoreState) => state.memory);
+    const feedDict = useSelector((state:StoreState) => state.memory.feeds);
+    const userData = useSelector((state:StoreState) => state.memory.userData);
+
     const basicKey = useSelector((state:StoreState) => state.config.basicKey);
-    const currentPage = useSelector((state:StoreState) => state.local.currentPage);
+    const currentProfile = useSelector((state:StoreState) => state.local.currentProfile);
     const config = useSelector((state:StoreState) => state.config);
-    const accounts = useSelector((state:StoreState) => state.accounts);
-    const pages = useSelector((state:StoreState) => state.pages);
+    const profiles = useSelector((state:StoreState) => state.profiles);
+    const currentActiveAccount = useSelector((state:StoreState) => {
+        const currentProfile = state.local.currentProfile;
+        for (const id of state.profiles.profileDict[currentProfile].accountIds) {
+            const account = state.profiles.accountDict[id];
+            if (account && account.active) {
+                return account;
+            }
+        }
+        return null;
+    });
 
     const dispatch = useDispatch();
     const [inputValue, setInputValue] = useState<{text:string, externSearch:boolean}>({text:"", externSearch:false});
@@ -49,10 +60,10 @@ export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
                    onChange={(event) => {
                        const v = event.target.value.trim();
                        const parts = v.split("/");
-                       const searchFeedAndUpdateUpdate = (uri) => {
+                       const searchFeedAndUpdate = (uri) => {
                            const id = randomUuid();
                            setMode({mode:ColumnMode.FEED, feeds:[], id, busy:true});
-                           getFeed(uri, memory.feeds, basicKey, accounts.dict[accounts.order[0]]).then(({update, feed, author}) => {
+                           getFeed(uri, feedDict, basicKey, currentActiveAccount).then(({update, feed, author}) => {
                                if (!feed) {
                                    // it is empty
                                    if (modeRef.current.mode === ColumnMode.FEED && modeRef.current.id === id) {
@@ -78,11 +89,11 @@ export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
                        if (v.startsWith("https://bsky.app/profile") && parts.length === 7 && parts[5] === "feed") {
                            const search = `at://${parts[4]}/app.bsky.feed.generator/${parts[6]}`;
                            console.log("url", search);
-                           searchFeedAndUpdateUpdate(search);
+                           searchFeedAndUpdate(search);
                            setInputValue({text:v, externSearch:false});
                        } else if (v.startsWith("at://") && parts.length === 5 && parts[3] === "app.bsky.feed.generator") {
                            console.log("at uri", v);
-                           searchFeedAndUpdateUpdate(v);
+                           searchFeedAndUpdate(v);
                            setInputValue({text:v, externSearch:false});
                        } else if (!v) {
                            setInputValue({text:v, externSearch:false});
@@ -92,7 +103,7 @@ export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
 
                            const lowerV = v.toLowerCase();
 
-                           let feeds:Feed[] = Object.values(memory.feeds);
+                           let feeds:Feed[] = Object.values(feedDict);
                            feeds = feeds.filter(x => x.displayName.toLowerCase().includes(lowerV) || x.description.toLowerCase().includes(lowerV));
                            feeds.sort((x,y) => {
                                if (x.displayName === y.displayName) {
@@ -142,8 +153,8 @@ export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
                 <div key={x.uri}
                      className={clsx(
                          "flex place-items-center justify-between gap-1 p-2 hover:bg-theme_dark-I1",
-                         pages.pageDict[currentPage].columns.find(y => {
-                             const config:ColumnConfig = pages.columnDict[y];
+                         profiles.profileDict[currentProfile].columnIds.find(y => {
+                             const config:ColumnConfig = profiles.columnDict[y];
                              if (config && config.type === ColumnType.FEED) {
                                  return (config as ColumnFeed).uri === x.uri;
                              }
@@ -165,7 +176,7 @@ export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
                         </div>
                         <div>
                             <div className="text-sm font-bold">{x.displayName}</div>
-                            <div className="text-xs font-semibold">by {getUserName(memory.userData[x.creator])}</div>
+                            <div className="text-xs font-semibold">by {getUserName(userData[x.creator])}</div>
                             <div className="text-xs line-clamp-2">{x.description}</div>
                         </div>
                     </div>
@@ -183,8 +194,8 @@ export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
                             onClick={() => {
                                 setMode({mode:ColumnMode.BUSY});
                                 const colId = randomUuid();
-                                const configFeed:InColumnFeed = {id:colId, type:ColumnType.FEED, observers: [accounts.order[0]], uri:x.uri};
-                                dispatch(addColumn({pageId: currentPage, config: configFeed, defaults: config}));
+                                const configFeed:InColumnFeed = {id:colId, type:ColumnType.FEED, observers: [profiles.profileDict[currentProfile].accountIds[0]], uri:x.uri};
+                                dispatch(addColumn({profileId: currentProfile, config: configFeed, defaults: config}));
                                 dispatch(initializeColumn({ids:[colId]}));
                                 setOpen(false);
                             }}/>

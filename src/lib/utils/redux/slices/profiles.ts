@@ -8,45 +8,92 @@ import {
     ColumnType,
     InColumn, InColumnFeed,
     InHome,
-    PageOfColumns
+    ProfileColumns
 } from "@/lib/utils/types-constants/column";
 import {ALL_NOTIFICATION_TYPES} from "@/lib/utils/types-constants/notification";
+import {BlueskyAccount, MastodonAccount} from "@/lib/utils/types-constants/user-data";
 
-export interface PagesState {
-    pageOrder:string[],
-    pageDict:{[id:string]: PageOfColumns}
+export interface ProfileState {
+    profileOrder:string[],
+    profileDict:{[id:string]: ProfileColumns}
     columnDict: {[id:string]: ColumnConfig},
+    accountDict: { [id: string]: BlueskyAccount | MastodonAccount }
 }
 
-export const makeInitialState = ():PagesState => {
+export const makeInitialState = ():ProfileState => {
     const id = randomUuid();
-    const defaultPage:PageOfColumns = {
+    const defaultProfile:ProfileColumns = {
         name: "My Main Profile",
-        columns: [],
+        accountIds: [],
+        columnIds: [],
         maskCw: true,
         hideCw: false,
         cwLabels: [], // Default show everything
         icon: ""
     }
     let dict = {};
-    dict[id] = defaultPage;
+    dict[id] = defaultProfile;
 
     return {
-        pageOrder: [id],
-        pageDict: dict,
-        columnDict:{}
+        profileOrder: [id],
+        profileDict: dict,
+        columnDict:{},
+        accountDict:{}
     }
 }
 
-const initialState:PagesState = makeInitialState();
+const initialState:ProfileState = makeInitialState();
 
 const slice = createSlice({
-    name:"pages",
+    name:"profiles",
     initialState,
     reducers:{
-        updatePageConfig: (state, action) => {
-            const {update, pageId} = action.payload;
-            const page = state.pageDict[pageId];
+        addOrUpdateAccount: (users, action) => {
+            const {service, usernameOrEmail, encryptedPassword, id, displayName, avatar, handle, refreshJwt, accessJwt,
+                lastTs} = action.payload;
+
+            const user:BlueskyAccount = {
+                type:"b",
+                service, usernameOrEmail, encryptedPassword,
+                refreshJwt, accessJwt, avatar,
+                handle, id, displayName, active:true, lastTs
+            };
+
+            users.accountDict[id] = user;
+        },
+        removeAccount: (users, action) => {
+            const {id} = action.payload;
+            delete users.accountDict[id];
+        },
+        logOut: (users, action) => {
+            const {id} = action.payload;
+            const user = users.accountDict[id];
+            if (user) {
+                user.active = false;
+                switch (user.type) {
+                    case "b": {
+                        user.encryptedPassword = "";
+                        user.refreshJwt = "";
+                        user.accessJwt = "";
+                        break;
+                    }
+                    case "m": {
+                        user.token = "";
+                        break;
+                    }
+                }
+            }
+        },
+
+        resetAccounts: (state, action) => {
+            for (const [key, value] of Object.entries(action.payload)) {
+                state[key] = value;
+            }
+        },
+
+        updateProfileConfig: (state, action) => {
+            const {update, profileId} = action.payload;
+            const page = state.profileDict[profileId];
             if (page) {
                 for (const [key, value] of Object.entries(update)) {
                     page[key] = value;
@@ -54,7 +101,7 @@ const slice = createSlice({
             }
         },
         addColumn: (state, action) => {
-            const {pageId, config, defaults:{refreshMs, thumbnailSize, columnWidth}} = action.payload;
+            const {profileId, config, defaults:{refreshMs, thumbnailSize, columnWidth}} = action.payload;
             const {id, type, observers, icon, name} = config as InColumn;
 
             let newColumn: ColumnConfig;
@@ -92,27 +139,27 @@ const slice = createSlice({
                     break;
                 }
             }
-            state.pageDict[pageId].columns.push(id);
+            state.profileDict[profileId].columnIds.push(id);
             state.columnDict[id] = newColumn;
         },
-        setPageOrder: (state, action) => {
+        setProfileOrder: (state, action) => {
             let {order} = action.payload;
 
-            const existingIds = Object.keys(state.pageDict);
+            const existingIds = Object.keys(state.profileDict);
             order = order.filter(id => existingIds.indexOf(id) >= 0); // only keep dids that are currently saved
-            state.pageOrder = order;
+            state.profileOrder = order;
 
             // remove pages that are not in input order list
             existingIds.filter(id => order.indexOf(id) < 0).forEach(id => {
-                delete state.pageDict[id];
+                delete state.profileDict[id];
             });
         },
         setColumnOrder: (state, action) => {
-            let {order, pageId} = action.payload;
+            let {order, profileId} = action.payload;
 
             const existingIds = Object.keys(state.columnDict);
             order = order.filter(id => existingIds.indexOf(id) >= 0); // only keep dids that are currently saved
-            state.pageDict[pageId].columns = order;
+            state.profileDict[profileId].columnIds = order;
         },
         updateColumn: (state, action) => {
             let {columnId, key, val} = action.payload;
@@ -120,16 +167,31 @@ const slice = createSlice({
         },
         removeColumn: (state, action) => {
             const {columnId} = action.payload;
-            state.pageOrder = state.pageOrder.filter(x => x !== columnId);
+            state.profileOrder = state.profileOrder.filter(x => x !== columnId);
             delete state.columnDict[columnId];
         },
-        resetPages: (state, action) => {
+        resetProfiles: (state, action) => {
             for (const [key, value] of Object.entries(action.payload)) {
                 state[key] = value;
             }
         },
+
+        setAccountOrder: (state, action) => {
+            let {profileId, order} = action.payload;
+            state.profileDict[profileId] = order;
+        },
     }
 });
 
-export const {updatePageConfig, addColumn, setColumnOrder, updateColumn, removeColumn, resetPages} = slice.actions
+export const {
+    updateProfileConfig,
+    addColumn,
+    setColumnOrder,
+    updateColumn,
+    removeColumn,
+    resetProfiles,
+    setProfileOrder,
+    setAccountOrder,
+    addOrUpdateAccount, removeAccount, logOut, resetAccounts
+} = slice.actions
 export default slice.reducer

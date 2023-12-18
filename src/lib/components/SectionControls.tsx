@@ -18,14 +18,14 @@ import {StoreState} from "@/lib/utils/redux/store";
 
 
 export default function SectionControls ({handleColumnDragEnd}) {
-    const accounts = useSelector((state:StoreState) => state.accounts);
-    const columnDict = useSelector((state:StoreState) => state.pages.columnDict);
+    const accountDict = useSelector((state:StoreState) => state.profiles.accountDict);
+    const columnDict = useSelector((state:StoreState) => state.profiles.columnDict);
     const columnIds = useSelector((state:StoreState) => {
-        const currentPage = state.local.currentPage;
-        if (!currentPage) {
+        const currentProfile = state.local.currentProfile;
+        if (!currentProfile) {
             return [];
         }
-        return state.pages.pageDict[currentPage].columns;
+        return state.profiles.profileDict[currentProfile].columnIds;
     }, shallowEqual);
 
 
@@ -50,7 +50,7 @@ export default function SectionControls ({handleColumnDragEnd}) {
             </div>
             {
                 <div className="h-4 w-4 absolute -right-1 -bottom-1 border border-theme_dark-I0 rounded-full">
-                    <AvatarUser avatar={accounts.dict[column.observers[0]].avatar} alt={getUserName(accounts.dict[column.observers[0]])}/>
+                    <AvatarUser avatar={accountDict[column.observers[0]].avatar} alt={getUserName(accountDict[column.observers[0]])}/>
                 </div>
             }
         </div>
@@ -132,11 +132,7 @@ export default function SectionControls ({handleColumnDragEnd}) {
                 <div className="w-8 h-8 bg-theme_dark-I1 hover:bg-theme_dark-I2 rounded-full border border-theme_dark_I0 grid place-items-center"
                      onClick={() => {
                          console.log("click avatar");
-                         if (accounts.order.length === 0) {
-                             setPopupConfig({state:PopupState.LOGIN})
-                         } else {
-                             setPopupConfig({state:PopupState.USERS, title: "Saved Accounts"} as PopupConfigUsers);
-                         }
+                         setPopupConfig({state:PopupState.USERS, title: "Saved Accounts"} as PopupConfigUsers);
                      }} >
                     <FaUsersCog className="w-5 h-5 text-theme_dark-I0" aria-label="Settings"/>
                 </div>

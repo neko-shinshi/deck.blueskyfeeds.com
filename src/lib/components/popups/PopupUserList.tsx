@@ -1,15 +1,12 @@
 import Popup from "@/lib/components/popups/Popup";
-import {useDispatch, useSelector} from "react-redux";
+import {shallowEqual, useDispatch, useSelector} from "react-redux";
 import {BsInfo} from "react-icons/bs";
 import {MdDeleteForever, MdLogout} from "react-icons/md";
 import {initialState as configInitialState, resetConfig, setConfigValue} from "@/lib/utils/redux/slices/config";
 import {
-    initialState as usersInitialState,
     logOut,
     removeAccount,
-    resetAccounts,
-    setAccountOrder,
-} from "@/lib/utils/redux/slices/accounts";
+} from "@/lib/utils/redux/slices/profiles";
 import {FaPlus} from "react-icons/fa";
 import {useEffect, useState} from "react";
 import clsx from "clsx";
@@ -20,7 +17,11 @@ import {RxDragHandleDots2} from "react-icons/rx";
 import PopupConfirmation from "@/lib/components/popups/PopupConfirmation";
 import {BiLogInCircle} from "react-icons/bi";
 import PopupFormSignInBluesky from "@/lib/components/popups/PopupFormSignInBluesky";
-import {makeInitialState as makePageInitialState, resetPages} from "@/lib/utils/redux/slices/pages";
+import {
+    makeInitialState as makePageInitialState,
+    resetProfiles,
+    setAccountOrder
+} from "@/lib/utils/redux/slices/profiles";
 import {resetMemory} from "@/lib/utils/redux/slices/memory";
 import {BlueskyAccount, getUserName} from "@/lib/utils/types-constants/user-data";
 import AvatarUser from "@/lib/components/ui/AvatarUser";
@@ -40,8 +41,15 @@ interface UserPopupConfig {
 }
 
 export default function PopupUserList({isOpen, setOpen}:{isOpen:boolean,setOpen:any}) {
-    const accounts = useSelector((state:StoreState) => state.accounts);
+    const profiles = useSelector((state:StoreState) => state.profiles);
     const popupConfig = useSelector((state:StoreState) => state.local.popupConfig);
+    const currentProfile = useSelector((state:StoreState) => state.local.currentProfile);
+    const currentAccountOrder = useSelector((state:StoreState) => {
+       const currentProfile = state.local.currentProfile;
+       if (!currentProfile) {return [];}
+       return state.profiles.profileDict[currentProfile].accountIds;
+    }, shallowEqual);
+
     const dispatch = useDispatch();
     const [userIds, setUserIds] = useState<string[]>([]);
     const [loginOpen, setLoginOpen] = useState<false|"bluesky"|"mastodon">(false);
@@ -58,10 +66,8 @@ export default function PopupUserList({isOpen, setOpen}:{isOpen:boolean,setOpen:
 
 
     useEffect(() => {
-        if (Array.isArray(accounts.order)) {
-            setUserIds(accounts.order);
-        }
-    }, [accounts]);
+        setUserIds(currentAccountOrder);
+    }, [currentAccountOrder]);
 
 
     function handleDragEnd(event) {
@@ -72,7 +78,7 @@ export default function PopupUserList({isOpen, setOpen}:{isOpen:boolean,setOpen:
             const newIndex = userIds.indexOf(over.id);
 
             const result = arrayMove(userIds, oldIndex, newIndex);
-            dispatch(setAccountOrder({order:result}));
+            dispatch(setAccountOrder({profileId:currentProfile, order:result}));
         }
     }
 
@@ -184,8 +190,7 @@ export default function PopupUserList({isOpen, setOpen}:{isOpen:boolean,setOpen:
                     }
                     case UserPopupState.RemoveAll: {
                         dispatch(resetConfig(configInitialState));
-                        dispatch(resetPages(makePageInitialState()));
-                        dispatch(resetAccounts(usersInitialState));
+                        dispatch(resetProfiles(makePageInitialState()));
                         dispatch(resetMemory())
                         break;
                     }
@@ -206,7 +211,7 @@ export default function PopupUserList({isOpen, setOpen}:{isOpen:boolean,setOpen:
             <SortableContext items={userIds} strategy={verticalListSortingStrategy}>
                 {
                     userIds.reduce((acc, did) => {
-                        const user = accounts.dict[did];
+                        const user = profiles.accountDict[did];
                         if (user) {
                             acc.push(<UserItem key={did} user={user} did={did}/>)
                         }

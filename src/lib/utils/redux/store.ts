@@ -2,26 +2,24 @@ import { configureStore } from '@reduxjs/toolkit'
 import { persistReducer, persistStore } from 'redux-persist';
 import storage from "redux-persist/lib/storage";
 import config, {ConfigState} from "@/lib/utils/redux/slices/config";
-import pages, {PagesState} from "@/lib/utils/redux/slices/pages";
+import profiles, {ProfileState} from "@/lib/utils/redux/slices/profiles";
 import {BlueskyAccount, MastodonAccount} from "@/lib/utils/types-constants/user-data";
 import memory, {MemoryState} from "@/lib/utils/redux/slices/memory";
 import {combineReducers} from "redux";
 import thunk from 'redux-thunk';
-import accounts, {AccountState} from "@/lib/utils/redux/slices/accounts";
 import local, {LocalState} from "@/lib/utils/redux/slices/local";
 
 // https://stackoverflow.com/questions/69480786/how-to-auto-refresh-component-when-redux-state-get-updated
 export interface StoreState {
-    accounts: AccountState
     config: ConfigState
     local: LocalState
     memory: MemoryState,
-    pages: PagesState
+    profiles: ProfileState
 }
 
 const persistedReducer = persistReducer(
     {key: 'root', storage, blacklist:['memory', 'local']},
-    combineReducers({config, pages, accounts, memory, local})
+    combineReducers({config, profiles, memory, local})
 );
 
 let sc:any;
@@ -71,7 +69,7 @@ export const exportJSON = async () => {
     delete state.memory;
     delete state._persist;
 
-    let userDict = state.accounts.dict as {[id:string]: BlueskyAccount | MastodonAccount};
+    let userDict = state.profiles.accountDict as {[id:string]: BlueskyAccount | MastodonAccount};
     Object.values(userDict).forEach(user => {
         switch (user.type) {
             case "b": {

@@ -287,7 +287,7 @@ export const processThread = async (authorsTbd, authors, thread) => {
 export const getPostThread = async (did, columnId, uri) => {
     let state = store.getState();
     const parent = state.memory.columns[columnId].mode;
-    const userObj = state.accounts.dict[did];
+    const userObj = state.profiles.accountDict[did];
     if (!userObj) {return false;}
     const userData = state.memory.userData;
 

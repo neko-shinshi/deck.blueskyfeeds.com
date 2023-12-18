@@ -7,14 +7,14 @@ import {useDropzone} from "react-dropzone";
 import {StoreState} from "@/lib/utils/redux/store";
 
 export default function SectionColumns ({handleColumnDragEnd}) {
-    const columnDict = useSelector((state:StoreState) => state.pages.columnDict);
-    const accounts = useSelector((state:StoreState) => state.accounts);
+    const columnDict = useSelector((state:StoreState) => state.profiles.columnDict);
+    const accountDict = useSelector((state:StoreState) => state.profiles.accountDict);
     const columnIds = useSelector((state:StoreState) => {
-        const currentPage = state.local.currentPage;
-        if (!currentPage) {
+        const currentProfile = state.local.currentProfile;
+        if (!currentProfile) {
             return [];
         }
-        return state.pages.pageDict[currentPage].columns;
+        return state.profiles.profileDict[currentProfile].columnIds;
     }, shallowEqual);
 
     // These two are used for handling drag animation
@@ -96,7 +96,7 @@ export default function SectionColumns ({handleColumnDragEnd}) {
                                             const column = columnDict[colId];
                                             if (column) {
                                                 acc.push(<Column
-                                                    className={`${i+1 < columnIds.length? "snap-start" : "snap-end"} ${(!accounts.dict[column.observers[0]].active)? "bg-red-900": "bg-transparent"}`}
+                                                    className={`${i+1 < columnIds.length? "snap-start" : "snap-end"} ${(!accountDict[column.observers[0]].active)? "bg-red-900": "bg-transparent"}`}
                                                     key={colId} column={column}/>);
                                             }
                                             return acc;

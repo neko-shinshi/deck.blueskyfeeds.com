@@ -1,6 +1,6 @@
 import { BskyAgent }  from "@atproto/api";
 import {decrypt, parseKey} from "@/lib/utils/crypto";
-import {addOrUpdateAccount, logOut} from "@/lib/utils/redux/slices/accounts";
+import {addOrUpdateAccount, logOut} from "@/lib/utils/redux/slices/profiles";
 import {store} from "@/lib/utils/redux/store";
 import {Feed} from "@/lib/utils/types-constants/feed";
 import {getUserName} from "@/lib/utils/types-constants/user-data";

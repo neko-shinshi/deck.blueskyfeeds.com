@@ -4,9 +4,10 @@ import {RefreshTimingType} from "@/lib/utils/types-constants/refresh-timings";
 import {ThumbnailSize} from "@/lib/utils/types-constants/thumbnail-size";
 import {Post} from "@/lib/utils/types-constants/post";
 
-export interface PageOfColumns {
+export interface ProfileColumns {
     name: string // for display
-    columns: string[]
+    columnIds: string[]
+    accountIds: string[]
     maskCw: boolean
     hideCw: boolean
     cwLabels: CwType[] // CwLabel type

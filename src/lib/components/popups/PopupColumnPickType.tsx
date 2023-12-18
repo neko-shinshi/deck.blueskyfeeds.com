@@ -7,7 +7,7 @@ import {BsFillBellFill} from "react-icons/bs";
 import {FaPlus} from "react-icons/fa";
 import clsx from "clsx";
 import {useEffect} from "react";
-import {addColumn} from "@/lib/utils/redux/slices/pages";
+import {addColumn} from "@/lib/utils/redux/slices/profiles";
 import {useDispatch, useSelector} from "react-redux";
 import {randomUuid} from "@/lib/utils/random";
 import AvatarUser from "@/lib/components/ui/AvatarUser";
@@ -16,7 +16,7 @@ import {Feed} from "@/lib/utils/types-constants/feed";
 import {initializeColumn, updateFeeds, updateMemory} from "@/lib/utils/redux/slices/memory";
 
 import useState from 'react-usestateref'
-import {getUserName} from "@/lib/utils/types-constants/user-data";
+import {BlueskyAccount, getUserName, MastodonAccount} from "@/lib/utils/types-constants/user-data";
 import FeedSelect from "@/lib/components/popups/new_column/FeedSelect";
 import {StoreState} from "@/lib/utils/redux/store";
 
@@ -48,8 +48,21 @@ export type ColumnTypeModeData = ColumnTypeFeedData | {mode: ColumnMode.ROOT} | 
 export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,setOpen:any}) {
     const memory = useSelector((state:StoreState) => state.memory);
     const config = useSelector((state:StoreState) => state.config);
-    const accounts = useSelector((state:StoreState) => state.accounts);
-    const currentPage = useSelector((state:StoreState) => state.local.currentPage);
+    const currentProfile = useSelector((state:StoreState) => state.local.currentProfile);
+    const profileAccounts:(BlueskyAccount|MastodonAccount)[] = useSelector((state:StoreState) => {
+        const currentProfile = state.local.currentProfile;
+        if (!currentProfile || !state.profiles.profileDict[currentProfile]) {
+            return [];
+        }
+        const ids = state.profiles.profileDict[currentProfile].accountIds;
+        return ids.reduce((acc, id) => {
+            const account = state.profiles.accountDict[id];
+            if (account) {
+                acc.push(account);
+            }
+            return acc;
+        }, []);
+    })
 
     const dispatch = useDispatch();
 
@@ -59,7 +72,6 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
         if (isOpen) {
             setMode({mode: ColumnMode.ROOT});
         }
-
     }, [isOpen]);
 
     const TypeButton = ({x}) => {
@@ -88,13 +100,8 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
                         setMode(newMode);
 
                         // Refresh feeds
-                        getMyFeeds(accounts.order.reduce((acc, x) => {
-                            const account = accounts.dict[x];
-                            if (account && account.type === "b") {
-                                acc.push(account);
-                            }
-                            return acc;
-                        }, []), config.basicKey).then(({feeds:newFeeds, authors}) => {
+                        getMyFeeds(profileAccounts.filter(account => account.type === "b"),
+                            config.basicKey).then(({feeds:newFeeds, authors}) => {
                             dispatch(updateFeeds({feeds:newFeeds}));
                             console.log("new Feeds", newFeeds);
 
@@ -140,39 +147,33 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
             {
                 (expanded === ColumnType.HOME) && <>
                     {
-                        accounts.order.reduce((acc, id) => {
-                            const account = accounts.dict[id];
-                            if (account) {
-                                acc.push(<div
-                                    key={id}
-                                    className="bg-theme_dark-L0 hover:bg-gray-700 flex place-items-center gap-2 ml-4 p-0.5"
-                                    onClick={async () => {
-                                        switch (expanded) {
-                                            case ColumnType.HOME: {
-                                                setOpen(false);
-                                                const colId = randomUuid();
-                                                dispatch(addColumn({pageId: currentPage, name: `Home`, config: {id: colId, type: ColumnType.HOME, observer: id}, defaults: config}));
-                                                dispatch(initializeColumn({ids:[colId]}));
-                                                break;
-                                            }
+                        profileAccounts.map(account =>
+                            <div
+                                key={account.id}
+                                className="bg-theme_dark-L0 hover:bg-gray-700 flex place-items-center gap-2 ml-4 p-0.5"
+                                onClick={async () => {
+                                    switch (expanded) {
+                                        case ColumnType.HOME: {
+                                            setOpen(false);
+                                            const colId = randomUuid();
+                                            dispatch(addColumn({profileId: currentProfile, name: `Home`, config: {id: colId, type: ColumnType.HOME, observer: account.id}, defaults: config}));
+                                            dispatch(initializeColumn({ids:[colId]}));
+                                            break;
                                         }
-                                    }}
-                                >
-                                    <div className="w-6 h-6 relative aspect-square">
-                                        <AvatarUser avatar={account.avatar} alt={getUserName(account)}/>
-                                    </div>
-                                    <div>
-                                        {
-                                            account.displayName &&
-                                            <div className="text-sm text-theme_dark-T0">{account.displayName}</div>
-                                        }
-                                        <div className="text-xs text-theme_dark-T1">{account.handle}</div>
-                                    </div>
-                                </div>)
-                            }
-
-                            return acc;
-                        }, [])
+                                    }
+                                }}
+                            >
+                                <div className="w-6 h-6 relative aspect-square">
+                                    <AvatarUser avatar={account.avatar} alt={getUserName(account)}/>
+                                </div>
+                                <div>
+                                    {
+                                        account.displayName &&
+                                        <div className="text-sm text-theme_dark-T0">{account.displayName}</div>
+                                    }
+                                    <div className="text-xs text-theme_dark-T1">{account.handle}</div>
+                                </div>
+                            </div>)
                     }
                 </>
             }

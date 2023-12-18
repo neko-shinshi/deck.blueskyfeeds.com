@@ -14,10 +14,10 @@ import {StoreState} from "@/lib/utils/redux/store";
 
 export default function PopupPageList(
     {isOpen, setOpen}: {isOpen:boolean,setOpen:any}) {
-    const pages = useSelector((state:StoreState) => state.pages);
+    const profiles = useSelector((state:StoreState) => state.profiles);
 
     const [mode, setMode] = useState<"main"|"rename">("main");
-    const [pageIds, setPageIds] = useState<string[]>([]);
+    const [profileIds, setProfileIds] = useState<string[]>([]);
 
     useEffect(() => {
         if (isOpen) {
@@ -26,10 +26,10 @@ export default function PopupPageList(
     }, [isOpen]);
 
     useEffect(() => {
-        if (Array.isArray(pages.pageOrder)) {
-            setPageIds(pages.pageOrder);
+        if (Array.isArray(profiles.profileOrder)) {
+            setProfileIds(profiles.profileOrder);
         }
-    }, [pages]);
+    }, [profiles]);
 
     function handleDragEnd(event) {
         const {active, over} = event;
@@ -43,21 +43,21 @@ export default function PopupPageList(
         }
     }
 
-    function PageItem({pageId}) {
+    function PageItem({profileId}) {
         const {
             attributes,
             listeners,
             setNodeRef,
             transform,
             transition,
-        } = useSortable({id: pageId});
+        } = useSortable({id: profileId});
 
         const style = {
             transform: CSS.Transform.toString(transform),
             transition,
         };
 
-        const page = pages.pageDict[pageId];
+        const page = profiles.profileDict[profileId];
 
         return <>
             {
@@ -75,13 +75,13 @@ export default function PopupPageList(
 
                         <div className="grow">
                             <div className="text-base font-semibold">{page.name}</div>
-                            <div className="text-sm">@{page.columns.length}</div>
+                            <div className="text-sm">@{page.columnIds.length}</div>
                         </div>
                     </div>
 
                     <div className="flex gap-3 p-1">
                         {
-                            pages.pageOrder.length > 1 &&
+                            profiles.profileOrder.length > 1 &&
                             <div
                                 className="bg-white hover:bg-gray-100 border border-black rounded-full h-8 w-8 grid place-items-center">
                                 <MdDeleteForever
@@ -122,9 +122,9 @@ export default function PopupPageList(
         {
             mode === "main" && <>
                 <DndContext onDragEnd={handleDragEnd}>
-                    <SortableContext items={pageIds} strategy={verticalListSortingStrategy}>
+                    <SortableContext items={profileIds} strategy={verticalListSortingStrategy}>
                         {
-                            pageIds.map(x => <PageItem key={x} pageId={x}/>)
+                            profileIds.map(x => <PageItem key={x} profileId={x}/>)
                         }
                     </SortableContext>
                 </DndContext>

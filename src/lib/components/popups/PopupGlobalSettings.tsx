@@ -3,12 +3,8 @@ import {useDispatch, useSelector} from "react-redux";
 import clsx from "clsx";
 import {exportJSON} from "@/lib/utils/redux/store";
 import {useState} from "react";
-import {
-    initialState as usersInitialState,
-    resetAccounts,
-} from "@/lib/utils/redux/slices/accounts";
 import {initialState as configInitialState, resetConfig, setConfigValue} from "@/lib/utils/redux/slices/config";
-import {makeInitialState as makePageInitialState, resetPages} from "@/lib/utils/redux/slices/pages";
+import {makeInitialState as makePageInitialState, resetProfiles} from "@/lib/utils/redux/slices/profiles";
 import {resetMemory} from "@/lib/utils/redux/slices/memory";
 import PopupConfirmation from "@/lib/components/popups/PopupConfirmation";
 import {MdDeleteForever} from "react-icons/md";
@@ -33,8 +29,7 @@ export default function PopupGlobalSettings(
             message=""
             yesCallback={ async () => {
                 dispatch(resetConfig(configInitialState));
-                dispatch(resetPages(makePageInitialState()));
-                dispatch(resetAccounts(usersInitialState));
+                dispatch(resetProfiles(makePageInitialState()));
                 dispatch(resetMemory());
 
             }}/>

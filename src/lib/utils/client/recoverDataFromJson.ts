@@ -1,7 +1,6 @@
 import {makeKey} from "@/lib/utils/crypto";
 import {setConfigValue} from "@/lib/utils/redux/slices/config";
-import {resetAccounts} from "@/lib/utils/redux/slices/accounts";
-import {resetPages} from "@/lib/utils/redux/slices/pages";
+import {resetProfiles} from "@/lib/utils/redux/slices/profiles";
 import {initializeColumn, updateMemory} from "@/lib/utils/redux/slices/memory";
 
 export default function recoverDataFromJson (dispatch) {
@@ -19,8 +18,7 @@ export default function recoverDataFromJson (dispatch) {
                 let {config, pages, users} = content;
                 config.basicKey = await makeKey();
                 dispatch(setConfigValue(config));
-                dispatch(resetAccounts(users));
-                dispatch(resetPages(pages));
+                dispatch(resetProfiles(pages));
                 dispatch(updateMemory({mode:"main"}));
 
                 const ids = Object.keys(pages.columnDict);

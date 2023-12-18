@@ -93,31 +93,31 @@ export default function RefreshHandler({}) {
         const fetchNewMessages = async () => {
             if (mainId === myId) {
                 const state = store.getState();
-                const pages = state.pages;
-                const accounts = state.accounts;
+                const profiles = state.profiles;
+                const accountDict = state.profiles.accountDict;
                 const config = state.config;
                 const local = state.local;
                 const memory = state.memory;
 
-                if (!local.currentPage) {
+                if (!local.currentProfile) {
                     return;
                 }
-                const pagesToUpdate = [...new Set([...openPages, local.currentPage])];
+                const profilesToUpdate = [...new Set([...openPages, local.currentProfile])];
 
                 // only fetch columns in pages that are open, and accounts that are logged in
 
                 let columnIds = new Set<string>();
-                for (const pageId of pagesToUpdate) {
-                    const page = pages.pageDict[pageId];
+                for (const profileId of profilesToUpdate) {
+                    const page = profiles.profileDict[profileId];
                     if (page) {
-                        page.columns.forEach(x => columnIds.add(x));
+                        page.columnIds.forEach(x => columnIds.add(x));
                     }
                 }
                 const now = new Date().getTime();
 
                 let toFetch = new Map<string, ColumnConfig[]>();
                 for (const columnId of columnIds) {
-                    const col = pages.columnDict[columnId];
+                    const col = profiles.columnDict[columnId];
                     if (!col || !("refreshMs" in col)) {continue;}
                     const column = col as FetchedColumn & ColumnConfig;
                     const lastObj = memory.columns[columnId];
@@ -134,14 +134,14 @@ export default function RefreshHandler({}) {
                         switch (type) {
                             case ColumnType.NOTIFS: {
                                 const {hideUsers} = column as ColumnNotifications;
-                                Object.values(accounts.dict)
+                                Object.values(accountDict)
                                     .filter(x => x.active && hideUsers.indexOf(x.id) < 0)
                                     .forEach(x => addToList(x.id));
                                 break;
                             }
                             case ColumnType.HOME: {
                                 const observer = observers[0];
-                                const userObj = accounts.dict[observer];
+                                const userObj = accountDict[observer];
                                 if (userObj && userObj.active && userObj.type === "b") {
                                     addToList(observer);
                                 }
@@ -149,7 +149,7 @@ export default function RefreshHandler({}) {
                             }
                             case ColumnType.FEED: {
                                 const observer = observers[0];
-                                const userObj = accounts.dict[observer];
+                                const userObj = accountDict[observer];
                                 if (userObj && userObj.active) {
                                     addToList(observer);
                                 }
@@ -165,7 +165,7 @@ export default function RefreshHandler({}) {
                 }
 
                 for (let [id, columns] of toFetch) {
-                    const userObj = accounts.dict[id];
+                    const userObj = accountDict[id];
                     if (userObj) {
                         let pass = true;
                         let agent = await getAgent(userObj, config.basicKey);
@@ -281,7 +281,7 @@ export default function RefreshHandler({}) {
         // Send a heartbeat
         const sendInterval = setInterval(async () => {
             const state = store.getState();
-            bc.postMessage({id:myId, page: state.local.currentPage, type:"hb"});
+            bc.postMessage({id:myId, page: state.local.currentProfile, type:"hb"});
         }, 0.5*1000);
 
         // Determine main
@@ -298,7 +298,7 @@ export default function RefreshHandler({}) {
                 }
             }
             const state = store.getState();
-            openPages = [...new Set([...hbMap.values(), state.local.currentPage].filter(x => x !== ""))];
+            openPages = [...new Set([...hbMap.values(), state.local.currentProfile].filter(x => x !== ""))];
             hbMap.clear();
         }, 2*1000);
 

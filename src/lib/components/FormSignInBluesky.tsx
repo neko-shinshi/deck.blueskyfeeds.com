@@ -5,18 +5,16 @@ import Link from "next/link";
 import {HiAtSymbol} from "react-icons/hi";
 import clsx from "clsx";
 import {useDispatch, useSelector} from "react-redux";
-import {addOrUpdateAccount, resetAccounts} from "@/lib/utils/redux/slices/accounts"
 import {setConfigValue} from "@/lib/utils/redux/slices/config";
 import {useForm} from "react-hook-form";
 import {encrypt, makeKey, parseKey} from "@/lib/utils/crypto";
-import {addColumn, updatePageConfig} from "@/lib/utils/redux/slices/pages";
-import memory, {initializeColumn, updateFeeds, updateMemory} from "@/lib/utils/redux/slices/memory";
-import recoverDataFromJson from "@/lib/utils/client/recoverDataFromJson";
+import {addColumn, addOrUpdateAccount} from "@/lib/utils/redux/slices/profiles";
+import {initializeColumn, updateFeeds, updateMemory} from "@/lib/utils/redux/slices/memory";
 import {BlueskyAccount} from "@/lib/utils/types-constants/user-data";
 import {randomUuid} from "@/lib/utils/random";
-import {ColumnHome, ColumnNotifications, ColumnType, InColumn} from "@/lib/utils/types-constants/column";
+import {ColumnType, InColumn} from "@/lib/utils/types-constants/column";
 import {getMyFeeds} from "@/lib/utils/bsky/feeds";
-import {setPage} from "@/lib/utils/redux/slices/local";
+import {setCurrentProfile} from "@/lib/utils/redux/slices/local";
 import {StoreState} from "@/lib/utils/redux/store";
 
 export default function FormSignInBluesky (
@@ -27,9 +25,9 @@ export default function FormSignInBluesky (
         initialUser?:BlueskyAccount,
         completeCallback?:() => void
     }) {
-    const accounts = useSelector((state:StoreState) => state.accounts);
     const config = useSelector((state:StoreState) => state.config);
-    const pages = useSelector((state:StoreState) => state.pages);
+    const profiles = useSelector((state:StoreState) => state.profiles);
+    const currentProfile = useSelector((state:StoreState) => state.local.currentProfile);
 
     const [warning, setWarning] = useState(false);
     const [submitting, setSubmitting] = useState(false);
@@ -93,18 +91,18 @@ export default function FormSignInBluesky (
                 const key = await parseKey(keyString);
                 const encryptedPassword = await encrypt(key, password);
 
-                if (accounts.order.length === 0 && pages.pageOrder.length > 0) {
+                if (!currentProfile) {
                     // First user logged in, pre-fill columns
-                    const pageId = pages.pageOrder[0];
+                    const profileId = profiles.profileOrder[0];
                     const notifId = randomUuid();
                     const homeId = randomUuid();
                     const configNotif:InColumn = {id:notifId, type:ColumnType.NOTIFS, observers: [did], name:"Notifications"};
                     const configHome:InColumn = {id:homeId, type:ColumnType.HOME, observers: [did], name:"Home"};
 
-                    dispatch(addColumn({pageId, config: configNotif, defaults: config}));
-                    dispatch(addColumn({pageId, config: configHome, defaults: config}));
+                    dispatch(addColumn({profileId, config: configNotif, defaults: config}));
+                    dispatch(addColumn({profileId, config: configHome, defaults: config}));
                     dispatch(initializeColumn({ids:[notifId, homeId]}));
-                    dispatch(setPage({pageId}));
+                    dispatch(setCurrentProfile({profileId}));
 
                     getMyFeeds([{service, usernameOrEmail, encryptedPassword, refreshJwt, accessJwt, id:did}], keyString).then(({feeds, authors}) => {
                         dispatch(updateFeeds({feeds}));

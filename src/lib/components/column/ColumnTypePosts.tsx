@@ -11,8 +11,7 @@ import {ColumnType, getColumnName} from "@/lib/utils/types-constants/column";
 import {StoreState} from "@/lib/utils/redux/store";
 export default function ColumnTypePosts({attributes, listeners, column}) {
     const memory = useSelector((state:StoreState) => state.memory);
-    const config = useSelector((state:StoreState) => state.config);
-    const accounts = useSelector((state:StoreState) => state.accounts);
+    const accountDict = useSelector((state:StoreState) => state.profiles.accountDict);
     const dispatch = useDispatch();
 
     const scrollRef = useRef(null);
@@ -48,7 +47,7 @@ export default function ColumnTypePosts({attributes, listeners, column}) {
                     <div className="flex">
                     {
                         (column.observers as string[]).reduce((acc, uid) => {
-                            const account = accounts.dict[uid];
+                            const account = accountDict[uid];
                             if (account) {
                                 acc.push(<div className="flex gap-1 place-items-center" key={uid}>
                                     <div className="relative h-4 w-4">

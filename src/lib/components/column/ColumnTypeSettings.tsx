@@ -11,7 +11,7 @@ import {
 import {useDispatch, useSelector} from "react-redux";
 import {HiChevronLeft, HiChevronRight} from "react-icons/hi";
 import {MdDeleteForever} from "react-icons/md";
-import {removeColumn, setColumnOrder, updateColumn} from "@/lib/utils/redux/slices/pages";
+import {removeColumn, setColumnOrder, updateColumn} from "@/lib/utils/redux/slices/profiles";
 import {arrayMove} from "@dnd-kit/sortable";
 import {useRef, useState} from "react";
 import {FaMinus, FaPlus} from "react-icons/fa";
@@ -25,9 +25,9 @@ import {StoreState} from "@/lib/utils/redux/store";
 
 export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
     const memory = useSelector((state:StoreState) => state.memory);
-    const accounts = useSelector((state:StoreState) => state.accounts);
-    const pages = useSelector((state:StoreState) => state.pages);
-    const currentPage =  useSelector((state:StoreState) => state.local.currentPage);
+    const accountDict = useSelector((state:StoreState) => state.profiles.accountDict);
+    const profiles = useSelector((state:StoreState) => state.profiles);
+    const currentProfile =  useSelector((state:StoreState) => state.local.currentProfile);
 
     const dispatch = useDispatch();
     const [sliderVal, setSliderVal] = useState(column.width);
@@ -35,13 +35,13 @@ export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
     const nameRef = useRef(null);
 
     const changeOrder = (diff) => {
-        let columnIds = pages.pageDict[currentPage].columns.filter(colId => pages.columnDict[colId]);
+        let columnIds = profiles.profileDict[currentProfile].columnIds.filter(colId => profiles.columnDict[colId]);
         const oldIndex = columnIds.indexOf(column.id);
         if (oldIndex < 0) {console.log("can't find column"); return;}
         let newIndex = oldIndex + diff;
         if (newIndex < 0) {console.log("far left"); return;}
         const result = arrayMove(columnIds, oldIndex, newIndex);
-        dispatch(setColumnOrder({order:result, pageId: currentPage}));
+        dispatch(setColumnOrder({order:result, profileId: currentProfile}));
     }
     const dispatchSliderVal = (val) => {
         if (!isNaN(val)) {
@@ -72,7 +72,7 @@ export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
                     <div className="font-bold">Move Column</div>
                     {
                         (() => {
-                            let columnIds = pages.pageDict[currentPage].columns.filter(colId => pages.columnDict[colId]);
+                            let columnIds = profiles.profileDict[currentProfile].columnIds.filter(colId => profiles.columnDict[colId]);
                             const oldIndex = columnIds.indexOf(column.id);
                             if (oldIndex < 0) {
                                 return <div/>
@@ -139,7 +139,7 @@ export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
                     <div className="font-bold">Column Account{column.type === ColumnType.NOTIFS && "s"}</div>
                     {
                         column.observers.reduce((acc, viewer) => {
-                            const account = accounts.dict[viewer];
+                            const account = accountDict[viewer];
                             if (account) {
                                 acc.push(<div key={viewer} className="flex gap-1 grow-0 overflow-hidden place-items-center group">
                                     <div
