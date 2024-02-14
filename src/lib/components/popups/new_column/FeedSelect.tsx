@@ -1,8 +1,8 @@
 import {BiArrowBack, BiSearch} from "react-icons/bi";
 import {randomUuid} from "@/lib/utils/random";
 import {ColumnConfig, ColumnFeed, ColumnType, InColumnFeed} from "@/lib/utils/types-constants/column";
-import {addColumn} from "@/lib/utils/redux/slices/profiles";
-import {initializeColumn, updateFeeds, updateMemory} from "@/lib/utils/redux/slices/memory";
+import {addColumn} from "@/lib/utils/redux/slices/storage";
+import {updateFeeds, updateUsers} from "@/lib/utils/redux/slices/memory";
 import AvatarFeed from "@/lib/components/ui/AvatarFeed";
 import {TiPin} from "react-icons/ti";
 import {LiaAtomSolid} from "react-icons/lia";
@@ -22,20 +22,29 @@ import {StoreState} from "@/lib/utils/redux/store";
 export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
     const feedDict = useSelector((state:StoreState) => state.memory.feeds);
     const userData = useSelector((state:StoreState) => state.memory.userData);
-
     const basicKey = useSelector((state:StoreState) => state.config.basicKey);
     const currentProfile = useSelector((state:StoreState) => state.local.currentProfile);
     const config = useSelector((state:StoreState) => state.config);
-    const profiles = useSelector((state:StoreState) => state.profiles);
+    const profiles = useSelector((state:StoreState) => state.storage);
     const currentActiveAccount = useSelector((state:StoreState) => {
         const currentProfile = state.local.currentProfile;
-        for (const id of state.profiles.profileDict[currentProfile].accountIds) {
-            const account = state.profiles.accountDict[id];
+        for (const id of state.storage.profiles[currentProfile].accountIds) {
+            const account = state.memory.accountData[id];
             if (account && account.active) {
                 return account;
             }
         }
         return null;
+    });
+    const columnFeedUris:string[] = useSelector((state:StoreState) => {
+        const currentProfile = state.local.currentProfile;
+        return state.storage.profiles[currentProfile].columnIds.reduce((acc, cid) => {
+            const config:ColumnConfig = state.storage.columns[cid];
+            if (config && config.type === ColumnType.FEED) {
+                acc.push((config as ColumnFeed).uri);
+            }
+            return acc;
+        }, []);
     });
 
     const dispatch = useDispatch();
@@ -73,9 +82,7 @@ export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
                                }
                                if (update) {
                                    dispatch(updateFeeds({feeds:[feed]}));
-                                   let memoryCommand = {};
-                                   memoryCommand[`userData.${author.id}`] = author;
-                                   dispatch(updateMemory(memoryCommand));
+                                   dispatch(updateUsers({users:[author]}));
                                }
 
                                if (modeRef.current.mode === ColumnMode.FEED && modeRef.current.id === id) {
@@ -153,12 +160,7 @@ export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
                 <div key={x.uri}
                      className={clsx(
                          "flex place-items-center justify-between gap-1 p-2 hover:bg-theme_dark-I1",
-                         profiles.profileDict[currentProfile].columnIds.find(y => {
-                             const config:ColumnConfig = profiles.columnDict[y];
-                             if (config && config.type === ColumnType.FEED) {
-                                 return (config as ColumnFeed).uri === x.uri;
-                             }
-                         }) && "bg-gray-700"
+                         columnFeedUris.indexOf(x.uri) >= 0 && "bg-gray-700"
                      )}
                      onClick={() => {
 
@@ -194,9 +196,8 @@ export default function FeedSelect ({mode, setMode, modeRef, setOpen}) {
                             onClick={() => {
                                 setMode({mode:ColumnMode.BUSY});
                                 const colId = randomUuid();
-                                const configFeed:InColumnFeed = {id:colId, type:ColumnType.FEED, observers: [profiles.profileDict[currentProfile].accountIds[0]], uri:x.uri};
+                                const configFeed:InColumnFeed = {id:colId, type:ColumnType.FEED, observers: [profiles.profiles[currentProfile].accountIds[0]], uri:x.uri};
                                 dispatch(addColumn({profileId: currentProfile, config: configFeed, defaults: config}));
-                                dispatch(initializeColumn({ids:[colId]}));
                                 setOpen(false);
                             }}/>
                     </div>

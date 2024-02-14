@@ -4,22 +4,22 @@ import {useDispatch, useSelector} from "react-redux";
 import {ColumnConfig, ColumnModeLoading} from "@/lib/utils/types-constants/column";
 import {StoreState} from "@/lib/utils/redux/store";
 
-export default function ColumnTypeLoading({column}:{column:ColumnConfig}) {
-    const memory = useSelector((state:StoreState) => state.memory);
+export default function ColumnTypeLoading({columnId}:{columnId:string}) {
+    const mode = useSelector((state:StoreState) => state.memory.columnMode[columnId]);
     const dispatch = useDispatch();
     return <>
         <div className="h-[3rem] flex place-items-center gap-2 justify-start">
             <div className="w-8 h-8 p-1 border border-theme_dark-I0 rounded-full mr-2 bg-theme_dark-I1 hover:bg-theme_dark-I2 shrink-0 grid place-items-center"
                  onClick={() => {
                      let command:any = {};
-                     command[`columns.${column.id}.mode`] = memory.columns[column.id].mode.parent;
+                     command[`columns.${columnId}.mode`] = mode.parent;
                      console.log(JSON.stringify(command, null,2 ))
                      dispatch(updateMemory(command));
                  }}
             >
                 <BiArrowBack className="w-4 h-4 text-theme_dark-I0" />
             </div>
-            <div>{(memory.columns[column.id].mode as ColumnModeLoading).header}</div>
+            <div>{(mode as ColumnModeLoading).header}</div>
         </div>
         <div className="w-full h-full grid place-items-center">
             <div className="flex place-items-center gap-3 pt-5">

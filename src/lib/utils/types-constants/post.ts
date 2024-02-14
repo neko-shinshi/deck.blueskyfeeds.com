@@ -1,8 +1,11 @@
+import {UserInteraction} from "@/lib/utils/types-constants/user-interaction";
 
 export interface TextPart {
     text: string,
     facet?: PostFacet
 }
+
+
 
 export interface Post {
     uri: string
@@ -22,6 +25,8 @@ export interface Post {
     reposterDid?: string
     replyTo?: string
     parentUri?:string
+    myLikes: UserInteraction[],
+    myReposts: UserInteraction[]
 }
 
 

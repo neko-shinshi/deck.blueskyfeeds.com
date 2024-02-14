@@ -8,8 +8,9 @@ import {PopupConfigPostAction, PopupState} from "@/lib/utils/types-constants/pop
 import {StoreState} from "@/lib/utils/redux/store";
 
 export default function PopupPostAction({isOpen, setOpen}) {
-    const memory = useSelector((state:StoreState) => state.memory);
     const popupConfig = useSelector((state:StoreState) => state.local.popupConfig);
+
+    const memory = useSelector((state:StoreState) => state.memory);
 
     const [postUrl, setPostUrl] = useState("");
     const [translateUrl, setTranslateUrl] = useState("");

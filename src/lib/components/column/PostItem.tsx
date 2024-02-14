@@ -11,7 +11,6 @@ import {
     RecordList,
     RecordPost,
 } from "@/lib/utils/types-constants/post";
-import {ColumnConfig} from "@/lib/utils/types-constants/column";
 import {useSelector} from "react-redux";
 import AvatarUser from "@/lib/components/ui/AvatarUser";
 import clsx from "clsx";
@@ -30,12 +29,10 @@ import {PopupConfigPostAction, PopupState} from "@/lib/utils/types-constants/pop
 import {useLongPress} from "use-long-press";
 import {getUserName} from "@/lib/utils/types-constants/user-data";
 import {setPopupConfig} from "@/lib/utils/redux/slices/local";
-import {StoreState} from "@/lib/utils/redux/store";
+import {store, StoreState} from "@/lib/utils/redux/store";
 
-export default function PostItem({post, column, highlight=false}: {post:Post, column:ColumnConfig, highlight:boolean}) {
-    const config = useSelector((state:StoreState) => state.config);
-    const memory = useSelector((state:StoreState) => state.memory);
-
+export default function PostItem({post, columnId, highlight=false}: {post:Post, columnId:string, highlight:boolean}) {
+    const offsetLeft = useSelector((state:StoreState) => state.config.offsetLeft);
     const longPressPost = useLongPress(()=> {}, {
         cancelOnMovement:25,
         cancelOutsideElement:true,
@@ -45,36 +42,28 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
             }
         },
     });
-
     const openThread = async (uri) => {
         console.log("opening ", uri);
-        // column observer
-        await getPostThread(column.observers[0], column.id, uri);
-    }
-
-    const thumbSizeToNumber = () => {
-        switch (column.thumbnailSize) {
-            case ThumbnailSize.X_SMALL: return 50;
-            case ThumbnailSize.SMALL: return 200;
-            case ThumbnailSize.MEDIUM: return 300;
-            case ThumbnailSize.LARGE: return 400;
-        }
+        const state = store.getState();
+        await getPostThread(state.storage.columnDict[columnId].observers[0], columnId, uri);
     }
 
     const PostHeader = ({id, indexedAt, mini=false}) => {
-        const user = memory.userData[id];
+        const userAvatar = useSelector((state:StoreState) => state.memory.userData[id].avatar);
+        const userHandle = useSelector((state:StoreState) => state.memory.userData[id].handle);
+        const userName = useSelector((state:StoreState) => state.memory.userData[id].displayName);
+
         return <div className="flex justify-between">
             <div className="flex gap-2 grow-0 overflow-hidden place-items-center group">
                 <div className={clsx(mini? "w-6 h-6": "w-8 h-8", "relative aspect-square rounded-full border border-theme_dark-I0")}>
-                    <AvatarUser avatar={user?.avatar} alt={getUserName(user)}/>
+                    <AvatarUser avatar={userAvatar} alt="User Avatar"/>
                 </div>
 
                 <div className="overflow-hidden">
-                    <div className={clsx(mini? "text-xs": "text-sm", "text-theme_dark-T0 truncate")}>{getUserName(user)}</div>
-                    <div className="text-theme_dark-T1 text-xs group-hover:underline">@{user?.handle}</div>
+                    { userName && <div className={clsx(mini? "text-xs": "text-sm", "text-theme_dark-T0 truncate")}>{userName}</div>}
+                    <div className="text-theme_dark-T1 text-xs group-hover:underline">{userHandle}</div>
                 </div>
             </div>
-
 
             <div className="text-theme_dark-T0">
                 <ReactTimeAgo date={indexedAt} locale="en-US" timeStyle="twitter"/>
@@ -83,30 +72,44 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
     }
 
     const PostImages = ({embedImage}: {embedImage:PostEmbedImages}) => {
+        const {thumbnailSize, thumbnailNumber} = useSelector((state:StoreState) => {
+            const column = state.storage.columns[columnId];
+            if (column) {
+                let thumbnailNumber = 0;
+                switch (column.thumbnailSize) {
+                    case ThumbnailSize.X_SMALL: thumbnailNumber = 50; break;
+                    case ThumbnailSize.SMALL: thumbnailNumber = 200; break;
+                    case ThumbnailSize.MEDIUM: thumbnailNumber = 300; break;
+                    case ThumbnailSize.LARGE: thumbnailNumber = 400; break;
+                }
+                return {thumbnailSize, thumbnailNumber};
+            }
+            return {thumbnailSize:ThumbnailSize.HIDDEN, thumbnailNumber:0};
+        });
         return <>
             {
-                column.thumbnailSize === ThumbnailSize.HIDDEN && <div className="grid place-items-center">
+                thumbnailSize === ThumbnailSize.HIDDEN && <div className="grid place-items-center">
                     <button type="button" className="p-2 bg-theme_dark-I2 rounded-md">Image</button>
                 </div>
             }
             {
-                column.thumbnailSize !== ThumbnailSize.HIDDEN && <div className="p-1">
+                thumbnailSize !== ThumbnailSize.HIDDEN && <div className="p-1">
                     {
                         embedImage.images.length === 1 &&
                         <div className="grid place-items-center">
-                            <Image height={thumbSizeToNumber()} width={thumbSizeToNumber()} src={embedImage.images[0].thumb} alt={embedImage.images[0].alt}/>
+                            <Image height={thumbnailNumber} width={thumbnailNumber} src={embedImage.images[0].thumb} alt={embedImage.images[0].alt}/>
                         </div>
                     }
                     {
                         embedImage.images.length === 2 || embedImage.images.length === 4 &&
                         <div className="grid place-items-center">
-                            <div className={clsx("grid grid-cols-2", column.thumbnailSize===ThumbnailSize.SMALL && "w-44", column.thumbnailSize===ThumbnailSize.MEDIUM && "w-64")}>
+                            <div className={clsx("grid grid-cols-2", thumbnailSize===ThumbnailSize.SMALL && "w-44", thumbnailSize===ThumbnailSize.MEDIUM && "w-64")}>
                                 {
                                     embedImage.images.map((img,i) => {
                                         return <Image
                                             key={i}
-                                            height={thumbSizeToNumber()}
-                                            width={thumbSizeToNumber()}
+                                            height={thumbnailNumber}
+                                            width={thumbnailNumber}
                                             className="aspect-square object-cover"
                                             src={img.thumb}
                                             alt={img.alt}
@@ -124,13 +127,13 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                     {
                         embedImage.images.length === 3 &&
                         <div className="grid place-items-center">
-                            <div className={clsx("grid grid-cols-3 grid-flow-col", column.thumbnailSize===ThumbnailSize.SMALL && "w-44", column.thumbnailSize===ThumbnailSize.MEDIUM && "w-64")}>
+                            <div className={clsx("grid grid-cols-3 grid-flow-col", thumbnailSize===ThumbnailSize.SMALL && "w-44", thumbnailSize===ThumbnailSize.MEDIUM && "w-64")}>
                                 {
                                     embedImage.images.map((img,i) => {
                                         return <Image
                                             key={i}
-                                            height={thumbSizeToNumber()}
-                                            width={thumbSizeToNumber()}
+                                            height={thumbnailNumber}
+                                            width={thumbnailNumber}
                                             className={clsx(i === 0 && embedImage.images.length === 3 && "row-span-2 col-span-2", "aspect-square object-cover w-full h-full")}
                                             src={img.thumb}
                                             alt={img.alt}
@@ -156,7 +159,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
             <PostHeader id={record.authorDid} indexedAt={record.indexedAt} mini={true}/>
             <div className="text-theme_dark-T0">{record.text}</div>
 
-            <PostEmbeds postItem={record}/>
+            {record.embed && <PostEmbeds postItem={record}/>}
         </div>
     }
     const PostFeed = ({record}:{record:RecordFeed}) => {
@@ -207,74 +210,69 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
     const PostEmbeds = ({postItem}) => {
         return <>
             {
-                postItem && <>
-                    {
-                        postItem.embed && postItem.embed.type === "Images" &&
-                        <PostImages embedImage={postItem.embed as PostEmbedImages}/>
-                    }
-
-                    {
-                        postItem.embed && 'media' in postItem.embed && (postItem.embed as PostEmbedRecordWithMedia).media.type === "Images" &&
-                        <PostImages embedImage={(postItem.embed as PostEmbedRecordWithMedia).media as PostEmbedImages}/>
-                    }
-
-                    {
-                        postItem.embed && postItem.embed.type === "External" &&
-                        <PostExternal embedExternal={postItem.embed as PostEmbedExternal}/>
-                    }
-
-                    {
-                        postItem.embed && 'media' in postItem.embed && (postItem.embed as PostEmbedRecordWithMedia).media.type === "External" &&
-                        <PostExternal embedExternal={(postItem.embed as PostEmbedRecordWithMedia).media as PostEmbedExternal}/>
-                    }
-
-
-                    {
-                        postItem.embed && postItem.embed.type === "Record" &&
-                        <PostRecord embedRecord={postItem.embed as PostEmbedRecord}/>
-                    }
-                    {
-                        postItem.embed && postItem.embed.type === "RecordWithMedia" &&
-                        <PostRecord embedRecord={postItem.embed as PostEmbedRecordWithMedia}/>
-                    }
-                </>
+                postItem.embed.type === "Images" &&
+                <PostImages embedImage={postItem.embed as PostEmbedImages}/>
+            }
+            {
+                'media' in postItem.embed && (postItem.embed as PostEmbedRecordWithMedia).media.type === "Images" &&
+                <PostImages embedImage={(postItem.embed as PostEmbedRecordWithMedia).media as PostEmbedImages}/>
+            }
+            {
+                postItem.embed.type === "External" &&
+                <PostExternal embedExternal={postItem.embed as PostEmbedExternal}/>
+            }
+            {
+                'media' in postItem.embed && (postItem.embed as PostEmbedRecordWithMedia).media.type === "External" &&
+                <PostExternal embedExternal={(postItem.embed as PostEmbedRecordWithMedia).media as PostEmbedExternal}/>
+            }
+            {
+                postItem.embed.type === "Record" &&
+                <PostRecord embedRecord={postItem.embed as PostEmbedRecord}/>
+            }
+            {
+                postItem.embed.type === "RecordWithMedia" &&
+                <PostRecord embedRecord={postItem.embed as PostEmbedRecordWithMedia}/>
             }
         </>
     }
 
-    return <div {...longPressPost()} className={clsx("w-full rounded-md flex flex-col p-2 whitespace-pre-line text-xs border border-transparent hover:border-white", highlight? "bg-slate-700" : "bg-theme_dark-L1")}>
-        {
-            post.reposterDid &&
-            <div className="text-theme_dark-T0 flex place-items-center pl-6 mb-1 hover:underline"
-                 onClick={(evt) => {
-                     evt.stopPropagation();
-                     console.log("open reposter", post.reposterDid);
-                 }}>
-                <BiRepost className="h-4 w-4 text-green-500" />
-                <div className="whitespace-nowrap text-ellipsis overflow-hidden">Reposted by {getUserName(memory.userData[post.reposterDid])}</div>
+    const RepostedBy = () => {
+        const reposterName = useSelector((state:StoreState) => getUserName(state.memory.userData[post.reposterDid]));
+        return <div className="text-theme_dark-T0 flex place-items-center pl-6 mb-1 hover:underline"
+                    onClick={(evt) => {
+                        evt.stopPropagation();
+                        console.log("open reposter", post.reposterDid);
+                    }}>
+            <BiRepost className="h-4 w-4 text-green-500" />
+            <div className="whitespace-nowrap text-ellipsis overflow-hidden">Reposted by {reposterName}</div>
+        </div>
+    }
+
+    const ReplyTo = () => {
+        const replyToName = useSelector((state:StoreState) => getUserName(state.memory.userData[post.replyTo]));
+        return <div className="text-theme_dark-T1 flex place-items-center gap-1 p-1">
+            <FaReply className="h-3 w-3 peer"
+                     onClick={() => openThread(post.parentUri)}/>
+            <div className="hover:underline peer-hover:underline shrink-0"
+                 onClick={() => openThread(post.parentUri)}>Reply to</div>
+            <div className="whitespace-nowrap text-ellipsis overflow-hidden hover:underline"
+                 onClick={() => {
+                     console.log("open profile", post.replyTo);
+
+                 }}
+            >
+                {` ${replyToName}`}
             </div>
-        }
+        </div>
+    }
+
+    return <div {...longPressPost()} className={clsx("w-full rounded-md flex flex-col p-2 whitespace-pre-line text-xs border border-transparent hover:border-white", highlight? "bg-slate-700" : "bg-theme_dark-L1")}>
+        {post.reposterDid && <RepostedBy />}
 
         <PostHeader id={post.authorDid} indexedAt={post.indexedAt}/>
 
-        <div className={clsx(config.offsetLeft && "pl-10", "text-theme_dark-T0 overflow-hidden")}>
-            {
-                post.replyTo &&
-                <div className="text-theme_dark-T1 flex place-items-center gap-1 p-1">
-                    <FaReply className="h-3 w-3 peer"
-                             onClick={() => openThread(post.parentUri)}/>
-                    <div className="hover:underline peer-hover:underline shrink-0"
-                         onClick={() => openThread(post.parentUri)}>Reply to</div>
-                    <div className="whitespace-nowrap text-ellipsis overflow-hidden hover:underline"
-                         onClick={() => {
-                           console.log("open profile", post.replyTo);
-
-                         }}
-                    >
-                        {` ${getUserName(memory.userData[post.replyTo])}`}
-                    </div>
-                </div>
-            }
+        <div className={clsx(offsetLeft && "pl-10", "text-theme_dark-T0 overflow-hidden")}>
+            {post.replyTo && <ReplyTo />}
             <div className="p-1">
                 {
                     post.textParts && post.textParts.map((textPart, i) => <span key={i}>
@@ -315,9 +313,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                         }
                     </span>)
                 }
-                {
-                    !post.textParts && post.text
-                }
+                {!post.textParts && post.text}
                 {
                     post.tags.length > 0 && <div className="flex gap-2">
                         Append:
@@ -336,7 +332,8 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                 }
             </div>
 
-            <PostEmbeds postItem={post}/>
+            {post.embed && <PostEmbeds postItem={post}/>}
+
 
             <div>
                 <div className="w-full h-px bg-gray-400 mt-1" />
@@ -371,9 +368,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                             console.log("reply");
                         }}>
                         <HiOutlineChatBubbleOvalLeft className="w-4 h-4"/>
-                        {
-                            !highlight && post.replyCount > 0 && post.replyCount
-                        }
+                        {!highlight && post.replyCount > 0 && post.replyCount}
                     </button>
                     <button
                         type="button"
@@ -383,9 +378,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                             console.log("repost");
                         }}>
                         <BiRepost className="h-4 w-4" />
-                        {
-                            !highlight && post.repostCount > 0 && post.repostCount
-                        }
+                        {!highlight && post.repostCount > 0 && post.repostCount}
                     </button>
                     <button
                         type="button"
@@ -395,9 +388,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                             console.log("like");
                         }}>
                         <AiOutlineHeart className="h-4 w-4" />
-                        {
-                            !highlight && post.likeCount > 0 && post.likeCount
-                        }
+                        {!highlight && post.likeCount > 0 && post.likeCount}
                     </button>
                     <button
                         type="button"
@@ -414,9 +405,7 @@ export default function PostItem({post, column, highlight=false}: {post:Post, co
                         <FaEllipsis className="h-4 w-4" />
                     </button>
                 </div>
-
             </div>
-
         </div>
     </div>
 }

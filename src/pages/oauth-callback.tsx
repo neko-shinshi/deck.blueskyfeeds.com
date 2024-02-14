@@ -1,5 +1,5 @@
 import {errorResponse} from "@/lib/utils/next-response";
-import {getProfile, parseProfile} from "@/lib/utils/mastodon/mastodon";
+import {getMyProfile, parseProfile} from "@/lib/utils/fediverse/mastodon";
 import {useEffect} from "react";
 import {useRouter} from "next/router";
 export const runtime = 'experimental-edge';
@@ -45,7 +45,7 @@ export async function getServerSideProps({query}) {
         console.log(result);
         const {access_token} = result;
 
-        let profile = await getProfile(server, access_token);
+        let profile = await getMyProfile(server, access_token);
         if (!profile) {
             console.log(profile);
             console.log("error3");

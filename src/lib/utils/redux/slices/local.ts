@@ -6,7 +6,7 @@ export type LocalState = {
     popupConfig: PopupConfig
 }
 
-// Local data is not shared, and is volatile
+// Local data is volatile and not synced nor persisted
 const initialState:LocalState = {currentProfile:"", popupConfig: false};
 
 const slice = createSlice({
@@ -21,10 +21,16 @@ const slice = createSlice({
             const {popupConfig} = action.payload;
             state.popupConfig = popupConfig;
         },
+        resetLocal: (state, action) => {
+            for (const [key, value] of Object.entries(initialState)) {
+                state[key] = value;
+            }
+        }
     }
 });
-export const { setCurrentProfile, _setPopupConfig } = slice.actions
+export const { resetLocal, setCurrentProfile, _setPopupConfig } = slice.actions
 
+// The dispatch wrapper is handled here
 export const setPopupConfig = (popupConfig:PopupConfig) => {
     store.dispatch(_setPopupConfig({popupConfig}));
 }

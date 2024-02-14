@@ -1,4 +1,3 @@
-import AvatarSelfMain from "@/lib/components/ui/AvatarSelfMain";
 import Image from "next/image";
 import {BsFillGearFill} from "react-icons/bs";
 import {LuMessageSquarePlus} from "react-icons/lu";
@@ -12,31 +11,30 @@ import AvatarUser from "@/lib/components/ui/AvatarUser";
 import {TbColumnInsertRight} from "react-icons/tb";
 import {PopupConfigUsers, PopupState} from "@/lib/utils/types-constants/popup";
 import {FaUsersCog} from "react-icons/fa";
-import {getUserName} from "@/lib/utils/types-constants/user-data";
 import {setPopupConfig} from "@/lib/utils/redux/slices/local";
 import {StoreState} from "@/lib/utils/redux/store";
 
 
 export default function SectionControls ({handleColumnDragEnd}) {
-    const accountDict = useSelector((state:StoreState) => state.profiles.accountDict);
-    const columnDict = useSelector((state:StoreState) => state.profiles.columnDict);
     const columnIds = useSelector((state:StoreState) => {
         const currentProfile = state.local.currentProfile;
         if (!currentProfile) {
             return [];
         }
-        return state.profiles.profileDict[currentProfile].columnIds;
+        return state.storage.profiles[currentProfile].columnIds;
     }, shallowEqual);
 
 
-    const ControlDraggable = ({column}) => {
+    const ControlDraggable = ({columnId}:{columnId:string}) => {
+        const avatar = useSelector((state:StoreState) => state.memory.accountData[state.storage.columns[columnId].observers[0]].avatar);
+
         const {
             attributes,
             listeners,
             setNodeRef,
             transform,
             transition,
-        } = useSortable({id: column.id});
+        } = useSortable({id: columnId});
 
         const style = {
             transform: CSS.Transform.toString(transform),
@@ -46,11 +44,11 @@ export default function SectionControls ({handleColumnDragEnd}) {
         return <div ref={setNodeRef} style={style} {...attributes} {...listeners}
                     className="w-8 h-8 shrink-0 relative">
             <div className="h-8 w-8 absolute inset-0 bg-theme_dark-I1 hover:bg-theme_dark-I2 rounded-full border border-theme_dark-I0">
-                <ColumnIcon config={column}/>
+                <ColumnIcon columnId={columnId}/>
             </div>
             {
                 <div className="h-4 w-4 absolute -right-1 -bottom-1 border border-theme_dark-I0 rounded-full">
-                    <AvatarUser avatar={accountDict[column.observers[0]].avatar} alt={getUserName(accountDict[column.observers[0]])}/>
+                    <AvatarUser avatar={avatar} alt=""/>
                 </div>
             }
         </div>
@@ -76,13 +74,7 @@ export default function SectionControls ({handleColumnDragEnd}) {
                 <DndContext onDragEnd={handleColumnDragEnd}>
                     <SortableContext items={columnIds} strategy={verticalListSortingStrategy}>
                     {
-                        columnIds.reduce((acc,colId) => {
-                            const column = columnDict[colId];
-                            if (column) {
-                                acc.push(<ControlDraggable key={colId} column={column}/>)
-                            }
-                            return acc;
-                        }, [])
+                        columnIds.map(colId => <ControlDraggable key={colId} columnId={colId}/>)
                     }
                     </SortableContext>
                 </DndContext>
@@ -95,28 +87,6 @@ export default function SectionControls ({handleColumnDragEnd}) {
                 <div className="w-8 h-8 bg-theme_dark-I1 hover:bg-theme_dark-I2 rounded-full border border-theme_dark_I0 grid place-items-center"
                      onClick={() => {
                          setPopupConfig({state:PopupState.ADD_COLUMN});
-                         /*
-                         const activeUsers = Object.values(users.dict).filter(x => (x as UserData).active);
-                         switch (activeUsers.length) {
-                             case 0: {
-                                 // Show user list screen to force user to login
-                                 setPopupState({
-                                     state:PopupState.USERS,
-                                     title:"Login to an Account First",
-                                     loggedInCallback:()=> {
-                                         setPopupState({state:PopupState.ADD_COLUMN});
-                                     }});
-                                 break;
-                             }
-                             case 1: {
-                                 // Open the add UI now
-
-                                 break;
-                             }
-                             default: {
-                                 setPopupState({state:PopupState.USERS});
-                             }
-                         }*/
                      }}
                 >
                     <TbColumnInsertRight className="ml-1 w-6 h-6 text-theme_dark-I0" aria-label="Add Column"/>
@@ -132,7 +102,8 @@ export default function SectionControls ({handleColumnDragEnd}) {
                 <div className="w-8 h-8 bg-theme_dark-I1 hover:bg-theme_dark-I2 rounded-full border border-theme_dark_I0 grid place-items-center"
                      onClick={() => {
                          console.log("click avatar");
-                         setPopupConfig({state:PopupState.USERS, title: "Saved Accounts"} as PopupConfigUsers);
+                         const config:PopupConfigUsers = {state:PopupState.USERS, title: "Saved Accounts"};
+                         setPopupConfig(config);
                      }} >
                     <FaUsersCog className="w-5 h-5 text-theme_dark-I0" aria-label="Settings"/>
                 </div>

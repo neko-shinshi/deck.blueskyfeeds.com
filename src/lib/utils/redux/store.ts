@@ -1,25 +1,20 @@
-import { configureStore } from '@reduxjs/toolkit'
-import { persistReducer, persistStore } from 'redux-persist';
-import storage from "redux-persist/lib/storage";
+import {configureStore} from '@reduxjs/toolkit'
+import {persistReducer, persistStore} from 'redux-persist';
+import storageLib from "redux-persist/lib/storage";
 import config, {ConfigState} from "@/lib/utils/redux/slices/config";
-import profiles, {ProfileState} from "@/lib/utils/redux/slices/profiles";
-import {BlueskyAccount, MastodonAccount} from "@/lib/utils/types-constants/user-data";
+import storage, {StorageState} from "@/lib/utils/redux/slices/storage";
+import {AccountType, BlueskyAccount, MastodonAccount} from "@/lib/utils/types-constants/user-data";
 import memory, {MemoryState} from "@/lib/utils/redux/slices/memory";
 import {combineReducers} from "redux";
 import thunk from 'redux-thunk';
 import local, {LocalState} from "@/lib/utils/redux/slices/local";
 
 // https://stackoverflow.com/questions/69480786/how-to-auto-refresh-component-when-redux-state-get-updated
-export interface StoreState {
-    config: ConfigState
-    local: LocalState
-    memory: MemoryState,
-    profiles: ProfileState
-}
+
 
 const persistedReducer = persistReducer(
-    {key: 'root', storage, blacklist:['memory', 'local']},
-    combineReducers({config, profiles, memory, local})
+    {key: 'root', storage:storageLib, blacklist:['memory', 'local']},
+    combineReducers({config, storage, memory, local})
 );
 
 let sc:any;
@@ -69,22 +64,22 @@ export const exportJSON = async () => {
     delete state.memory;
     delete state._persist;
 
-    let userDict = state.profiles.accountDict as {[id:string]: BlueskyAccount | MastodonAccount};
+    let userDict = state.memory.accountData as {[id:string]: BlueskyAccount | MastodonAccount};
     Object.values(userDict).forEach(user => {
         switch (user.type) {
-            case "b": {
+            case AccountType.BLUESKY: {
                 userDict[user.id] = {
                     ...user,
-                    active:false,
-                    encryptedPassword: "",
+                 //   active:false,
+                  //  encryptedPassword: "",
                     refreshJwt:"", accessJwt:""
                 };
                 break;
             }
-            case "m": {
+            case AccountType.MASTODON: {
                 userDict[user.id] = {
                     ...user,
-                    active:false,
+                  //  active:false,
                     token:""
                 };
                 break;
@@ -97,3 +92,11 @@ export const exportJSON = async () => {
     return state;
 }
 
+// Directly declare feels safer
+//export type StoreState = ReturnType<typeof store.getState>
+export interface StoreState {
+    config: ConfigState
+    local: LocalState
+    memory: MemoryState,
+    storage: StorageState
+}

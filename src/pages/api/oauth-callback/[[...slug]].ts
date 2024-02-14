@@ -1,7 +1,5 @@
 import {NextRequest, NextResponse} from "next/server";
 import {errorResponse} from "@/lib/utils/next-response";
-import {getProfile} from "@/lib/utils/mastodon/mastodon";
-import {useEffect} from "react";
 export const runtime = 'edge';
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;

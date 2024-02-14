@@ -1,3 +1,5 @@
+import {UserInteraction} from "@/lib/utils/types-constants/user-interaction";
+
 export interface Feed {
     uri: string
     displayName: string
@@ -10,4 +12,5 @@ export interface Feed {
     saved?: boolean
     pinned?: boolean
     custom?: boolean
+    likes: UserInteraction[]
 }

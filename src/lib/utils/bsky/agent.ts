@@ -1,10 +1,9 @@
-import { BskyAgent }  from "@atproto/api";
-import {decrypt, parseKey} from "@/lib/utils/crypto";
-import {addOrUpdateAccount, logOut} from "@/lib/utils/redux/slices/profiles";
+import {BskyAgent} from "@atproto/api";
 import {store} from "@/lib/utils/redux/store";
-import {Feed} from "@/lib/utils/types-constants/feed";
-import {getUserName} from "@/lib/utils/types-constants/user-data";
-import {stripFeedUri, stripPostUri} from "@/lib/utils/at_uri";
+import {AccountStateType, AccountType, BlueskyAccount, BlueskyUserData} from "@/lib/utils/types-constants/user-data";
+import {setEncryptedAccount, setUserData} from "@/lib/utils/redux/slices/storage";
+import {setAccount} from "@/lib/utils/redux/slices/memory";
+import {encrypt} from "@/lib/utils/crypto";
 
 
 // Try login with password
@@ -15,41 +14,59 @@ export const getAgentLogin = async (service, identifier, password) => {
 }
 
 // Try login with stored session, if fail, try login with password, update session
-export const getAgent = async (userObj, basicKey) => {
-    const {service, usernameOrEmail:identifier, encryptedPassword, refreshJwt, accessJwt, id} = userObj;
+export const getAgent = async (userObj:BlueskyAccount) => {
+    const {service, usernameOrEmail:identifier, password, refreshJwt, accessJwt, id} = userObj;
     const agent = new BskyAgent({ service: `https://${service}/` });
 
     try {
         await agent.resumeSession({did:id, refreshJwt, accessJwt, handle:"", email:""});
     } catch (e) {
        try {
-           const key = await parseKey(basicKey);
-           const password = await decrypt(key, encryptedPassword);
            await agent.login({identifier, password});
        } catch (e) {
            if (e.status === 1 && e.error.startsWith("TypeError: NetworkError")) {
                console.log("no network");
            } else {
-               store.dispatch(logOut({did:userObj.id}));
-               alert(`Error: ${getUserName(userObj)} logged out`);
+              // store.dispatch(logOut({id:userObj.id}));
+               alert(`Error: ${id} logged out`);
            }
            return null;
        }
     }
 
-    updateAgent(agent, service, identifier, encryptedPassword);
+    updateAgent({agent, password, service, usernameOrEmail:identifier}).then(() => console.log("updated self"));
 
     return agent;
 }
 
-const updateAgent = async (agent, service, usernameOrEmail, encryptedPassword) => {
+const updateAgent = async ({agent, password, service, usernameOrEmail}) => {
     const {did, handle, refreshJwt, accessJwt} = agent.session;
     const now = new Date().getTime();
     try {
         const {data} = await agent.getProfile({actor:did});
         const {displayName, avatar} = data;
-        console.log("addOrUpdateAccount FromRESUME");
-        store.dispatch(addOrUpdateAccount({service, usernameOrEmail, encryptedPassword, id:did, displayName:displayName||handle, avatar, handle, refreshJwt, accessJwt, lastTs:now}));
+
+        let userData:BlueskyUserData;
+        userData = {type: AccountType.BLUESKY, id:did, displayName:displayName||handle, avatar, handle, lastTs:now};
+        store.dispatch(setUserData({users:[userData]}));
+
+        let accountData:BlueskyAccount;
+        accountData = {
+            accessJwt,
+            id:did,
+            password,
+            refreshJwt,
+            service,
+            state: {type:AccountStateType.ACTIVE},
+            usernameOrEmail,
+            type: AccountType.BLUESKY
+        }
+
+        store.dispatch(setAccount(accountData));
+
+        const key = store.getState().config.basicKey;
+        const encryptedAccount = await encrypt(key, JSON.stringify(accountData));
+        store.dispatch(setEncryptedAccount({encryptedAccount, id: did}));
     } catch (e) {
         if (e.status === 1 && e.error.startsWith("TypeError: NetworkError")) {
             console.log("no network");

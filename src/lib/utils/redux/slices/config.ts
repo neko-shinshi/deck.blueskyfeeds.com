@@ -4,7 +4,7 @@ import {ColorMode} from "@/lib/utils/types-constants/color-mode";
 import {RefreshTimingType} from "@/lib/utils/types-constants/refresh-timings";
 import {ThumbnailSize} from "@/lib/utils/types-constants/thumbnail-size";
 
-export interface ConfigState {
+export type ConfigState = {
     colorMode: ColorMode
     showScrollbars: boolean
     altTextPrompt: boolean
@@ -17,7 +17,7 @@ export interface ConfigState {
     showTags: boolean
     version: number
 }
-
+// Config data is stored and synced, but is separated to make it easy to retrieve and dump
 export const initialState:ConfigState = {
     // Globals
     colorMode: ColorMode.DARK,

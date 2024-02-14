@@ -1,34 +1,30 @@
 import HeadExtended from "@/lib/components/HeadExtended";
-import {useEffect, useState} from "react";
+import {useEffect} from "react";
 import {shallowEqual, useDispatch, useSelector} from "react-redux";
 import RefreshHandler from "@/lib/components/RefreshHandler";
 import SectionControls from "@/lib/components/SectionControls";
 import {arrayMove} from "@dnd-kit/sortable";
-import {setColumnOrder} from "@/lib/utils/redux/slices/profiles";
+import {setColumnOrder} from "@/lib/utils/redux/slices/storage";
 import SectionColumns from "@/lib/components/SectionColumns";
-import {updateFeeds, updateMemory} from "@/lib/utils/redux/slices/memory";
 import LoginSwitcher from "@/lib/components/LoginSwitcher";
 import {PopupState} from "@/lib/utils/types-constants/popup";
-
-
 import TimeAgo from "javascript-time-ago";
-
 import en from 'javascript-time-ago/locale/en.json'
-import {getMyFeeds} from "@/lib/utils/bsky/feeds";
+import {getFeedsForAccounts} from "@/lib/utils/bsky/feeds";
 import {setCurrentProfile, setPopupConfig} from "@/lib/utils/redux/slices/local";
 import {StoreState} from "@/lib/utils/redux/store";
 import SectionPopups from "@/lib/components/SectionPopups";
 
+
+
 export default function Main ({}) {
-    const accountsDict = useSelector((state:StoreState) => state.profiles.accountDict);
-    const profileOrder = useSelector((state:StoreState) => state.profiles.profileOrder);
-    const basicKey = useSelector((state:StoreState) => state.config.basicKey);
+    const profileOrder = useSelector((state:StoreState) => state.storage.profileOrder);
     const currentProfile = useSelector((state:StoreState) => state.local.currentProfile);
     const singleProfileLoggedIn = useSelector((state:StoreState) => {
         const currentProfile = state.local.currentProfile;
         return currentProfile &&
-            state.profiles.profileDict[currentProfile] &&
-            state.profiles.profileDict[currentProfile].accountIds.length > 0
+            state.storage.profiles[currentProfile] &&
+            state.storage.profiles[currentProfile].accountIds.length > 0
     });
 
     const columnIds = useSelector((state:StoreState) => {
@@ -36,7 +32,7 @@ export default function Main ({}) {
         if (!currentProfile) {
             return [];
         }
-        return state.profiles.profileDict[currentProfile].columnIds;
+        return state.storage.profiles[currentProfile].columnIds;
     }, shallowEqual);
 
     const dispatch = useDispatch();
@@ -44,21 +40,14 @@ export default function Main ({}) {
 
     useEffect(() => {
         TimeAgo.addDefaultLocale(en);
-        if (Object.keys(accountsDict).length > 0) {
-            getMyFeeds(Object.values(accountsDict).reduce((acc, x) => {
-                if (x.active && x.type === "b") {
-                    acc.push(x);
-                }
-                return acc;
-            }, []), basicKey).then(({feeds, authors}) => {
-                console.log("new Feeds", feeds);
-                dispatch(updateFeeds({feeds}));
 
-                let memoryCommand = {};
-                authors.forEach(author => memoryCommand[`userData.${author.id}`] = author);
-                dispatch(updateMemory(memoryCommand));
-            });
-        }
+        // Get feeds from accounts
+        getFeedsForAccounts();
+
+        //getInstancePublicTimeline("sakurajima.social", {});
+       // getFeaturedChannels("misskey.io").then(r => console.log("ok"));
+       //
+
 
         switch (profileOrder.length) {
             case 0: {
@@ -113,7 +102,6 @@ export default function Main ({}) {
                 </div>
             }
 
-
             {
                 currentProfile &&
                 <div className="w-full h-full flex pr-2 py-0.5">
@@ -121,7 +109,6 @@ export default function Main ({}) {
                     <SectionColumns handleColumnDragEnd={handleColumnDragEnd}/>
                 </div>
             }
-
         </div>
    </>
 }

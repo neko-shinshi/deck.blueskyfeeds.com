@@ -1,6 +1,6 @@
 import {makeCustomException} from "@/lib/utils/custom-exception";
 import {BskyAgent} from "@atproto/api";
-import {Account, BlueskyUserData, UserData} from "@/lib/utils/types-constants/user-data";
+import { AccountType, BlueskyUserData, UserData} from "@/lib/utils/types-constants/user-data";
 
 const USER_REFRESH_BUFFER = 20 * 1000;
 // Fetch authors not updated by the latest query
@@ -24,7 +24,7 @@ export const getTbdAuthors = async (agent:BskyAgent, authorsTbd:Set<string>, aut
             const {data:{profiles}} = await agent.getProfiles({actors:chunk});
             profiles.forEach(x => {
                 const {did, handle, avatar, displayName} = x;
-                authors.set(did, {avatar, handle, displayName:displayName||handle, id:did, lastTs, type:"b"});
+                authors.set(did, {avatar, handle, displayName:displayName||handle, id:did, lastTs, type:AccountType.BLUESKY});
             });
         } catch (e) {
             if (e.status === 429) {

@@ -12,7 +12,7 @@ import {
 } from "@/lib/utils/types-constants/column";
 import {getAgent} from "@/lib/utils/bsky/agent";
 import {processFeed} from "@/lib/utils/bsky/bsky-feed";
-import {BlueskyUserData} from "@/lib/utils/types-constants/user-data";
+import {AccountType, BlueskyUserData} from "@/lib/utils/types-constants/user-data";
 import {getTbdAuthors} from "@/lib/utils/bsky/users";
 
 export default function RefreshHandler({}) {
@@ -93,8 +93,8 @@ export default function RefreshHandler({}) {
         const fetchNewMessages = async () => {
             if (mainId === myId) {
                 const state = store.getState();
-                const profiles = state.profiles;
-                const accountDict = state.profiles.accountDict;
+                const profiles = state.storage;
+                const accountDict = state.memory.accountData;
                 const config = state.config;
                 const local = state.local;
                 const memory = state.memory;
@@ -142,7 +142,7 @@ export default function RefreshHandler({}) {
                             case ColumnType.HOME: {
                                 const observer = observers[0];
                                 const userObj = accountDict[observer];
-                                if (userObj && userObj.active && userObj.type === "b") {
+                                if (userObj && userObj.active && userObj.type === AccountType.BLUESKY) {
                                     addToList(observer);
                                 }
                                 break;

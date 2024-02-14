@@ -1,39 +1,67 @@
-export interface UserData {
-    // Store commonly referenced data, not full profile
-    type: "m"|"b"
+export enum AccountType {
+    MASTODON,
+    BLUESKY
+}
+
+export type UserData = BlueskyUserData | MastodonUserData
+
+export type MastodonUserData = {
+    type:AccountType.MASTODON
     id: string // same as full address in Mastodon, did in Bluesky
+    displayName: string // Name
+    avatar: string
+    lastTs: number
+}
+
+export type BlueskyUserData = {
+    type:AccountType.BLUESKY
+    id: string // did in Bluesky
     handle: string // Full Address
     displayName: string // Name
     avatar: string
     lastTs: number
 }
 
-export interface MastodonUserData extends UserData {
-    type:"m"
+export type EncryptedAccount = {
+    id: string
+    encryptedData: string
 }
 
-export interface BlueskyUserData extends UserData {
-    type:"b"
+export enum AccountStateType {
+    DISABLED=-2,
+    FAILED=-1,
+    PENDING=0,
+    ACTIVE=1,
 }
+export type AccountState =
+    {type:AccountStateType.FAILED, retries:number} |
+    {type:AccountStateType.PENDING} |
+    {type:AccountStateType.ACTIVE} |
+    {type:AccountStateType.DISABLED}
 
-export interface Account {
-    active: boolean
-}
+export type AccountData = BlueskyAccount | MastodonAccount
 
-
-export interface BlueskyAccount extends BlueskyUserData, Account {
+export type BlueskyAccount = {
+    type:AccountType.BLUESKY
+    id: string
     service: string // connected server
     usernameOrEmail: string
-    encryptedPassword: string
-    refreshJwt: string,
+    password: string
+    refreshJwt: string
     accessJwt: string
+    state: AccountState
 }
 
-export interface MastodonAccount extends MastodonUserData, Account {
-    token: string,
+export type MastodonAccount = {
+    type:AccountType.MASTODON
+    id: string
+    token: string
+    state: AccountState
 }
+
+export type AccountPair = {account:BlueskyAccount, user:BlueskyUserData} | {account:MastodonAccount, user:MastodonUserData}
 
 export const getUserName = (user:UserData) => {
     if (!user) {return ""}
-    return user.displayName || user.handle;
+    return user.displayName || (user.type === AccountType.BLUESKY && user.handle) || "";
 }

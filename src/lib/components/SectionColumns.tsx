@@ -7,14 +7,16 @@ import {useDropzone} from "react-dropzone";
 import {StoreState} from "@/lib/utils/redux/store";
 
 export default function SectionColumns ({handleColumnDragEnd}) {
-    const columnDict = useSelector((state:StoreState) => state.profiles.columnDict);
-    const accountDict = useSelector((state:StoreState) => state.profiles.accountDict);
-    const columnIds = useSelector((state:StoreState) => {
+    const columnIds:string[] = useSelector((state:StoreState) => {
         const currentProfile = state.local.currentProfile;
         if (!currentProfile) {
             return [];
         }
-        return state.profiles.profileDict[currentProfile].columnIds;
+        return state.storage.profiles[currentProfile].columnIds.filter(colId => {
+            const columnConfig = state.storage.columns[colId];
+            const columnMode = state.memory.columnMode[colId];
+            return columnConfig && columnMode;
+        });
     }, shallowEqual);
 
     // These two are used for handling drag animation
@@ -78,6 +80,19 @@ export default function SectionColumns ({handleColumnDragEnd}) {
         return () => document.removeEventListener('paste', pasteListener);
     }, []);
 
+    const DragOverlayHelper = ({}) => {
+        const columnConfig= useSelector((state:StoreState) => state.storage.columns[draggingId]);
+        const columnMode = useSelector((state:StoreState) => state.memory.columnMode[draggingId]);
+        return <DragOverlay>
+            {
+                draggingId && columnConfig && columnMode &&
+                <Column className="bg-theme_dark-L0 bg-opacity-50"
+                        columnId={draggingId}
+                />
+            }
+        </DragOverlay>
+    }
+
     return  <div className="relative h-full w-full">
         <div {...getRootProps({ className: 'dropzone absolute inset-0' })}>
             <input {...getInputProps()} />
@@ -92,22 +107,14 @@ export default function SectionColumns ({handleColumnDragEnd}) {
                             <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
                                 <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
                                     {
-                                        columnIds.reduce((acc, colId, i) => {
-                                            const column = columnDict[colId];
-                                            if (column) {
-                                                acc.push(<Column
-                                                    className={`${i+1 < columnIds.length? "snap-start" : "snap-end"} ${(!accountDict[column.observers[0]].active)? "bg-red-900": "bg-transparent"}`}
-                                                    key={colId} column={column}/>);
-                                            }
-                                            return acc;
-                                        }, [])
+                                        columnIds.map((colId, i) => {
+                                            return <Column key={colId}
+                                                           columnId={colId}
+                                                           className={`${i+1 < columnIds.length? "snap-start" : "snap-end"}`}/>
+                                        })
                                     }
                                 </SortableContext>
-                                <DragOverlay>
-                                    {
-                                        draggingId && <Column className="bg-theme_dark-L0 bg-opacity-50" column={columnDict[draggingId]}/>
-                                    }
-                                </DragOverlay>
+                                <DragOverlayHelper/>
                             </DndContext>
                         </div>
             }

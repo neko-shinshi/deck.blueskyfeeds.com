@@ -7,16 +7,22 @@ import {BsFillBellFill} from "react-icons/bs";
 import {FaPlus} from "react-icons/fa";
 import clsx from "clsx";
 import {useEffect} from "react";
-import {addColumn} from "@/lib/utils/redux/slices/profiles";
+import {addColumn} from "@/lib/utils/redux/slices/storage";
 import {useDispatch, useSelector} from "react-redux";
 import {randomUuid} from "@/lib/utils/random";
 import AvatarUser from "@/lib/components/ui/AvatarUser";
 import {getMyFeeds} from "@/lib/utils/bsky/feeds";
 import {Feed} from "@/lib/utils/types-constants/feed";
-import {initializeColumn, updateFeeds, updateMemory} from "@/lib/utils/redux/slices/memory";
+import {updateFeeds} from "@/lib/utils/redux/slices/memory";
 
 import useState from 'react-usestateref'
-import {BlueskyAccount, getUserName, MastodonAccount} from "@/lib/utils/types-constants/user-data";
+import {
+    AccountPair,
+    AccountType,
+    BlueskyAccount,
+    getUserName,
+    MastodonAccount
+} from "@/lib/utils/types-constants/user-data";
 import FeedSelect from "@/lib/components/popups/new_column/FeedSelect";
 import {StoreState} from "@/lib/utils/redux/store";
 
@@ -49,14 +55,14 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
     const memory = useSelector((state:StoreState) => state.memory);
     const config = useSelector((state:StoreState) => state.config);
     const currentProfile = useSelector((state:StoreState) => state.local.currentProfile);
-    const profileAccounts:(BlueskyAccount|MastodonAccount)[] = useSelector((state:StoreState) => {
+    const profileAccounts:AccountPair[] = useSelector((state:StoreState) => {
         const currentProfile = state.local.currentProfile;
-        if (!currentProfile || !state.profiles.profileDict[currentProfile]) {
+        if (!currentProfile || !state.storage.profiles[currentProfile]) {
             return [];
         }
-        const ids = state.profiles.profileDict[currentProfile].accountIds;
+        const ids = state.storage.profiles[currentProfile].accountIds;
         return ids.reduce((acc, id) => {
-            const account = state.profiles.accountDict[id];
+            const account = state.memory.accountData[id];
             if (account) {
                 acc.push(account);
             }
@@ -100,14 +106,11 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
                         setMode(newMode);
 
                         // Refresh feeds
-                        getMyFeeds(profileAccounts.filter(account => account.type === "b"),
+                        getMyFeeds(profileAccounts.filter(account => account.type === AccountType.BLUESKY),
                             config.basicKey).then(({feeds:newFeeds, authors}) => {
                             dispatch(updateFeeds({feeds:newFeeds}));
                             console.log("new Feeds", newFeeds);
-
-                            let memoryCommand = {};
-                            authors.forEach(author => memoryCommand[`userData.${author.id}`] = author);
-                            dispatch(updateMemory(memoryCommand));
+                            dispatch(updateUsers({users:authors}));
 
                             // If mode has not updated, update it with latest info
                             console.log(id, modeRef.current);
@@ -157,7 +160,6 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
                                             setOpen(false);
                                             const colId = randomUuid();
                                             dispatch(addColumn({profileId: currentProfile, name: `Home`, config: {id: colId, type: ColumnType.HOME, observer: account.id}, defaults: config}));
-                                            dispatch(initializeColumn({ids:[colId]}));
                                             break;
                                         }
                                     }

@@ -1,18 +1,16 @@
 import {useSelector, useDispatch} from "react-redux";
 import PostItem from "@/lib/components/column/PostItem"
-import {ColumnConfig, ColumnModeThread} from "@/lib/utils/types-constants/column";
-import {BiArrowBack, BiArrowToLeft} from "react-icons/bi";
-import {updateMemory} from "@/lib/utils/redux/slices/memory";
+import {ColumnModeThread} from "@/lib/utils/types-constants/column";
 import clsx from "clsx";
 import {useEffect} from "react";
 import AvatarUser from "@/lib/components/ui/AvatarUser";
 import {getUserName} from "@/lib/utils/types-constants/user-data";
 import {StoreState} from "@/lib/utils/redux/store";
+import ColumnBackButtons from "@/lib/components/column/ColumnBackButtons";
 
-export default function ColumnTypeThread({thread, column}: {thread:ColumnModeThread, column:ColumnConfig}) {
-    const memory = useSelector((state:StoreState) => state.memory);
-    const accountDict = useSelector((state:StoreState) => state.profiles.accountDict);
-    const dispatch = useDispatch();
+export default function ColumnTypeThread({thread, columnId}: {thread:ColumnModeThread, columnId:string}) {
+    const accountDict = useSelector((state:StoreState) => state.memory.accountData);
+    const parentMode = useSelector((state:StoreState) => state.memory.columnMode[columnId].parent);
 
     useEffect(() => {
         if (thread && thread.mainUri) {
@@ -23,29 +21,7 @@ export default function ColumnTypeThread({thread, column}: {thread:ColumnModeThr
 
     return <>
         <div className="h-[3rem] flex place-items-center gap-1 justify-start">
-            {
-                memory.columns[column.id].mode.parent &&
-                <div className="w-8 h-8 p-1 border border-theme_dark-I0 rounded-full bg-theme_dark-I1 hover:bg-theme_dark-I2 shrink-0 grid place-items-center"
-                     onClick={() => {
-                         let command:any = {};
-                         command[`columns.${column.id}.mode`] = null;
-                         console.log(JSON.stringify(command, null,2 ))
-                         dispatch(updateMemory(command));
-                     }}
-                >
-                    <BiArrowToLeft className="w-4 h-4 text-theme_dark-I0" />
-                </div>
-            }
-            <div className="w-8 h-8 p-1 border border-theme_dark-I0 rounded-full bg-theme_dark-I1 hover:bg-theme_dark-I2 shrink-0 grid place-items-center"
-                 onClick={() => {
-                     let command:any = {};
-                     command[`columns.${column.id}.mode`] = memory.columns[column.id].mode.parent;
-                     console.log(JSON.stringify(command, null,2 ))
-                     dispatch(updateMemory(command));
-                 }}
-            >
-                <BiArrowBack className="w-4 h-4 text-theme_dark-I0" />
-            </div>
+            <ColumnBackButtons parentMode={parentMode} columnId={columnId} />
             <div>Thread as</div>
             <div className="flex gap-1 grow-0 overflow-hidden place-items-center group">
                 <div className={clsx("w-4 h-4", "relative aspect-square rounded-full border border-theme_dark-I0")}>
@@ -71,7 +47,7 @@ export default function ColumnTypeThread({thread, column}: {thread:ColumnModeThr
                     }
 
                     acc.items.push(<div key={post.uri} id={post.uri} className={clsx(offset === -1 && "pr-4", offset === 1 && "pl-4")}>
-                        <PostItem post={post} column={column} highlight={offset === 0}/>
+                        <PostItem post={post} columnId={columnId} highlight={offset === 0}/>
                     </div>)
 
                     return acc;

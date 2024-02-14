@@ -4,7 +4,7 @@ import clsx from "clsx";
 import {exportJSON} from "@/lib/utils/redux/store";
 import {useState} from "react";
 import {initialState as configInitialState, resetConfig, setConfigValue} from "@/lib/utils/redux/slices/config";
-import {makeInitialState as makePageInitialState, resetProfiles} from "@/lib/utils/redux/slices/profiles";
+import {makeInitialState as makePageInitialState, resetProfiles} from "@/lib/utils/redux/slices/storage";
 import {resetMemory} from "@/lib/utils/redux/slices/memory";
 import PopupConfirmation from "@/lib/components/popups/PopupConfirmation";
 import {MdDeleteForever} from "react-icons/md";

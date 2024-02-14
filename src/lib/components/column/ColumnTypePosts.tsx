@@ -3,25 +3,66 @@ import {RxDragHandleDots2} from "react-icons/rx";
 import {BsFillGearFill} from "react-icons/bs";
 import {useSelector, useDispatch} from "react-redux";
 import PostItem from "@/lib/components/column/PostItem"
-import {updateMemory} from "@/lib/utils/redux/slices/memory";
 import AvatarUser from "@/lib/components/ui/AvatarUser";
 import {useEffect, useRef} from "react";
 import clsx from "clsx";
-import {ColumnType, getColumnName} from "@/lib/utils/types-constants/column";
-import {StoreState} from "@/lib/utils/redux/store";
-export default function ColumnTypePosts({attributes, listeners, column}) {
-    const memory = useSelector((state:StoreState) => state.memory);
-    const accountDict = useSelector((state:StoreState) => state.profiles.accountDict);
+import {ColumnFeed, ColumnType} from "@/lib/utils/types-constants/column";
+import {store, StoreState} from "@/lib/utils/redux/store";
+import {Post} from "@/lib/utils/types-constants/post";
+import {BlueskyAccount, MastodonAccount} from "@/lib/utils/types-constants/user-data";
+import {updateColumnMode, updatePosts} from "@/lib/utils/redux/slices/memory";
+export default function ColumnTypePosts({attributes, listeners, columnId}) {
+    const posts:Post[] = useSelector((state:StoreState) => {
+        const postConfig = state.memory.columnPosts[columnId];
+        const postDict = state.memory.posts;
+        return postConfig.uris.reduce((acc, postId) => {
+            const post = postDict[postId];
+            if (post) {
+                acc.push(post);
+            }
+            return acc;
+        }, []);
+    });
+    const columnName = useSelector((state:StoreState) => {
+        const config = state.storage.columns[columnId];
+        return config.name || (config.type === ColumnType.FEED && state.memory.feeds[(config as ColumnFeed).uri]?.displayName);
+    });
     const dispatch = useDispatch();
-
     const scrollRef = useRef(null);
 
+    const ObserversAvatars = () => {
+        const observerAccounts:(BlueskyAccount|MastodonAccount)[] = useSelector((state:StoreState) => {
+            return state.storage.columns[columnId].observers.reduce((acc, x) => {
+                const account = state.memory.accountData[x];
+                if (account) {
+                    acc.push(account);
+                }
+                return acc;
+            }, []);
+        });
+        return <div className="flex">
+            {
+                observerAccounts.map(observer =>
+                    <div className="flex gap-1 place-items-center" key={observer.id}>
+                        <div className="relative h-4 w-4">
+                            <div className="h-4 w-4 absolute border border-theme_dark-I0 rounded-full">
+                                <AvatarUser avatar={observer.avatar} alt="Avatar"/>
+                            </div>
+                        </div>
+
+                        <div className="text-2xs">{observer.handle}</div>
+                    </div>)
+            }
+        </div>
+    }
+
     const loadUpdates = () => {
-        const col = memory.columns[column.id];
-        if (col && col.postUris.pending.uris.length > 0) {
+        const state = store.getState();
+        const col = state.memory.columnPostsNext[columnId];
+        if (col && col.uris.length > 0) {
             let command = {};
-            command[`columns.${column.id}.postUris.current`] = col.postUris.pending;
-            dispatch(updateMemory(command));
+            command[`columnPosts.${columnId}`] = col;
+            dispatch(updatePosts(command));
         }
         if (scrollRef.current) {
             scrollRef.current.scrollTo({top:0, behavior:"smooth"});
@@ -35,44 +76,21 @@ export default function ColumnTypePosts({attributes, listeners, column}) {
                 <div className="w-6 h-6 border border-black rounded-full shrink-0 relative peer"
                      onClick={loadUpdates}>
                     <div className="h-6 w-6 absolute inset-0 bg-theme_dark-L0 rounded-full border border-theme_dark-I0">
-                        <ColumnIcon config={column}/>
+                        <ColumnIcon columnId={columnId}/>
                     </div>
                 </div>
                 <div>
                     <div className="line-clamp-2 text-theme_dark-I0 peer-hover:underline hover:underline"
                          onClick={loadUpdates}
                     >
-                        {getColumnName(column, memory)}
+                        {columnName}
                     </div>
-                    <div className="flex">
-                    {
-                        (column.observers as string[]).reduce((acc, uid) => {
-                            const account = accountDict[uid];
-                            if (account) {
-                                acc.push(<div className="flex gap-1 place-items-center" key={uid}>
-                                    <div className="relative h-4 w-4">
-                                        <div className="h-4 w-4 absolute border border-theme_dark-I0 rounded-full">
-                                            <AvatarUser avatar={account.avatar} alt="Avatar"/>
-                                        </div>
-                                    </div>
-
-                                    <div className="text-2xs">{account.handle}</div>
-                                </div>);
-                            }
-                            return acc;
-                        }, [])
-                    }
-                    </div>
+                    <ObserversAvatars />
                 </div>
-
             </div>
 
             <div className="w-8 h-8 p-1 border border-theme_dark-I0 rounded-full mr-2 bg-theme_dark-I1 hover:bg-theme_dark-I2 shrink-0 grid place-items-center"
-                 onClick={() => {
-                     let command:any = {};
-                     command[`columns.${column.id}.mode`] = {mode:"settings"};
-                     dispatch(updateMemory(command));
-                 }}
+                 onClick={() => dispatch(updateColumnMode({colId: columnId, mode: {mode:"settings"}}))}
             >
 
                 <BsFillGearFill className="w-4 h-4 text-theme_dark-I0"/>
@@ -95,13 +113,7 @@ export default function ColumnTypePosts({attributes, listeners, column}) {
                      }
                  }}>
                 {
-                    memory.columns[column.id] && memory.columns[column.id].postUris.current.uris.reduce((acc, uri) => {
-                        const post = memory.posts[uri];
-                        if (post) {
-                            acc.push(<PostItem key={uri} post={post} column={column} highlight={false}/>)
-                        }
-                        return acc;
-                    }, [])
+                    posts.map(post => <PostItem key={post.uri} post={post} columnId={columnId} highlight={false}/>)
                 }
             </div>
             <div className="absolute top-1 left-1/2 -translate-x-1/2 bg-theme_dark-I1 text-sm px-2 py-1 rounded-lg"

@@ -6,7 +6,7 @@ import {initialState as configInitialState, resetConfig, setConfigValue} from "@
 import {
     logOut,
     removeAccount,
-} from "@/lib/utils/redux/slices/profiles";
+} from "@/lib/utils/redux/slices/storage";
 import {FaPlus} from "react-icons/fa";
 import {useEffect, useState} from "react";
 import clsx from "clsx";
@@ -21,7 +21,7 @@ import {
     makeInitialState as makePageInitialState,
     resetProfiles,
     setAccountOrder
-} from "@/lib/utils/redux/slices/profiles";
+} from "@/lib/utils/redux/slices/storage";
 import {resetMemory} from "@/lib/utils/redux/slices/memory";
 import {BlueskyAccount, getUserName} from "@/lib/utils/types-constants/user-data";
 import AvatarUser from "@/lib/components/ui/AvatarUser";
@@ -41,13 +41,13 @@ interface UserPopupConfig {
 }
 
 export default function PopupUserList({isOpen, setOpen}:{isOpen:boolean,setOpen:any}) {
-    const profiles = useSelector((state:StoreState) => state.profiles);
+    const accountDict = useSelector((state:StoreState) => state.memory.accountData);
     const popupConfig = useSelector((state:StoreState) => state.local.popupConfig);
     const currentProfile = useSelector((state:StoreState) => state.local.currentProfile);
     const currentAccountOrder = useSelector((state:StoreState) => {
        const currentProfile = state.local.currentProfile;
        if (!currentProfile) {return [];}
-       return state.profiles.profileDict[currentProfile].accountIds;
+       return state.storage.profiles[currentProfile].accountIds;
     }, shallowEqual);
 
     const dispatch = useDispatch();
@@ -211,7 +211,7 @@ export default function PopupUserList({isOpen, setOpen}:{isOpen:boolean,setOpen:
             <SortableContext items={userIds} strategy={verticalListSortingStrategy}>
                 {
                     userIds.reduce((acc, did) => {
-                        const user = profiles.accountDict[did];
+                        const user = accountDict[did];
                         if (user) {
                             acc.push(<UserItem key={did} user={user} did={did}/>)
                         }

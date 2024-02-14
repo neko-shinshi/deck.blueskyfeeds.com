@@ -8,14 +8,14 @@ import {useDispatch, useSelector} from "react-redux";
 import {setConfigValue} from "@/lib/utils/redux/slices/config";
 import {useForm} from "react-hook-form";
 import {encrypt, makeKey, parseKey} from "@/lib/utils/crypto";
-import {addColumn, addOrUpdateAccount} from "@/lib/utils/redux/slices/profiles";
-import {initializeColumn, updateFeeds, updateMemory} from "@/lib/utils/redux/slices/memory";
-import {BlueskyAccount} from "@/lib/utils/types-constants/user-data";
+import {addColumn, setEncryptedAccount, setUserData} from "@/lib/utils/redux/slices/storage";
+import {setAccount, updateFeeds} from "@/lib/utils/redux/slices/memory";
+import {AccountStateType, AccountType, BlueskyAccount, BlueskyUserData} from "@/lib/utils/types-constants/user-data";
 import {randomUuid} from "@/lib/utils/random";
 import {ColumnType, InColumn} from "@/lib/utils/types-constants/column";
 import {getMyFeeds} from "@/lib/utils/bsky/feeds";
 import {setCurrentProfile} from "@/lib/utils/redux/slices/local";
-import {StoreState} from "@/lib/utils/redux/store";
+import {store, StoreState} from "@/lib/utils/redux/store";
 
 export default function FormSignInBluesky (
     {
@@ -26,7 +26,7 @@ export default function FormSignInBluesky (
         completeCallback?:() => void
     }) {
     const config = useSelector((state:StoreState) => state.config);
-    const profiles = useSelector((state:StoreState) => state.profiles);
+    const profiles = useSelector((state:StoreState) => state.storage);
     const currentProfile = useSelector((state:StoreState) => state.local.currentProfile);
 
     const [warning, setWarning] = useState(false);
@@ -89,7 +89,17 @@ export default function FormSignInBluesky (
                 }
 
                 const key = await parseKey(keyString);
-                const encryptedPassword = await encrypt(key, password);
+
+                let account:BlueskyAccount;
+                account = {service, usernameOrEmail, password, id:did, refreshJwt, accessJwt,
+                    type:AccountType.BLUESKY, state: {type:AccountStateType.ACTIVE}};
+                const encryptedAccount = await encrypt(key, JSON.stringify(account));
+
+                let userData:BlueskyUserData;
+                userData = {type: AccountType.BLUESKY, id:did, displayName:displayName||handle, avatar, handle, lastTs:now};
+                dispatch(setUserData({users:[userData]}));
+                dispatch(setAccount(account));
+                dispatch(setEncryptedAccount({encryptedAccount, id: did}));
 
                 if (!currentProfile) {
                     // First user logged in, pre-fill columns
@@ -101,20 +111,15 @@ export default function FormSignInBluesky (
 
                     dispatch(addColumn({profileId, config: configNotif, defaults: config}));
                     dispatch(addColumn({profileId, config: configHome, defaults: config}));
-                    dispatch(initializeColumn({ids:[notifId, homeId]}));
                     dispatch(setCurrentProfile({profileId}));
 
-                    getMyFeeds([{service, usernameOrEmail, encryptedPassword, refreshJwt, accessJwt, id:did}], keyString).then(({feeds, authors}) => {
+                    getMyFeeds([{service, usernameOrEmail, password, refreshJwt, accessJwt, id:did}], keyString).then(({feeds, authors}) => {
                         dispatch(updateFeeds({feeds}));
-                        let memoryCommand = {};
-                        authors.forEach(author => memoryCommand[`userData.${author.id}`] = author);
-                        dispatch(updateMemory(memoryCommand));
+                        dispatch(setUserData({users:authors}))
                     });
                 }
 
-                console.log("addOrUpdateAccount INITIAL")
 
-                dispatch(addOrUpdateAccount({service, usernameOrEmail, encryptedPassword, id:did, displayName, avatar, handle, refreshJwt, accessJwt, lastTs:now}));
                 if (completeCallback) {
                     completeCallback();
                 }
@@ -176,7 +181,7 @@ export default function FormSignInBluesky (
 
             <div>
                 <label htmlFor="password" className="flex justify-items-start place-items-center gap-2 text-sm font-medium text-theme_dark-T1">
-                    App Password  <Link href="/faq-app-password" className="flex place-items-center group" target="_blank" rel="noreferrer">
+                    App Password  <Link href="https://blueskyfeeds.com/en/faq-app-password" className="flex place-items-center group" target="_blank" rel="noreferrer">
                     <BsInfoCircle className="mr-1 w-4 h-4 text-blue-500 group-hover:text-blue-800"/>
                     <div className=" text-blue-500 group-hover:underline group-hover:text-blue-800">What is this?</div>
                 </Link>

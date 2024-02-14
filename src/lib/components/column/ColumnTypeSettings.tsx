@@ -1,17 +1,15 @@
-import {updateMemory} from "@/lib/utils/redux/slices/memory";
-import {BiArrowBack} from "react-icons/bi";
+import {BiArrowBack, BiArrowToLeft} from "react-icons/bi";
 import {
-    ColumnConfig,
+    ColumnConfig, ColumnFeed,
     ColumnType,
     FetchedColumn,
-    getColumnName,
     MAX_WIDTH,
     MIN_WIDTH
 } from "@/lib/utils/types-constants/column";
 import {useDispatch, useSelector} from "react-redux";
 import {HiChevronLeft, HiChevronRight} from "react-icons/hi";
 import {MdDeleteForever} from "react-icons/md";
-import {removeColumn, setColumnOrder, updateColumn} from "@/lib/utils/redux/slices/profiles";
+import {removeColumn, setColumnOrder, updateColumn} from "@/lib/utils/redux/slices/storage";
 import {arrayMove} from "@dnd-kit/sortable";
 import {useRef, useState} from "react";
 import {FaMinus, FaPlus} from "react-icons/fa";
@@ -20,14 +18,32 @@ import {RiCheckboxBlankCircleLine, RiCheckboxCircleFill} from "react-icons/ri";
 import {RefreshTimingType} from "@/lib/utils/types-constants/refresh-timings";
 import clsx from "clsx";
 import AvatarUser from "@/lib/components/ui/AvatarUser";
-import {getUserName} from "@/lib/utils/types-constants/user-data";
+import {AccountType, BlueskyAccount, getUserName, MastodonAccount} from "@/lib/utils/types-constants/user-data";
 import {StoreState} from "@/lib/utils/redux/store";
+import {updateColumnMode} from "@/lib/utils/redux/slices/memory";
+import ColumnBackButtons from "@/lib/components/column/ColumnBackButtons";
 
-export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
-    const memory = useSelector((state:StoreState) => state.memory);
-    const accountDict = useSelector((state:StoreState) => state.profiles.accountDict);
-    const profiles = useSelector((state:StoreState) => state.profiles);
+export default function ColumnTypeSettings ({columnId}:{columnId:string}) {
+    const column = useSelector((state:StoreState) => state.storage.columns[columnId]);
     const currentProfile =  useSelector((state:StoreState) => state.local.currentProfile);
+    const observerAccounts:(BlueskyAccount|MastodonAccount)[] = useSelector((state:StoreState) => {
+        return state.storage.columns[columnId].observers.reduce((acc, x) => {
+            const account = state.memory.accountData[x];
+            if (account && account.type === AccountType.BLUESKY) {
+                acc.push(account);
+            }
+            return acc;
+        }, []);
+    });
+    const columnIds = useSelector((state:StoreState) =>
+        state.storage.profiles[currentProfile].columnIds.filter(colId => state.storage.columns[colId]))
+
+    const parentMode = useSelector((state:StoreState) => state.memory.columnMode[columnId].parent);
+    const columnName = useSelector((state:StoreState) => {
+        const config = state.storage.columns[columnId];
+        return config.name || (config.type === ColumnType.FEED && state.memory.feeds[(config as ColumnFeed).uri]?.displayName);
+    });
+
 
     const dispatch = useDispatch();
     const [sliderVal, setSliderVal] = useState(column.width);
@@ -35,8 +51,7 @@ export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
     const nameRef = useRef(null);
 
     const changeOrder = (diff) => {
-        let columnIds = profiles.profileDict[currentProfile].columnIds.filter(colId => profiles.columnDict[colId]);
-        const oldIndex = columnIds.indexOf(column.id);
+        const oldIndex = columnIds.indexOf(columnId);
         if (oldIndex < 0) {console.log("can't find column"); return;}
         let newIndex = oldIndex + diff;
         if (newIndex < 0) {console.log("far left"); return;}
@@ -52,18 +67,9 @@ export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
     }
 
     return <>
-        <div className="h-[3rem] flex place-items-center gap-2 justify-start">
-            <div className="w-8 h-8 p-1 border border-theme_dark-I0 rounded-full mr-2 bg-theme_dark-I1 hover:bg-theme_dark-I2 shrink-0 grid place-items-center"
-                 onClick={() => {
-                     let command:any = {};
-                     command[`columns.${column.id}.mode`] = memory.columns[column.id].mode.parent;
-                     console.log(JSON.stringify(command, null,2 ))
-                     dispatch(updateMemory(command));
-                 }}
-            >
-                <BiArrowBack className="w-4 h-4 text-theme_dark-I0" />
-            </div>
-            Settings - {getColumnName(column, memory)}
+        <div className="h-[3rem] flex place-items-center gap-1 justify-start">
+            <ColumnBackButtons parentMode={parentMode} columnId={columnId} />
+            <div>Settings - {columnName}</div>
         </div>
 
         <div className="space-y-2 p-2 bg-theme_dark-L1 rounded-md">
@@ -71,40 +77,28 @@ export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
                 <div className="flex gap-2 place-items-center">
                     <div className="font-bold">Move Column</div>
                     {
-                        (() => {
-                            let columnIds = profiles.profileDict[currentProfile].columnIds.filter(colId => profiles.columnDict[colId]);
-                            const oldIndex = columnIds.indexOf(column.id);
-                            if (oldIndex < 0) {
-                                return <div/>
-                            }
+                        columnIds.indexOf(columnId) > 0 &&
+                        <div className={clsx("border border-theme_dark-I0 rounded-full text-theme_dark-I0",
+                            "hover:bg-theme_dark-I2 bg-theme_dark-I1")}
+                             onClick={() => changeOrder(-1)}
+                        >
+                            <HiChevronLeft className="w-6 h-6"/>
+                        </div>
 
-                            return <>
-                                {
-                                    oldIndex > 0 &&
-                                    <div className={clsx("border border-theme_dark-I0 rounded-full text-theme_dark-I0",
-                                        "hover:bg-theme_dark-I2 bg-theme_dark-I1")}
-                                         onClick={() => changeOrder(-1)}
-                                    >
-                                        <HiChevronLeft className="w-6 h-6"/>
-                                    </div>
-
-                                }
-                                {
-                                    oldIndex < columnIds.length - 1 &&
-                                    <div className={clsx("border border-theme_dark-I0 rounded-full text-theme_dark-I0",
-                                        "hover:bg-theme_dark-I2 bg-theme_dark-I1")}
-                                         onClick={() => changeOrder(1)}
-                                    >
-                                        <HiChevronRight className="w-6 h-6"/>
-                                    </div>
-                                }
-                            </>
-                        })()
+                    }
+                    {
+                        columnIds.indexOf(columnId) < columnIds.length - 1 &&
+                        <div className={clsx("border border-theme_dark-I0 rounded-full text-theme_dark-I0",
+                            "hover:bg-theme_dark-I2 bg-theme_dark-I1")}
+                             onClick={() => changeOrder(1)}
+                        >
+                            <HiChevronRight className="w-6 h-6"/>
+                        </div>
                     }
                 </div>
                 <div className="flex place-items-center text-red-500 hover:text-red-600 hover:bg-theme_dark-I2 rounded-md p-1 select-none"
                      onClick={() => {
-                         dispatch(removeColumn({columnId: column.id}));
+                         dispatch(removeColumn({columnId}));
                      }}
                 >
                     <MdDeleteForever className="w-6 h-6"/>
@@ -125,7 +119,7 @@ export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
                                     const name = nameRef.current.value;
                                     if (name.trim()) {
                                         console.log(name);
-                                        dispatch(updateColumn({columnId: column.id, key:"name", val:name}));
+                                        dispatch(updateColumn({columnId, key:"name", val:name}));
                                     }
                                 }}>Update</button>
                     </div>
@@ -138,21 +132,15 @@ export default function ColumnTypeSettings ({column}:{column:ColumnConfig}) {
                 <div className={clsx(column.observers.length === 1 && "flex place-items-center gap-2")}>
                     <div className="font-bold">Column Account{column.type === ColumnType.NOTIFS && "s"}</div>
                     {
-                        column.observers.reduce((acc, viewer) => {
-                            const account = accountDict[viewer];
-                            if (account) {
-                                acc.push(<div key={viewer} className="flex gap-1 grow-0 overflow-hidden place-items-center group">
-                                    <div
-                                        className={clsx("w-4 h-4", "relative aspect-square rounded-full border border-theme_dark-I0")}>
-                                        <AvatarUser avatar={account.avatar}
-                                                    alt={getUserName(account)}/>
-                                    </div>
-                                    <div
-                                        className="overflow-hidden text-theme_dark-T1 text-xs group-hover:underline">{account.handle}</div>
-                                </div>)
-                            }
-                            return acc;
-                        }, [])
+                        observerAccounts.map(account =>
+                            <div key={account.id} className="flex gap-1 grow-0 overflow-hidden place-items-center group">
+                                <div className={clsx("w-4 h-4", "relative aspect-square rounded-full border border-theme_dark-I0")}>
+                                    <AvatarUser avatar={account.avatar}
+                                                alt={getUserName(account)}/>
+                                </div>
+                                <div
+                                    className="overflow-hidden text-theme_dark-T1 text-xs group-hover:underline">{account.handle}</div>
+                            </div>)
                     }
                 </div>
 

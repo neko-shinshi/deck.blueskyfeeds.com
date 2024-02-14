@@ -320,8 +320,10 @@ const remText = {
     '49.9': 'w-[49.9rem]'
 };
 
-export default function Column({column, className=""}) {
-    const columns = useSelector((state:StoreState) => state.memory.columns);
+export default function Column({columnId, className=""} : {columnId:string, className:string}) {
+    const columnWidth = useSelector((state:StoreState) => state.storage.columns[columnId].width);
+    const columnMode = useSelector((state:StoreState) => state.memory.columnMode[columnId]);
+    const observerActive = useSelector((state:StoreState) => state.memory.accountData[state.storage.columns[columnId].observers[0]].active);
 
     const {
         attributes,
@@ -329,37 +331,33 @@ export default function Column({column, className=""}) {
         setNodeRef,
         transform,
         transition,
-    } = useSortable({id: column.id});
+    } = useSortable({id: columnId});
 
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
     };
 
-
-
-
     return <div ref={setNodeRef} style={style}
-                className={clsx(className, "shrink-0 h-full overflow-hidden", remText[`${column.width}`])}>
-        {
-            columns[column.id] && <>
-                {
-                    !columns[column.id].mode &&
-                    <ColumnTypePosts attributes={attributes} listeners={listeners} column={column}/>
-                }
-                {
-                    columns[column.id].mode?.mode === "thread" &&
-                    <ColumnTypeThread thread={columns[column.id].mode as ColumnModeThread} column={column}/>
-                }
-                {
-                    columns[column.id].mode?.mode === "settings" &&
-                    <ColumnTypeSettings column={column}/>
-                }
-                {
-                    columns[column.id].mode?.mode === "loading" &&
-                    <ColumnTypeLoading column={column}/>
-                }
-            </>
-        }
+                className={clsx(className,
+                    `${(observerActive? "bg-transparent" : "bg-red-900")}`,
+                    "shrink-0 h-full overflow-hidden",
+                    remText[`${columnWidth}`])}>
+            {
+                !columnMode.mode &&
+                <ColumnTypePosts attributes={attributes} listeners={listeners} columnId={columnId}/>
+            }
+            {
+                columnMode.mode === "thread" &&
+                <ColumnTypeThread thread={columnMode as ColumnModeThread} columnId={columnId}/>
+            }
+            {
+                columnMode.mode === "settings" &&
+                <ColumnTypeSettings columnId={columnId}/>
+            }
+            {
+                columnMode.mode === "loading" &&
+                <ColumnTypeLoading columnId={columnId}/>
+            }
     </div>
 }

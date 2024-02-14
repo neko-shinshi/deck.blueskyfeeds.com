@@ -9,11 +9,10 @@ import {
     PostFacetTag,
     TextPart
 } from "@/lib/utils/types-constants/post";
-import {updateMemory} from "@/lib/utils/redux/slices/memory";
 import {getAgent} from "@/lib/utils/bsky/agent";
 import {store} from "@/lib/utils/redux/store";
 import {randomUuid} from "@/lib/utils/random";
-import {stripFeedUri, stripPostUri} from "@/lib/utils/at_uri";
+import {getDidAndHash, stripFeedUri, stripPostUri} from "@/lib/utils/at_uri";
 import {getTbdAuthors} from "@/lib/utils/bsky/users";
 
 // Use the public search API to 'create' a feed
@@ -186,7 +185,7 @@ const processPost = async (post, now, authors, authorsTbd) => {
         }
     }
 
-    const {uri:_uri, cid, author, record, embed, replyCount, repostCount, likeCount, labels, indexedAt:_indexedAt} = post;
+    const {uri:_uri, cid, author, record, embed, replyCount, repostCount, likeCount, labels, indexedAt:_indexedAt, viewer} = post;
     const indexedAt = new Date(_indexedAt).getTime();
     const authorDid = processAuthorGetDid(author, now, authors);
     const {text, langs, tags, facets} = record;
@@ -198,8 +197,18 @@ const processPost = async (post, now, authors, authorsTbd) => {
         labels: labels? labels.map(x => x.val) : [],
         tags: tags?? [], langs: langs ?? [],
         indexedAt,
-        lastTs: now, replyCount, repostCount, likeCount
+        lastTs: now, replyCount, repostCount, likeCount, myLikes:[], myReposts:[]
     };
+
+    if (viewer) {
+        const {like, repost} = viewer;
+        if (like) {
+            postObj.myLikes.push(getDidAndHash(like));
+        }
+        if (repost) {
+            postObj.myReposts.push(getDidAndHash(like));
+        }
+    }
 
     if (embed) {
         postObj.embed = await processEmbed(embed);
@@ -286,8 +295,8 @@ export const processThread = async (authorsTbd, authors, thread) => {
 
 export const getPostThread = async (did, columnId, uri) => {
     let state = store.getState();
-    const parent = state.memory.columns[columnId].mode;
-    const userObj = state.profiles.accountDict[did];
+    const parent = state.memory.columnMode[columnId];
+    const userObj = state.memory.accountData[did];
     if (!userObj) {return false;}
     const userData = state.memory.userData;
 
@@ -310,6 +319,7 @@ export const getPostThread = async (did, columnId, uri) => {
 
     let authors = new Map<string, BlueskyUserData>();
     let authorsTbd = new Set<string>();
+
     let posts, mainUri;
     try {
         const {data: {thread}} = await agent.getPostThread({uri: `at://${uri.replace("/post/", "/app.bsky.feed.post/")}`});
