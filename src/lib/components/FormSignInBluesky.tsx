@@ -26,7 +26,7 @@ export default function FormSignInBluesky (
         completeCallback?:() => void
     }) {
     const config = useSelector((state:StoreState) => state.config);
-    const profiles = useSelector((state:StoreState) => state.storage);
+    const storage = useSelector((state:StoreState) => state.storage);
     const currentProfile = useSelector((state:StoreState) => state.local.currentProfile);
 
     const [warning, setWarning] = useState(false);
@@ -73,15 +73,16 @@ export default function FormSignInBluesky (
             usernameOrEmail = usernameOrEmail.indexOf(".") < 0? `${usernameOrEmail}.${service}` : usernameOrEmail;
 
 
+            console.log(usernameOrEmail, password);
             const agent = await getAgentLogin(service, usernameOrEmail, password);
             if (!agent) {
+                console.log('no agent');
                 setError("fail", {type: "unknown", message:`Unknown Error, try again later or contact @blueskyfeeds.com`});
             } else {
                 console.log("OK!");
                 const {did, handle, refreshJwt, accessJwt} = agent.session;
                 const now = new Date().getTime();
-                const {data} = await agent.getProfile({actor:did});
-                const {displayName, avatar} = data;
+                const {data:{displayName, avatar}} = await agent.getProfile({actor:did});
                 let keyString = config.basicKey;
                 if (!keyString) {
                     keyString = await makeKey();
@@ -92,7 +93,7 @@ export default function FormSignInBluesky (
 
                 let account:BlueskyAccount;
                 account = {service, usernameOrEmail, password, id:did, refreshJwt, accessJwt,
-                    type:AccountType.BLUESKY, state: {type:AccountStateType.ACTIVE}};
+                    type:AccountType.BLUESKY, state: {type:AccountStateType.ACTIVE}, lastTs: now};
                 const encryptedAccount = await encrypt(key, JSON.stringify(account));
 
                 let userData:BlueskyUserData;
@@ -103,7 +104,7 @@ export default function FormSignInBluesky (
 
                 if (!currentProfile) {
                     // First user logged in, pre-fill columns
-                    const profileId = profiles.profileOrder[0];
+                    const profileId = storage.profileOrder[0];
                     const notifId = randomUuid();
                     const homeId = randomUuid();
                     const configNotif:InColumn = {id:notifId, type:ColumnType.NOTIFS, observers: [did], name:"Notifications"};
@@ -113,7 +114,7 @@ export default function FormSignInBluesky (
                     dispatch(addColumn({profileId, config: configHome, defaults: config}));
                     dispatch(setCurrentProfile({profileId}));
 
-                    getMyFeeds([{service, usernameOrEmail, password, refreshJwt, accessJwt, id:did}], keyString).then(({feeds, authors}) => {
+                    getMyFeeds([account]).then(({feeds, authors}) => {
                         dispatch(updateFeeds({feeds}));
                         dispatch(setUserData({users:authors}))
                     });
@@ -127,6 +128,7 @@ export default function FormSignInBluesky (
 
             setSubmitting(false);
         })(e).catch(err => {
+            console.log("err!!", err);
             setSubmitting(false);
             switch (err.status) {
                 case 401: {
@@ -138,6 +140,7 @@ export default function FormSignInBluesky (
                     break;
                 }
                 default: {
+                    console.log(err);
                     setError("fail", {type: err.status, message:`Unknown Caught Error ${err.status}, try again later or contact @blueskyfeeds.com`});
                     break;
                 }

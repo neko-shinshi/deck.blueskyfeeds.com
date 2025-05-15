@@ -7,8 +7,8 @@ import {BsFillBellFill} from "react-icons/bs";
 import {FaPlus} from "react-icons/fa";
 import clsx from "clsx";
 import {useEffect} from "react";
-import {addColumn} from "@/lib/utils/redux/slices/storage";
-import {useDispatch, useSelector} from "react-redux";
+import {addColumn, setUserData} from "@/lib/utils/redux/slices/storage";
+import {shallowEqual, useDispatch, useSelector} from "react-redux";
 import {randomUuid} from "@/lib/utils/random";
 import AvatarUser from "@/lib/components/ui/AvatarUser";
 import {getMyFeeds} from "@/lib/utils/bsky/feeds";
@@ -16,15 +16,9 @@ import {Feed} from "@/lib/utils/types-constants/feed";
 import {updateFeeds} from "@/lib/utils/redux/slices/memory";
 
 import useState from 'react-usestateref'
-import {
-    AccountPair,
-    AccountType,
-    BlueskyAccount,
-    getUserName,
-    MastodonAccount
-} from "@/lib/utils/types-constants/user-data";
+import {AccountType, getUserName, UserData} from "@/lib/utils/types-constants/user-data";
 import FeedSelect from "@/lib/components/popups/new_column/FeedSelect";
-import {StoreState} from "@/lib/utils/redux/store";
+import {store, StoreState} from "@/lib/utils/redux/store";
 
 const columnData = [
     {type: ColumnType.HOME, icon: <BiSolidHome className="h-6 w-6"/>, description: "The Default Following Feed of an account"},
@@ -52,23 +46,15 @@ export type ColumnTypeModeData = ColumnTypeFeedData | {mode: ColumnMode.ROOT} | 
 
 
 export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,setOpen:any}) {
-    const memory = useSelector((state:StoreState) => state.memory);
-    const config = useSelector((state:StoreState) => state.config);
-    const currentProfile = useSelector((state:StoreState) => state.local.currentProfile);
-    const profileAccounts:AccountPair[] = useSelector((state:StoreState) => {
+
+    const profileUsers:UserData[] = useSelector((state:StoreState) => {
         const currentProfile = state.local.currentProfile;
         if (!currentProfile || !state.storage.profiles[currentProfile]) {
             return [];
         }
         const ids = state.storage.profiles[currentProfile].accountIds;
-        return ids.reduce((acc, id) => {
-            const account = state.memory.accountData[id];
-            if (account) {
-                acc.push(account);
-            }
-            return acc;
-        }, []);
-    })
+        return ids.map(id => state.storage.userData[id]).filter(x => x);
+    }, shallowEqual);
 
     const dispatch = useDispatch();
 
@@ -93,6 +79,9 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
                 }
                 switch(x.type) {
                     case ColumnType.FEED: {
+                        const {memory, local, storage} = store.getState();
+                        const currentProfile = local.currentProfile;
+
                         const feeds:Feed[] = Object.values(memory.feeds);
                         feeds.sort((x,y) => {
                             if (x.displayName === y.displayName) {
@@ -105,12 +94,21 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
                         const newMode = {mode:ColumnMode.FEED, feeds, id, busy} as ColumnTypeFeedData;
                         setMode(newMode);
 
+
+                        const accounts = storage.profiles[currentProfile].accountIds.reduce((acc,x) => {
+                            const account = memory.accountData[x];
+                            if (account.type === AccountType.BLUESKY) {
+                                acc.push(account);
+                            }
+                            return acc;
+                        }, []);
+
                         // Refresh feeds
-                        getMyFeeds(profileAccounts.filter(account => account.type === AccountType.BLUESKY),
-                            config.basicKey).then(({feeds:newFeeds, authors}) => {
+                        getMyFeeds(accounts)
+                            .then(({feeds:newFeeds, authors}) => {
                             dispatch(updateFeeds({feeds:newFeeds}));
                             console.log("new Feeds", newFeeds);
-                            dispatch(updateUsers({users:authors}));
+                            dispatch(setUserData({users:authors}));
 
                             // If mode has not updated, update it with latest info
                             console.log(id, modeRef.current);
@@ -150,30 +148,35 @@ export default function PopupColumnPickType({isOpen, setOpen}:{isOpen:boolean,se
             {
                 (expanded === ColumnType.HOME) && <>
                     {
-                        profileAccounts.map(account =>
+                        profileUsers.map(user =>
                             <div
-                                key={account.id}
+                                key={user.id}
                                 className="bg-theme_dark-L0 hover:bg-gray-700 flex place-items-center gap-2 ml-4 p-0.5"
                                 onClick={async () => {
                                     switch (expanded) {
                                         case ColumnType.HOME: {
                                             setOpen(false);
                                             const colId = randomUuid();
-                                            dispatch(addColumn({profileId: currentProfile, name: `Home`, config: {id: colId, type: ColumnType.HOME, observer: account.id}, defaults: config}));
+                                            const {config, local} = store.getState();
+                                            dispatch(addColumn({profileId: local.currentProfile, name: `Home`, config: {id: colId, type: ColumnType.HOME, observer: user.id}, defaults: config}));
                                             break;
                                         }
                                     }
                                 }}
                             >
                                 <div className="w-6 h-6 relative aspect-square">
-                                    <AvatarUser avatar={account.avatar} alt={getUserName(account)}/>
+                                    <AvatarUser avatar={user.avatar} alt={getUserName(user)}/>
                                 </div>
                                 <div>
                                     {
-                                        account.displayName &&
-                                        <div className="text-sm text-theme_dark-T0">{account.displayName}</div>
+                                        user.displayName &&
+                                        <div className="text-sm text-theme_dark-T0">{user.displayName}</div>
                                     }
-                                    <div className="text-xs text-theme_dark-T1">{account.handle}</div>
+                                    {
+                                        user.type === AccountType.BLUESKY &&
+                                        <div className="text-xs text-theme_dark-T1">{user.handle}</div>
+                                    }
+
                                 </div>
                             </div>)
                     }

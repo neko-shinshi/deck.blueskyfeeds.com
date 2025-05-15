@@ -1,6 +1,7 @@
 import {UserInteraction} from "@/lib/utils/types-constants/user-interaction";
+import {TimestampedType} from "@/lib/utils/types-constants/timestamped-type";
 
-export interface Feed {
+export interface Feed extends TimestampedType {
     uri: string
     displayName: string
     description: string
@@ -13,4 +14,5 @@ export interface Feed {
     pinned?: boolean
     custom?: boolean
     likes: UserInteraction[]
+    lastTs: number
 }

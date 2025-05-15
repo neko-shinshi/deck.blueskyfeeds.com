@@ -26,7 +26,7 @@ export default function SectionControls ({handleColumnDragEnd}) {
 
 
     const ControlDraggable = ({columnId}:{columnId:string}) => {
-        const avatar = useSelector((state:StoreState) => state.memory.accountData[state.storage.columns[columnId].observers[0]].avatar);
+        const avatar = useSelector((state:StoreState) => state.storage.userData[state.storage.columns[columnId].observers[0]].avatar);
 
         const {
             attributes,

@@ -149,9 +149,6 @@ export default function PostItem({post, columnId, highlight=false}: {post:Post, 
                     }
                 </div>
             }
-
-
-
         </>
     }
     const PostQuote = ({record}:{record:RecordPost}) => {

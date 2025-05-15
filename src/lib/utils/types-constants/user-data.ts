@@ -1,3 +1,5 @@
+import {TimestampedType} from "@/lib/utils/types-constants/timestamped-type";
+
 export enum AccountType {
     MASTODON,
     BLUESKY
@@ -41,7 +43,7 @@ export type AccountState =
 
 export type AccountData = BlueskyAccount | MastodonAccount
 
-export type BlueskyAccount = {
+export interface BlueskyAccount extends TimestampedType {
     type:AccountType.BLUESKY
     id: string
     service: string // connected server
@@ -50,13 +52,15 @@ export type BlueskyAccount = {
     refreshJwt: string
     accessJwt: string
     state: AccountState
+    lastTs: number
 }
 
-export type MastodonAccount = {
+export interface MastodonAccount extends TimestampedType {
     type:AccountType.MASTODON
     id: string
     token: string
     state: AccountState
+    lastTs: number
 }
 
 export type AccountPair = {account:BlueskyAccount, user:BlueskyUserData} | {account:MastodonAccount, user:MastodonUserData}

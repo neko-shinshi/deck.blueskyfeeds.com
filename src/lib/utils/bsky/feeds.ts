@@ -2,19 +2,16 @@ import {Feed} from "@/lib/utils/types-constants/feed";
 import {getDidAndHash, stripFeedUri} from "@/lib/utils/at_uri";
 import {getAgent} from "@/lib/utils/bsky/agent";
 import {AccountStateType, AccountType, BlueskyUserData} from "@/lib/utils/types-constants/user-data";
-import {updateFeeds, updateUsers} from "@/lib/utils/redux/slices/memory";
+import {updateFeeds} from "@/lib/utils/redux/slices/memory";
 import {store} from "@/lib/utils/redux/store";
 import {setUserData} from "@/lib/utils/redux/slices/storage";
 
 export const getFeedsForAccounts = () => {
     const state = store.getState();
     if (Object.keys(state.memory.accountData).length > 0) {
-        getMyFeeds(Object.values(state.memory.accountData).reduce((acc, x) => {
-            if (x.state.type === AccountStateType.ACTIVE && x.type === AccountType.BLUESKY) {
-                acc.push(x);
-            }
-            return acc;
-        }, []), state.config.basicKey).then(({feeds, authors}) => {
+        getMyFeeds(Object.values(state.memory.accountData).filter(x =>
+            x.state.type === AccountStateType.ACTIVE && x.type === AccountType.BLUESKY
+        )).then(({feeds, authors}) => {
             console.log("new Feeds", feeds);
             store.dispatch(updateFeeds({feeds}));
             store.dispatch(setUserData({users:authors}));
@@ -34,6 +31,7 @@ export const getFeed = async (feedUri, feedDictionary, user) => {
         return {update:false, feed:null};
     }
 
+    const now = new Date().getTime();
     const {data:{feeds}} = await agent.api.app.bsky.feed.getFeedGenerators({feeds: [feedUri]});
     if (feeds.length === 0) {
         return {update:false, feed:null};
@@ -44,7 +42,7 @@ export const getFeed = async (feedUri, feedDictionary, user) => {
         const lastTs = new Date().getTime();
         return {avatar, handle, displayName: displayName || handle, id: did, lastTs, type: AccountType.BLUESKY};
     })();
-    let feed:Feed = {uri: feedUri, displayName, description, likeCount, avatar, creator:author.id, indexedAt, likes:[]};
+    let feed:Feed = {uri: feedUri, displayName, description, likeCount, avatar, creator:author.id, indexedAt, likes:[], lastTs:now};
     if (viewer.like) {
         feed.likes.push(getDidAndHash(viewer.like));
     }
@@ -52,7 +50,7 @@ export const getFeed = async (feedUri, feedDictionary, user) => {
     return {update:true, feed, author};
 }
 
-export const getMyFeeds = async (users, basicKey, additionalFeeds=[]):Promise<{feeds:Feed[], authors:BlueskyUserData[]}> => {
+export const getMyFeeds = async (accounts, additionalFeeds=[]):Promise<{feeds:Feed[], authors:BlueskyUserData[]}> => {
     let bigFeedMap = new Map<string, any>();
     const destructureAndAdd = (x, flags, uri, feedMap) => {
         let {displayName, description, likeCount, avatar, creator, indexedAt} = x;
@@ -68,8 +66,8 @@ export const getMyFeeds = async (users, basicKey, additionalFeeds=[]):Promise<{f
         });
     }
 
-    const feedMaps = await Promise.all(users.map(async (user, i) => {
-        const agent = await getAgent(user);
+    const feedMaps = await Promise.all(accounts.map(async (account, i) => {
+        const agent = await getAgent(account);
         if (!agent) {
             return {feeds:[], authorsTbd:[]};
         }

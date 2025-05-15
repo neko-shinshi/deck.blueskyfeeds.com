@@ -59,7 +59,8 @@ const updateAgent = async ({agent, password, service, usernameOrEmail}) => {
             service,
             state: {type:AccountStateType.ACTIVE},
             usernameOrEmail,
-            type: AccountType.BLUESKY
+            type: AccountType.BLUESKY,
+            lastTs: now
         }
 
         store.dispatch(setAccount(accountData));

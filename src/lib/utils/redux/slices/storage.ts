@@ -18,6 +18,7 @@ import {
     MastodonAccount, MastodonUserData,
     UserData
 } from "@/lib/utils/types-constants/user-data";
+import {CwType} from "@/lib/utils/types-constants/content-warning";
 
 export type StorageState = {
     profileOrder:string[],
@@ -28,9 +29,22 @@ export type StorageState = {
 }
 
 export const makeInitialState = ():StorageState => {
+    const profileId = randomUuid();
+
+    let profiles = {};
+    profiles[profileId] = {
+        name: "Default Profile",
+        columnIds: [],
+        accountIds: [],
+        maskCw: true,
+        hideCw: false,
+        cwLabels: [],
+        icon: ""
+    }
+
     return {
-        profileOrder: [],
-        profiles: {},
+        profileOrder: [profileId],
+        profiles,
         columns:{},
         userData: {},
         encryptedAccounts:{}
@@ -48,13 +62,13 @@ const slice = createSlice({
         setProfileOrder: (state, action) => {
             let {order} = action.payload;
 
-            const existingIds = Object.keys(state.storage);
+            const existingIds = Object.keys(state.profiles);
             order = order.filter(id => existingIds.indexOf(id) >= 0); // only keep dids that are currently saved
             state.profileOrder = order;
 
-            // remove pages that are not in input order list
+            // remove profiles that are not in input order list
             existingIds.filter(id => order.indexOf(id) < 0).forEach(id => {
-                delete state.storage[id];
+                delete state.profiles[id];
             });
         },
 
@@ -62,7 +76,7 @@ const slice = createSlice({
         // profiles
         setProfileConfig: (state, action) => {
             const {update, profileId} = action.payload;
-            const page = state.storage[profileId];
+            const page = state.profiles[profileId];
             if (page) {
                 for (const [key, value] of Object.entries(update)) {
                     page[key] = value;
@@ -75,12 +89,12 @@ const slice = createSlice({
 
             const existingIds = Object.keys(state.columns);
             order = order.filter(id => existingIds.indexOf(id) >= 0); // only keep dids that are currently saved
-            state.storage[profileId].columnIds = order;
+            state.profiles[profileId].columnIds = order;
         },
 
         setAccountOrder: (state, action) => {
             let {profileId, order} = action.payload;
-            state.storage[profileId] = order;
+            state.profiles[profileId] = order;
         },
 
 
@@ -124,7 +138,7 @@ const slice = createSlice({
                     break;
                 }
             }
-            state.storage[profileId].columnIds.push(id);
+            state.profiles[profileId].columnIds.push(id);
             state.columns[id] = newColumn;
         },
 

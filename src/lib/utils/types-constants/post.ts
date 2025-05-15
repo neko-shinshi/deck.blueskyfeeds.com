@@ -1,4 +1,5 @@
 import {UserInteraction} from "@/lib/utils/types-constants/user-interaction";
+import {TimestampedType} from "@/lib/utils/types-constants/timestamped-type";
 
 export interface TextPart {
     text: string,
@@ -7,7 +8,7 @@ export interface TextPart {
 
 
 
-export interface Post {
+export interface Post extends TimestampedType {
     uri: string
     cid: string // needed to like, repost etc
     textParts?: TextPart[]
@@ -17,7 +18,6 @@ export interface Post {
     tags: string[] // Max 8
     langs: string[] // Max 3
     indexedAt: number // post's timestamp
-    lastTs: number // last update timestamp
     replyCount: number
     repostCount: number
     likeCount: number
@@ -25,8 +25,9 @@ export interface Post {
     reposterDid?: string
     replyTo?: string
     parentUri?:string
-    myLikes: UserInteraction[],
+    myLikes: UserInteraction[]
     myReposts: UserInteraction[]
+    lastTs: number
 }
 
 

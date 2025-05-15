@@ -1,10 +1,10 @@
 import {useEffect} from "react";
-import {MemoryState, updateMemory} from "@/lib/utils/redux/slices/memory";
+import {MemoryState, setMemory} from "@/lib/utils/redux/slices/memory";
 import {useDispatch, useSelector} from "react-redux";
 import {store} from "@/lib/utils/redux/store";
 import {
     ColumnConfig,
-    ColumnFeed,
+    ColumnFeed, ColumnMode,
     ColumnNotifications,
     ColumnType,
     ColumnUsers,
@@ -12,8 +12,10 @@ import {
 } from "@/lib/utils/types-constants/column";
 import {getAgent} from "@/lib/utils/bsky/agent";
 import {processFeed} from "@/lib/utils/bsky/bsky-feed";
-import {AccountType, BlueskyUserData} from "@/lib/utils/types-constants/user-data";
+import {AccountData, AccountType, BlueskyUserData} from "@/lib/utils/types-constants/user-data";
 import {getTbdAuthors} from "@/lib/utils/bsky/users";
+import {Post} from "@/lib/utils/types-constants/post";
+import {Feed} from "@/lib/utils/types-constants/feed";
 
 export default function RefreshHandler({}) {
     useEffect(() => {
@@ -45,37 +47,7 @@ export default function RefreshHandler({}) {
                 case "ack": {
                     if (id === myId && inMemory) {
                         console.log("receive ack", inMemory);
-                        const {columns, posts, userData} = inMemory as MemoryState;
-                        let command:any = {};
-                        const memory = store.getState().memory;
-
-                        // update posts
-                        for (const [uri, post] of Object.entries(posts)) {
-                            const existing = memory.posts[uri];
-                            if (!existing || existing.lastTs < post.lastTs) {
-                                command[`posts.${uri}`] = post;
-                            }
-                        }
-
-                        // update columns
-                        for (const [id, column] of Object.entries(columns)) {
-                            const existing = memory.columns[id];
-                            if (!existing || existing.lastTs < column.lastTs) {
-                                command[`columns.${id}`] = column;
-                            }
-                        }
-
-                        // update account fetch
-                        for (const [id, account] of Object.entries(userData)) {
-                            const existing = memory.userData[id];
-                            if (!existing || existing.lastTs < account.lastTs) {
-                                command[`userData.${id}`] = account;
-                            }
-                        }
-
-                        if (Object.keys(command).length > 0) {
-                            store.dispatch(updateMemory(command));
-                        }
+                        store.dispatch(setMemory(inMemory));
                     }
                     break;
                 }
@@ -105,6 +77,7 @@ export default function RefreshHandler({}) {
                 const profilesToUpdate = [...new Set([...openPages, local.currentProfile])];
 
                 // only fetch columns in pages that are open, and accounts that are logged in
+                /*
 
                 let columnIds = new Set<string>();
                 for (const profileId of profilesToUpdate) {
@@ -163,6 +136,7 @@ export default function RefreshHandler({}) {
                 if (toFetch.size > 0) {
                     console.log("toFetch", toFetch);
                 }
+
 
                 for (let [id, columns] of toFetch) {
                     const userObj = accountDict[id];
@@ -272,7 +246,7 @@ export default function RefreshHandler({}) {
                     }
                 }
 
-                store.dispatch(updateMemory(command));
+                store.dispatch(updateMemory(command));*/
             }
         }
 

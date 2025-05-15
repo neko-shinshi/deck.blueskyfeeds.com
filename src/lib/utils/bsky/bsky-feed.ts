@@ -1,4 +1,4 @@
-import {BlueskyUserData, UserData} from "@/lib/utils/types-constants/user-data";
+import {BlueskyAccount, BlueskyUserData, UserData} from "@/lib/utils/types-constants/user-data";
 import {makeCustomException} from "@/lib/utils/custom-exception";
 import {
     Post,
@@ -14,6 +14,7 @@ import {store} from "@/lib/utils/redux/store";
 import {randomUuid} from "@/lib/utils/random";
 import {getDidAndHash, stripFeedUri, stripPostUri} from "@/lib/utils/at_uri";
 import {getTbdAuthors} from "@/lib/utils/bsky/users";
+import {updateColumnMode, updateMemory} from "@/lib/utils/redux/slices/memory";
 
 // Use the public search API to 'create' a feed
 export const searchPosts = async (agent, searchTerm, cursor="") => {
@@ -296,24 +297,16 @@ export const processThread = async (authorsTbd, authors, thread) => {
 export const getPostThread = async (did, columnId, uri) => {
     let state = store.getState();
     const parent = state.memory.columnMode[columnId];
-    const userObj = state.memory.accountData[did];
+    const userObj = state.memory.accountData[did] as BlueskyAccount;
     if (!userObj) {return false;}
-    const userData = state.memory.userData;
+    const userData = state.storage.userData;
 
     const loadingId = randomUuid();
-    let memoryCommand:any = {};
-    memoryCommand[`columns.${columnId}.mode`] = {
-        id: loadingId,
-        mode: "loading",
-        header: "Thread",
-        parent,
-    };
-    store.dispatch(updateMemory(memoryCommand));
+    store.dispatch(updateColumnMode({colId: columnId, mode:{id: loadingId, mode: "loading", header: "Thread", parent}}));
 
-    let agent = await getAgent(userObj, state.config.basicKey);
+    let agent = await getAgent(userObj);
     if (!agent) {
-        memoryCommand[`columns.${columnId}.mode`] = parent;
-        store.dispatch(updateMemory(memoryCommand));
+        store.dispatch(updateColumnMode({colId: columnId, mode: parent}));
         return;
     }
 
@@ -330,8 +323,7 @@ export const getPostThread = async (did, columnId, uri) => {
         mainUri = _mainUri;
     } catch (e) {
         if (e.status === 400 && e.error === "NotFound") {
-            memoryCommand[`columns.${columnId}.mode`] = parent;
-            store.dispatch(updateMemory(memoryCommand));
+            store.dispatch(updateColumnMode({colId: columnId, mode:parent}));
             return;
         }
 
@@ -344,26 +336,24 @@ export const getPostThread = async (did, columnId, uri) => {
 
     // Check if parent is still the same
     state = store.getState(); // Get latest state
-    if (!state.memory.columns[columnId]) {
-        memoryCommand[`columns.${columnId}.mode`] = parent;
-        store.dispatch(updateMemory(memoryCommand));
+    if (!state.memory.columnMode[columnId]) {
+        store.dispatch(updateColumnMode({colId: columnId, mode: parent}));
         console.log("column deleted");
         return;
     }
-    const newMode = state.memory.columns[columnId].mode;
+    const newMode = state.memory.columnMode[columnId];
     if (!newMode || newMode.id !== loadingId) {
+        store.dispatch(updateColumnMode({colId: columnId, mode: parent}));
         console.log("load messages cancelled");
-        memoryCommand[`columns.${columnId}.mode`] = parent;
-        store.dispatch(updateMemory(memoryCommand));
         return; // Action was cancelled
     }
 
-    memoryCommand = {};
+    let memoryCommand = {};
     for (let [key, value] of authors.entries()) {
         memoryCommand[`userData.${key}`] = value;
     }
 
-    memoryCommand[`columns.${columnId}.mode`] = {
+    memoryCommand[`columnMode.${columnId}`] = {
         id: randomUuid(),
         mode:"thread",
         parent,
@@ -390,3 +380,4 @@ export const getPostThread = async (did, columnId, uri) => {
     }
     store.dispatch(updateMemory(memoryCommand));
 }
+

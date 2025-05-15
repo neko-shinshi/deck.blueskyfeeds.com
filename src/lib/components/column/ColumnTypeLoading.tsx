@@ -1,4 +1,4 @@
-import {updateMemory} from "@/lib/utils/redux/slices/memory";
+import {updateColumnMode, updateMemory} from "@/lib/utils/redux/slices/memory";
 import {BiArrowBack} from "react-icons/bi";
 import {useDispatch, useSelector} from "react-redux";
 import {ColumnConfig, ColumnModeLoading} from "@/lib/utils/types-constants/column";
@@ -11,10 +11,7 @@ export default function ColumnTypeLoading({columnId}:{columnId:string}) {
         <div className="h-[3rem] flex place-items-center gap-2 justify-start">
             <div className="w-8 h-8 p-1 border border-theme_dark-I0 rounded-full mr-2 bg-theme_dark-I1 hover:bg-theme_dark-I2 shrink-0 grid place-items-center"
                  onClick={() => {
-                     let command:any = {};
-                     command[`columns.${columnId}.mode`] = mode.parent;
-                     console.log(JSON.stringify(command, null,2 ))
-                     dispatch(updateMemory(command));
+                     dispatch(updateColumnMode({colId: columnId, mode:mode.parent}));
                  }}
             >
                 <BiArrowBack className="w-4 h-4 text-theme_dark-I0" />

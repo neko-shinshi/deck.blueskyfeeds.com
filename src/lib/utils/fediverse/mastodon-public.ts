@@ -16,7 +16,7 @@ export const getInstancePublicTimeline = async (server:string, config:any={}) =>
     const response = await fetch(url);
     if (response.ok) {
         const result = await response.json();
-        console.log(JSON.stringify(result, null, 2));
+        console.log(JSON.stringify(result.map(x => x.uri), null, 2));
     } else {
         console.error(response);
     }

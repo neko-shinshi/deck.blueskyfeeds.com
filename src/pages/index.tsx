@@ -12,43 +12,59 @@ import TimeAgo from "javascript-time-ago";
 import en from 'javascript-time-ago/locale/en.json'
 import {getFeedsForAccounts} from "@/lib/utils/bsky/feeds";
 import {setCurrentProfile, setPopupConfig} from "@/lib/utils/redux/slices/local";
-import {StoreState} from "@/lib/utils/redux/store";
+import {store, StoreState} from "@/lib/utils/redux/store";
 import SectionPopups from "@/lib/components/SectionPopups";
+import {hash} from "@noble/hashes/_assert";
+import {decrypt, parseKey} from "@/lib/utils/crypto";
+import MainUI from "@/lib/components/MainUI";
 
 
+enum PageState {
+    NEED_LOGIN,
+    USER_SELECTED,
+    SELECT_PROFILE
+}
 
 export default function Main ({}) {
-    const profileOrder = useSelector((state:StoreState) => state.storage.profileOrder);
-    const currentProfile = useSelector((state:StoreState) => state.local.currentProfile);
-    const singleProfileLoggedIn = useSelector((state:StoreState) => {
-        const currentProfile = state.local.currentProfile;
-        return currentProfile &&
-            state.storage.profiles[currentProfile] &&
-            state.storage.profiles[currentProfile].accountIds.length > 0
+    const pageState = useSelector((state:StoreState):PageState => {
+        if (state.local.currentProfile) {
+            return PageState.USER_SELECTED;
+        }
+
+        const numProfiles = state.storage.profileOrder.length;
+
+        if (numProfiles === 1 && Object.keys(state.storage.encryptedAccounts).length > 0) {
+            return PageState.NEED_LOGIN;
+        }
+
+        if (numProfiles > 1) {
+           return PageState.SELECT_PROFILE;
+        }
+
+        return PageState.NEED_LOGIN;
     });
 
-    const columnIds = useSelector((state:StoreState) => {
-        const currentProfile = state.local.currentProfile;
-        if (!currentProfile) {
-            return [];
-        }
-        return state.storage.profiles[currentProfile].columnIds;
-    }, shallowEqual);
 
-    const dispatch = useDispatch();
 
 
     useEffect(() => {
         TimeAgo.addDefaultLocale(en);
 
+        const {storage} = store.getState();
+
+        if (storage.profileOrder.length === 1 && Object.keys(storage.encryptedAccounts).length > 0) {
+
+        }
+
         // Get feeds from accounts
-        getFeedsForAccounts();
+   //     getFeedsForAccounts();
 
         //getInstancePublicTimeline("sakurajima.social", {});
        // getFeaturedChannels("misskey.io").then(r => console.log("ok"));
-       //
 
 
+
+        /*
         switch (profileOrder.length) {
             case 0: {
                 // User automatically asked to sign in
@@ -67,24 +83,10 @@ export default function Main ({}) {
                 setPopupConfig({state:PopupState.PICK_PAGE});
                 break;
             }
-        }
+        }*/
     }, []);
 
 
-
-    function handleColumnDragEnd(event) {
-        const {active, over} = event;
-
-        if (over && active.id !== over.id) {
-            console.log("old", columnIds);
-            const oldIndex = columnIds.indexOf(active.id);
-            const newIndex = columnIds.indexOf(over.id);
-
-            const result = arrayMove(columnIds, oldIndex, newIndex);
-            console.log("new", result);
-            dispatch(setColumnOrder({order:result, profileId: currentProfile}));
-        }
-    }
 
     return <>
         <HeadExtended
@@ -96,18 +98,21 @@ export default function Main ({}) {
 
         <div className="h-screen w-full bg-theme_dark-L0">
             {
-                !currentProfile &&
+                pageState === PageState.NEED_LOGIN &&
                 <div className="w-full h-screen grid place-items-center  bg-cover bg-center bg-[url('https://files.blueskyfeeds.com/sky.webp')]">
                     <LoginSwitcher initialMode="root"/>
                 </div>
             }
 
             {
-                currentProfile &&
-                <div className="w-full h-full flex pr-2 py-0.5">
-                    <SectionControls handleColumnDragEnd={handleColumnDragEnd}/>
-                    <SectionColumns handleColumnDragEnd={handleColumnDragEnd}/>
+                pageState === PageState.SELECT_PROFILE &&
+                <div className="w-full h-screen grid place-items-center  bg-cover bg-center bg-[url('https://files.blueskyfeeds.com/sky.webp')]">
+                    Profile Select
                 </div>
+            }
+
+            {
+                pageState === PageState.USER_SELECTED && <MainUI />
             }
         </div>
    </>

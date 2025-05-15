@@ -3,6 +3,7 @@ import {CwType} from "@/lib/utils/types-constants/content-warning";
 import {RefreshTimingType} from "@/lib/utils/types-constants/refresh-timings";
 import {ThumbnailSize} from "@/lib/utils/types-constants/thumbnail-size";
 import {Post} from "@/lib/utils/types-constants/post";
+import {TimestampedType} from "@/lib/utils/types-constants/timestamped-type";
 
 export interface ProfileColumns {
     name: string // for display
@@ -100,6 +101,12 @@ export interface ColumnModeThread extends ColumnMode {
     posts: Post[]
     mainUri: string
     viewer: string
+}
+
+export interface ColumnPosts extends TimestampedType{
+    uris:string[],
+    cursor:string,
+    lastTs:number
 }
 
 // Look at a profile in detail
